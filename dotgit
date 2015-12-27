@@ -1,0 +1,106 @@
+#! /bin/bash
+
+# Dotgit is an easy-to-use and effective way to backup all your dotfiles and manage them in a repository
+
+# Written by Kobus van Schoor
+# You are free to distrubute and modify this software in any way as long as you acknowledge the original author
+
+REPO=$PWD
+
+function phelp
+{
+	echo "Usage: dotgit [option]
+
+OPTIONS:
+update			Update all the files in the repo with new versions from home folder
+restore			Restore all files from the repo to your home folder
+init			Initialize current folder with new dotgit repo
+diff			Show new changes
+help			Show this message"
+}
+
+function pstatus
+{
+	type="Updating"
+	if [ ! -z $3 ]; then
+		type="$3"
+	fi;
+
+	echo -n "-->$type    "; printf "%-30s" $1 $2; printf "\n"
+}
+
+function update
+{
+	if [ ! -a filelist ]; then
+		echo "Filelist not found. Aborting...";
+		exit 1;
+	fi;
+
+	echo "Commencing update..."
+	cd $HOME;
+
+	for i in $(grep -v "\:" "$REPO/filelist"); do
+		pstatus $i "common"
+		cp --parents "$i" "$REPO/dotfiles/common"
+	done;
+
+	for i in $(grep "$HOSTNAME" "$REPO/filelist"); do
+		hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\ / | rev);
+		filename=$(echo $i | sed s/\:.*//);
+		for k in $hosts; do
+
+			if [ ! -d "$REPO/dotfiles/$k" ]; then
+				mkdir "$REPO/dotfiles/$k";
+			fi;
+
+			pstatus $filename $k
+			cp --parents "$filename" "$REPO/dotfiles/$k"
+		done;
+	done;
+
+	cd $REPO;
+	cleanup
+}
+
+function cleanup
+{
+	echo "Commencing cleanup..."
+}
+
+function restore
+{
+
+	echo asd;
+}
+
+function init
+{
+	echo "Initializing dotgit repo..."
+	mkdir dotfiles
+	mkdir dotfiles/common
+	git init
+	if [ ! -a filelist ]; then
+		touch filelist
+	fi
+	echo "Initialized new dotgit repo in $PWD"
+}
+
+function pdiff
+{
+	git diff
+}
+
+
+if [[ $# -eq 0 ]]; then
+	phelp;
+	exit;
+fi;
+
+case "$1" in
+	"update")update;;
+	"restore")restore;;
+	"init")init;;
+	"diff")pdiff;;
+	"help")phelp;;
+	*)phelp;;
+esac;
