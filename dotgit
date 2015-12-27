@@ -60,6 +60,33 @@ function update
 
 	cd $REPO;
 	cleanup
+
+	if [ -z "$(git diff)" ]; then echo "No changes made to any files..."; exit; fi;
+
+	echo -n "Do you want to create a commit for new update? [Y/n] "
+	read ans
+	if [ -z $ans ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
+		echo -n "Do you want to generate a commit message? [Y/n] "
+		read ans
+		message="Changes: "
+		if [ -z $ans ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
+			OLDIFS=$IFS
+			IFS=$(echo -ne "\n\b")
+			for i in $(git diff --name-status | grep dotfiles); do
+				case "$(echo $i | cut -c 1-1)" in
+					"D")message=$(echo "$message deleted $(echo $i | cut -c 12-); ");;
+					"M")message=$(echo "$message modified $(echo $i | cut -c 12-); ");;
+				esac
+			done
+			IFS=$OLDIFS
+			message=$(echo $message | rev | cut -c 2- | rev)
+		else
+			echo "Enter commit message:"
+			read message
+		fi
+		git add --all
+		git commit -m "$message"
+	fi;
 }
 
 function cleanup
