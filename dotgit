@@ -5,7 +5,7 @@
 # Written by Kobus van Schoor
 # You are free to distrubute and modify this software in any way as long as you acknowledge the original author
 
-REPO=$PWD
+REPO="$PWD"
 
 function phelp
 {
@@ -31,9 +31,9 @@ function pstatus
 
 function update
 {
-	if [ ! -a filelist ]; then
-		echo "Filelist not found. Aborting...";
-		exit 1;
+	if [ ! -e "$REPO/filelist" ]; then
+		echo "Filelist not found. Aborting..."
+		exit;
 	fi;
 
 	echo "Commencing update..."
@@ -65,6 +65,32 @@ function update
 function cleanup
 {
 	echo "Commencing cleanup..."
+	cd dotfiles;
+	for i in *; do
+		echo "Entering $i..."
+		cd "$i"
+
+		for k in $(find -not -type d); do
+			if [ $k == "." ]; then
+				continue;
+			fi
+			k=$(echo $k | cut -c 3-);
+
+			z=""
+			if [ $i != "common" ]; then
+				z="$i"
+			fi
+
+			if [ -z "$(grep "$k" "$REPO/filelist" | grep "$z" )" ]; then
+				pstatus "$k" "$i" "Removing"
+				rm "$k"
+			fi;
+		done;
+		cd ..
+	done;
+
+	cd $REPO;
+	find dotfiles -empty -type d -delete
 }
 
 function restore
