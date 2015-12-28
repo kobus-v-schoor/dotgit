@@ -18,7 +18,7 @@ OPTIONS:
 				If a category is passed to update only that category's files will be updated (not even the common folder will be updated)
   restore		Restore all files from the repo to your home folder
 				If a category is passed to restore only that category's files will be restored (not even the common folder will be restored)
-  add-remote	Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
+  add-remote		Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
   init			Initialize current folder with new dotgit repo
   diff			Show new changes
   help			Show this message"
