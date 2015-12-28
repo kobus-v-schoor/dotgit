@@ -18,6 +18,7 @@ OPTIONS:
 				If a category is passed to update only that category's files will be updated (not even the common folder will be updated)
   restore		Restore all files from the repo to your home folder
 				If a category is passed to restore only that category's files will be restored (not even the common folder will be restored)
+  add-remote	Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
   init			Initialize current folder with new dotgit repo
   diff			Show new changes
   help			Show this message"
@@ -102,6 +103,16 @@ function update
 			read message
 		fi
 		git commit -m "$message"
+
+		if [ ! -z "$(git remote)" ]; then
+			echo -n "Remote detected, do you want to push (sync) to it? [Y/n] "
+			read ans
+			if [ -z "$ans" ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
+				for i in $(git remote); do
+					git push -u $i "$(git branch | grep \* | cut -c 3-)"
+				done;
+			fi
+		fi
 	else
 		git reset
 	fi
@@ -200,6 +211,29 @@ function pdiff
 	git diff
 }
 
+function addRemote
+{
+	if [ -z "$1" ]; then
+		echo "Error: you need to specify a remote repo"
+		return
+	fi
+
+	if [ ! -z "$(git remote)" ]; then
+		echo -n "This repository already has a remote repository to sync to (remote name $(git remote)), remove it? [Y/n] "
+		read ans
+		if [ -z $ans ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
+			echo "Removed $(git remote)"
+			git remote remove $(git remote)
+		else
+			echo "Aborting..."
+			return
+		fi
+	fi
+
+	git remote add origin "$1"
+	echo "Added new repository $1"
+}
+
 
 if [[ $# -eq 0 ]]; then
 	phelp;
@@ -212,6 +246,7 @@ case "$1" in
 	"init")init;;
 	"diff")pdiff;;
 	"help")phelp;;
+	"add-remote")addRemote "$2";;
 	*)phelp;;
 esac;
 
