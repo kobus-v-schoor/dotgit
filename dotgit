@@ -144,7 +144,7 @@ function restore
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
 			pstatus "$i" "common" "Restoring"
-			cp --parents "$i" "$HOME/qwe"
+			cp --parents "$i" "$HOME"
 		done
 		cd ..
 
@@ -158,8 +158,8 @@ function restore
 
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
-			pstatus "$i" "$HOSTNANE" "Restoring"
-			cp --parents "$i" "$HOME/qwe"
+			pstatus "$i" "$HOSTNAME" "Restoring"
+			cp --parents "$i" "$HOME"
 		done
 	else
 		if [ -d "$1" ]; then
@@ -172,7 +172,7 @@ function restore
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
 			pstatus "$i" "$1" "Restoring"
-			cp --parents "$i" "$HOME/qwe"
+			cp --parents "$i" "$HOME"
 		done
 	fi
 
