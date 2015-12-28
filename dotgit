@@ -9,14 +9,16 @@ REPO="$PWD"
 
 function phelp
 {
-	echo "Usage: dotgit [option]
+	echo "Usage: dotgit [option] (optional category)
 
 OPTIONS:
-update			Update all the files in the repo with new versions from home folder
-restore			Restore all files from the repo to your home folder
-init			Initialize current folder with new dotgit repo
-diff			Show new changes
-help			Show this message"
+  update		Update all the files in the repo with new versions from home folder
+				If a category is passed to update only that category's files will be updated (not even the common folder will be updated)
+  restore		Restore all files from the repo to your home folder
+				If a category is passed to restore only that category's files will be restored (not even the common folder will be restored)
+  init			Initialize current folder with new dotgit repo
+  diff			Show new changes
+  help			Show this message"
 }
 
 function pstatus
@@ -39,24 +41,36 @@ function update
 	echo "Commencing update..."
 	cd $HOME;
 
-	for i in $(grep -v "\:" "$REPO/filelist"); do
-		pstatus $i "common"
-		cp --parents "$i" "$REPO/dotfiles/common"
-	done;
-
-	for i in $(grep "$HOSTNAME" "$REPO/filelist"); do
-		hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\ / | rev);
-		filename=$(echo $i | sed s/\:.*//);
-		for k in $hosts; do
-
-			if [ ! -d "$REPO/dotfiles/$k" ]; then
-				mkdir "$REPO/dotfiles/$k";
-			fi;
-
-			pstatus $filename $k
-			cp --parents "$filename" "$REPO/dotfiles/$k"
+	if [ -z "$1" ]; then
+		for i in $(grep -v "\:" "$REPO/filelist"); do
+			pstatus $i "common"
+			cp --parents "$i" "$REPO/dotfiles/common"
 		done;
-	done;
+	
+		for i in $(grep "$HOSTNAME" "$REPO/filelist"); do
+			hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\ / | rev);
+			filename=$(echo $i | sed s/\:.*//);
+			for k in $hosts; do
+
+				if [ ! -d "$REPO/dotfiles/$k" ]; then
+					mkdir "$REPO/dotfiles/$k";
+				fi;
+	
+				pstatus $filename $k
+				cp --parents "$filename" "$REPO/dotfiles/$k"
+			done;
+		done;
+	else
+		if [ ! -d "$REPO/dotfiles/$1" ]; then
+			mkdir "$REPO/dotfiles/$1"
+		fi
+
+		for i in $(grep "$1" "$REPO/filelist"); do
+			i=$(echo $i | sed s/\:.*//)
+			pstatus "$i" "$1"
+			cp --parents "$i" "$REPO/dotfiles/$1"
+		done
+	fi
 
 	cd $REPO;
 	cleanup
@@ -122,8 +136,7 @@ function cleanup
 
 function restore
 {
-
-	echo asd;
+	echo "Commencing file restore..."
 }
 
 function init
@@ -150,7 +163,7 @@ if [[ $# -eq 0 ]]; then
 fi;
 
 case "$1" in
-	"update")update;;
+	"update")update "$2";;
 	"restore")restore;;
 	"init")init;;
 	"diff")pdiff;;
