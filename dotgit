@@ -6,6 +6,8 @@
 # You are free to distrubute and modify this software in any way as long as you acknowledge the original author
 
 REPO="$PWD"
+OLDIFS=$IFS
+IFS=$(echo -ne "\n\b")
 
 function phelp
 {
@@ -46,16 +48,16 @@ function update
 			pstatus $i "common"
 			cp --parents "$i" "$REPO/dotfiles/common"
 		done;
-	
+
 		for i in $(grep "$HOSTNAME" "$REPO/filelist"); do
-			hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\ / | rev);
+			hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/ | rev);
 			filename=$(echo $i | sed s/\:.*//);
 			for k in $hosts; do
 
 				if [ ! -d "$REPO/dotfiles/$k" ]; then
 					mkdir "$REPO/dotfiles/$k";
 				fi;
-	
+
 				pstatus $filename $k
 				cp --parents "$filename" "$REPO/dotfiles/$k"
 			done;
@@ -84,8 +86,6 @@ function update
 		read ans
 		message="Changes: "
 		if [ -z $ans ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
-			OLDIFS=$IFS
-			IFS=$(echo -ne "\n\b")
 			for i in $(git diff --name-status | grep dotfiles); do
 				case "$(echo $i | cut -c 1-1)" in
 					"D")message=$(echo "$message deleted $(echo $i | cut -c 12-); ");;
@@ -137,6 +137,46 @@ function cleanup
 function restore
 {
 	echo "Commencing file restore..."
+	cd dotfiles
+
+	if [ -z "$1" ]; then
+		cd common
+		for i in $(find . -not -type d); do
+			i="$(echo $i | cut -c 3-)"
+			pstatus "$i" "common" "Restoring"
+			cp --parents "$i" "$HOME/qwe"
+		done
+		cd ..
+
+		if [ -d "$HOSTNAME" ]; then
+			cd "$HOSTNAME"
+		else
+			echo "Folder for $HOSTNAME not found..."
+			echo "Finished restoring..."
+			return
+		fi
+
+		for i in $(find . -not -type d); do
+			i="$(echo $i | cut -c 3-)"
+			pstatus "$i" "$HOSTNANE" "Restoring"
+			cp --parents "$i" "$HOME/qwe"
+		done
+	else
+		if [ -d "$1" ]; then
+			cd "$1"
+		else
+			echo "Category $1 not found... Aborting"
+			return
+		fi
+
+		for i in $(find . -not -type d); do
+			i="$(echo $i | cut -c 3-)"
+			pstatus "$i" "$1" "Restoring"
+			cp --parents "$i" "$HOME/qwe"
+		done
+	fi
+
+	echo "Finished restoring..."
 }
 
 function init
@@ -164,9 +204,11 @@ fi;
 
 case "$1" in
 	"update")update "$2";;
-	"restore")restore;;
+	"restore")restore "$2";;
 	"init")init;;
 	"diff")pdiff;;
 	"help")phelp;;
 	*)phelp;;
 esac;
+
+IFS=$OLDIFS
