@@ -77,7 +77,8 @@ function update
 	cd $REPO;
 	cleanup
 
-	if [ -z "$(git diff)" ]; then echo "No changes made to any files..."; exit; fi;
+	git add --all
+	if [ -z "$(git status --porcelain)" ]; then echo "No changes made to any files..."; return; fi;
 
 	echo -n "Do you want to create a commit for new update? [Y/n] "
 	read ans
@@ -86,10 +87,12 @@ function update
 		read ans
 		message="Changes: "
 		if [ -z $ans ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
-			for i in $(git diff --name-status | grep dotfiles); do
+			for i in $(git status --porcelain | grep dotfiles); do
 				case "$(echo $i | cut -c 1-1)" in
-					"D")message=$(echo "$message deleted $(echo $i | cut -c 12-); ");;
-					"M")message=$(echo "$message modified $(echo $i | cut -c 12-); ");;
+					"D")message=$(echo "$message deleted $(echo $i | cut -c 13-); ");;
+					"M")message=$(echo "$message modified $(echo $i | cut -c 13-); ");;
+					"A")message=$(echo "$message added $(echo $i | cut -c 13-); ");;
+					"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g"); ");;
 				esac
 			done
 			IFS=$OLDIFS
@@ -98,9 +101,10 @@ function update
 			echo "Enter commit message:"
 			read message
 		fi
-		git add --all
 		git commit -m "$message"
-	fi;
+	else
+		git reset
+	fi
 }
 
 function cleanup
