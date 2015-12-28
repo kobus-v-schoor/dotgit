@@ -1,3 +1,4 @@
+# Maintainer: Kobus van Schoor <pbscube at gmail dot com>
 pkgname=dotgit
 pkgver=1.0.0
 pkgrel=1
