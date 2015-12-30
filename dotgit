@@ -52,7 +52,10 @@ function update
 
 	if [ -z "$1" ]; then
 		for i in $(grep -v "\:" "$REPO/filelist"); do
-			pstatus $i "common"
+			z=""
+			if [ ! -z "$(diff "$i" "$REPO/dotfiles/common/$i")" ]; then z=" (changed)"; fi
+
+			pstatus $i "common$z"
 			cp --parents "$i" "$REPO/dotfiles/common"
 		done;
 
@@ -61,11 +64,12 @@ function update
 			filename=$(echo $i | sed s/\:.*//);
 			for k in $hosts; do
 
-				if [ ! -d "$REPO/dotfiles/$k" ]; then
-					mkdir "$REPO/dotfiles/$k";
-				fi;
+				if [ ! -d "$REPO/dotfiles/$k" ]; then mkdir "$REPO/dotfiles/$k"; fi
 
-				pstatus $filename $k
+				z=""
+				if [ ! -z "$(diff "$filename" "$REPO/dotfiles/$k/$filename")" ]; then z=" (changed)"; fi
+
+				pstatus "$filename" "$k$z"
 				cp --parents "$filename" "$REPO/dotfiles/$k"
 			done;
 		done;
@@ -76,7 +80,11 @@ function update
 
 		for i in $(grep "$1" "$REPO/filelist"); do
 			i=$(echo $i | sed s/\:.*//)
-			pstatus "$i" "$1"
+
+			z=""
+			if [ ! -z "$(diff "$i" "$REPO/dotfiles/$1/$i")" ]; then z=" (changed)"; fi
+
+			pstatus "$i" "$1$z"
 			cp --parents "$i" "$REPO/dotfiles/$1"
 		done
 	fi
@@ -120,7 +128,7 @@ function update
 			fi
 		fi
 	else
-		git reset
+		git reset -q
 	fi
 }
 
