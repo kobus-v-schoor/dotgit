@@ -30,6 +30,18 @@ OPTIONS:
   help          --  Show this message"
 }
 
+function ediff
+{
+	if [ ! -e $2 ]; then
+		echo " (new file)"
+		return
+	fi
+
+	if [ ! -z "$(diff "$1" "$2")" ]; then
+		echo " (changed)"
+	fi;
+}
+
 function pstatus
 {
 	type="Updating"
@@ -52,10 +64,7 @@ function update
 
 	if [ -z "$1" ]; then
 		for i in $(grep -v "\:" "$REPO/filelist"); do
-			z=""
-			if [ ! -z "$(diff "$i" "$REPO/dotfiles/common/$i")" ]; then z=" (changed)"; fi
-
-			pstatus $i "common$z"
+			pstatus $i "common$(ediff "$i" "$REPO/dotfiles/common/$i")"
 			cp --parents "$i" "$REPO/dotfiles/common"
 		done;
 
@@ -63,13 +72,9 @@ function update
 			hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/ | rev);
 			filename=$(echo $i | sed s/\:.*//);
 			for k in $hosts; do
-
 				if [ ! -d "$REPO/dotfiles/$k" ]; then mkdir "$REPO/dotfiles/$k"; fi
 
-				z=""
-				if [ ! -z "$(diff "$filename" "$REPO/dotfiles/$k/$filename")" ]; then z=" (changed)"; fi
-
-				pstatus "$filename" "$k$z"
+				pstatus "$filename" "$k$(ediff "$filename" "$REPO/dotfiles/$k/$filename")"
 				cp --parents "$filename" "$REPO/dotfiles/$k"
 			done;
 		done;
@@ -80,11 +85,7 @@ function update
 
 		for i in $(grep "$1" "$REPO/filelist"); do
 			i=$(echo $i | sed s/\:.*//)
-
-			z=""
-			if [ ! -z "$(diff "$i" "$REPO/dotfiles/$1/$i")" ]; then z=" (changed)"; fi
-
-			pstatus "$i" "$1$z"
+			pstatus "$i" "$1$(ediff "$i" "$REPO/dotfiles/$1/$i")"
 			cp --parents "$i" "$REPO/dotfiles/$1"
 		done
 	fi
