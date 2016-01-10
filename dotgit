@@ -18,6 +18,7 @@ Filelist syntax:
   .vimrc:host1,host2  --  Will only be restored if hostname of machine matches \"host1\" or \"host2\"
   .vimrc:host3        --  Will be kept seperate from .vimrc above and will only be restored on host3
   .xinitrc:category1  --  When category1 is specified as category only files with category1 suffix will be restored (or backed up) (also excludes common folder)
+  Comments are indicated with a // in the begining of the line (any line including // will be ignored)
 
 OPTIONS:
   update        --  Update all the files in the repo with new versions from home folder
@@ -26,7 +27,7 @@ OPTIONS:
                     If a category is passed to restore as an argument only that category's files will be restored (not even the common folder will be restored)
   add-remote    --  Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
   init          --  Initialize current folder with new dotgit repo
-  diff          --  Show new changes
+  diff          --  Show how dotgit repo will change after running dotgit update
   help          --  Show this message"
 }
 
@@ -63,12 +64,12 @@ function update
 	cd $HOME;
 
 	if [ -z "$1" ]; then
-		for i in $(grep -v "\:" "$REPO/filelist"); do
+		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
 			pstatus $i "common$(ediff "$i" "$REPO/dotfiles/common/$i")"
 			cp --parents "$i" "$REPO/dotfiles/common"
 		done;
 
-		for i in $(grep "$HOSTNAME" "$REPO/filelist"); do
+		for i in $(grep -v "//" "$REPO/filelist" | grep "$HOSTNAME"); do
 			hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/ | rev);
 			filename=$(echo $i | sed s/\:.*//);
 			for k in $hosts; do
@@ -83,7 +84,7 @@ function update
 			mkdir "$REPO/dotfiles/$1"
 		fi
 
-		for i in $(grep "$1" "$REPO/filelist"); do
+		for i in $(grep -v "//" "$REPO/filelist" | grep "$1"); do
 			i=$(echo $i | sed s/\:.*//)
 			pstatus "$i" "$1$(ediff "$i" "$REPO/dotfiles/$1/$i")"
 			cp --parents "$i" "$REPO/dotfiles/$1"
@@ -152,7 +153,7 @@ function cleanup
 				z="$i"
 			fi
 
-			if [ -z "$(grep "$k" "$REPO/filelist" | grep "$z" )" ]; then
+			if [ -z "$(grep -v "//" "$REPO/filelist" | grep "$k" | grep "$z" )" ]; then
 				pstatus "$k" "$i" "Removing"
 				rm "$k"
 			fi;
@@ -223,7 +224,24 @@ function init
 
 function pdiff
 {
-	git diff
+	for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
+		z=$(ediff "$HOME/$i" "$REPO/dotfiles/common/$i")
+
+		if [ ! -z "$z" ]; then
+			z=$(echo "common/$i $z")
+			echo $z
+		fi
+	done
+
+	for i in $(grep -v "//" "$REPO/filelist" | grep $HOSTNAME); do
+		i=$(echo $i | sed s/\:.*//)
+		z=$(ediff "$HOME/$i" "$REPO/dotfiles/$HOSTNAME/$i")
+
+		if [ ! -z "$z" ]; then
+			z=$(echo "$HOSTNAME/$i $z")
+			echo $z
+		fi
+	done
 }
 
 function addRemote
