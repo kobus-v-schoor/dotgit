@@ -70,7 +70,7 @@ function update
 		done;
 
 		for i in $(grep -v "//" "$REPO/filelist" | grep "$HOSTNAME"); do
-			hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/ | rev);
+			hosts=$(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev);
 			filename=$(echo $i | sed s/\:.*//);
 			for k in $hosts; do
 				if [ ! -d "$REPO/dotfiles/$k" ]; then mkdir "$REPO/dotfiles/$k"; fi
