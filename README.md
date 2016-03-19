@@ -1,5 +1,5 @@
 # dotgit
-## A simple bash program to backup and manage all your dotfiles (read multiple hosts) in a single git repo
+## A simple bash program to backup and manage all your dotfiles (multiple hosts) in a single git repo
 
 Using this program will allow you to effortlessly backup and store all your dotfiles in a single git repo. Dotgit doesn't only do backups - it also manages your dotfiles between multiple computers and devices. It has the ability to keep multiple versions of the same file (example different vimrcs) in the same repo, but it also allows you to easily share the same file between two or more devices (like a bashrc). It also incorporates an easy-to-use category system, so you can group a bunch of dotfiles together and keep them in-sync and safe.
 
