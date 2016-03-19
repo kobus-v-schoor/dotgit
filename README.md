@@ -16,7 +16,7 @@ Say you have a vimrc that you prefer to share between a laptop and a desktop (wi
 Simply running `dotgit update` in your dotgit repo would update the relevant files in the repo depending on what host you are running it on! Or if you fancy updating all your files in the server category you'd simply `dotgit update server`. Restoring the files you need (or updating the files in your home folder after changing it on another machine) is just as simple. Run `dotgit restore` and all the files that are relevant to the host will be copied over to your home folder.
 
 Dotgit also:
-* Can enerate commit messages
+* Can generate commit messages
 * Can automatically push the repo to a remote
 * Supports files that reside in folders (like .scripts/backup.sh)
 * Supports spaces in filnames \0/
