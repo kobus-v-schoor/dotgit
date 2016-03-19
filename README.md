@@ -22,4 +22,4 @@ Dotgit also:
 * Supports spaces in filnames \0/
 * Print a help message (awesome feature :P)
 
-Its written in bash so its easy to set up and use :) If you have any questions or feature requests please feel free to ask/request them!
+Its written in bash so its easy to set up and use :) If you have any questions or feature requests please feel free to request them!
