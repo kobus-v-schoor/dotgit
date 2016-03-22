@@ -23,3 +23,9 @@ Dotgit also:
 * Print a help message (awesome feature :P)
 
 It's written in bash so its easy to set up and use :) If you have any questions or feature requests please feel free to request them!
+
+## Instructions
+Remember that this is simply a git repo so all the usual git tricks work perfectly :)
+There are two way to start up a repo: First is to create your online repo, clone it and then run `dotgit init` (alias for `git init` and creating an empty filelist and dotfiles folder) in it or you can simply make an empty dir, run `dotgit init` inside of it and then `dotgit add-remote "repo url"`.
+
+Now all you have to do is edit the filelist (help message explains syntax) to your needs and you will be ready to do `dotgit update` :) The help message will explain the other options available to you. Have a good one
