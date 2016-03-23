@@ -60,6 +60,16 @@ function update
 		exit;
 	fi;
 
+	if [ -z "$(grep -v "//" "$REPO/filelist")" ]; then
+		echo "Filelist empty. Aborting..."
+		exit
+	fi
+
+	if [ ! -d "$REPO/dotfiles" ]; then
+		echo "Dotfiles folder not found. Aborting..."
+		exit
+	fi
+
 	echo "Commencing update..."
 	cd $HOME;
 
@@ -137,7 +147,8 @@ function update
 function cleanup
 {
 	echo "Commencing cleanup..."
-	cd dotfiles;
+
+	cd dotfiles
 	for i in *; do
 		echo "Entering $i..."
 		cd "$i"
@@ -165,6 +176,21 @@ function cleanup
 	find dotfiles -empty -type d -delete
 }
 
+function confcpy
+{
+	if [ -f "$HOME/$1" ]; then
+		if [ ! -z "$(diff "$i" "$HOME/$i")" ]; then
+			echo -ne "File $1 already exist in $HOME, and differs from the one in this repository.\nDo you want to replace it? [N/y]: "
+			read ans
+			if [ $ans == "y" ] || [ $ans == "Y" ]; then
+				cp --parents "$1" "$HOME"
+			fi
+		fi
+	else
+		cp --parents "$1" "$HOME"
+	fi
+}
+
 function restore
 {
 	echo "Commencing file restore..."
@@ -175,7 +201,7 @@ function restore
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
 			pstatus "$i" "common" "Restoring"
-			cp --parents "$i" "$HOME"
+			confcpy "$i"
 		done
 		cd ..
 
@@ -190,7 +216,7 @@ function restore
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
 			pstatus "$i" "$HOSTNAME" "Restoring"
-			cp --parents "$i" "$HOME"
+			confcpy "$i"
 		done
 	else
 		if [ -d "$1" ]; then
@@ -203,7 +229,7 @@ function restore
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
 			pstatus "$i" "$1" "Restoring"
-			cp --parents "$i" "$HOME"
+			confcpy "$i"
 		done
 	fi
 
