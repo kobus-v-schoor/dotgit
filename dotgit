@@ -173,17 +173,22 @@ function restore
 
 function generate
 {
-	message="Changes: "
+	message="Changes:"
+	git add --all
 	for i in $(git status --porcelain | grep dotfiles); do
 		case "$(echo $i | cut -c 1-1)" in
-			"D")message=$(echo "$message deleted $(echo $i | cut -c 13-); ");;
-			"M")message=$(echo "$message modified $(echo $i | cut -c 13-); ");;
-			"A")message=$(echo "$message added $(echo $i | cut -c 13-); ");;
-			"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g"); ");;
+			"D")message=$(echo "$message deleted $(echo $i | cut -c 13-);");;
+			"M")message=$(echo "$message modified $(echo $i | cut -c 13-);");;
+			"A")message=$(echo "$message added $(echo $i | cut -c 13-);");;
+			"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g");");;
 		esac
 	done
+	if [ "$message" == "Changes:" ]; then
+		echo "No changes to repository..."
+		exit
+	fi
 	message=$(echo $message | rev | cut -c 2- | rev)
-	git commit -q -m "$message"
+	git commit -m "$message"
 
 	if ! git remote >> /dev/null; then
 		echo -n "Remote detected, do you want to push (sync) to it? [Y/n] "
@@ -228,24 +233,10 @@ function cleanup
 	find dotfiles -empty -type d -delete
 }
 
-function confcpy
-{
-	if [ -f "$HOME/$1" ]; then
-		if [ ! -z "$(diff "$i" "$HOME/$i")" ]; then
-			echo -ne "File $1 already exist in $HOME, and differs from the one in this repository.\nDo you want to replace it? [N/y]: "
-			read ans
-			if [ $ans == "y" ] || [ $ans == "Y" ]; then
-				cp --parents "$1" "$HOME"
-			fi
-		fi
-	else
-		cp --parents "$1" "$HOME"
-	fi
-}
-
 function hardRestore
 {
 	echo "Commencing hard restore..."
+	safeguards
 	cd dotfiles
 
 	if [ -z "$1" ]; then
@@ -253,6 +244,9 @@ function hardRestore
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
 			pstatus "$i" "common" "Copying"
+			if [ -f "$HOME/$i" ]; then
+				rm "$HOME/$i"
+			fi
 			cp --parents "$i" "$HOME"
 		done
 		cd ..
@@ -267,6 +261,9 @@ function hardRestore
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
 			pstatus "$i" "$HOSTNAME" "Copying"
+			if [ -f "$HOME/$i" ]; then
+				rm "$HOME/$i"
+			fi
 			cp --parents "$i" "$HOME"
 		done
 	else
@@ -279,6 +276,9 @@ function hardRestore
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
 			pstatus "$i" "$1" "Copying"
+			if [ -f "$HOME/$i" ]; then
+				rm "$HOME/$i"
+			fi
 			cp --parents "$i" "$HOME"
 		done
 	fi
@@ -298,6 +298,7 @@ function init
 
 function pdiff
 {
+	git add --all
 	for i in $(git status --porcelain | grep dotfiles); do
 		case "$(echo $i | cut -c 1-1)" in
 			"D")echo "Deleted $(echo $i | cut -c 13-)";;
@@ -306,6 +307,7 @@ function pdiff
 			"R")echo "Renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g")";;
 		esac
 	done
+	git reset -q
 }
 
 function addRemote
