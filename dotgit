@@ -202,8 +202,8 @@ function hardRestore
 		cd common
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
-			pstatus "$i" "common" "Restoring"
-			confcpy "$i"
+			pstatus "$i" "common" "Copying"
+			cp --parents "$i" "$HOME"
 		done
 		cd ..
 
@@ -211,31 +211,29 @@ function hardRestore
 			cd "$HOSTNAME"
 		else
 			echo "Folder for $HOSTNAME not found..."
-			echo "Finished restoring..."
 			return
 		fi
 
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
-			pstatus "$i" "$HOSTNAME" "Restoring"
-			confcpy "$i"
+			pstatus "$i" "$HOSTNAME" "Copying"
+			cp --parents "$i" "$HOME"
 		done
 	else
 		if [ -d "$1" ]; then
 			cd "$1"
 		else
-			echo "Category $1 not found... Aborting"
-			return
+			echo "Category $1 not found..."
 		fi
 
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
-			pstatus "$i" "$1" "Restoring"
-			confcpy "$i"
+			pstatus "$i" "$1" "Copying"
+			cp --parents "$i" "$HOME"
 		done
 	fi
 
-	echo "Finished restoring..."
+	echo "Finished copying..."
 }
 
 function init
@@ -244,31 +242,19 @@ function init
 	mkdir dotfiles
 	mkdir dotfiles/common
 	git init
-	if [ ! -a filelist ]; then
-		touch filelist
-	fi
+	touch filelist
 	echo "Initialized new dotgit repo in $PWD"
 }
 
 function pdiff
 {
-	for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
-		z=$(ediff "$HOME/$i" "$REPO/dotfiles/common/$i")
-
-		if [ ! -z "$z" ]; then
-			z=$(echo "common/$i $z")
-			echo $z
-		fi
-	done
-
-	for i in $(grep -v "//" "$REPO/filelist" | grep $HOSTNAME); do
-		i=$(echo $i | sed s/\:.*//)
-		z=$(ediff "$HOME/$i" "$REPO/dotfiles/$HOSTNAME/$i")
-
-		if [ ! -z "$z" ]; then
-			z=$(echo "$HOSTNAME/$i $z")
-			echo $z
-		fi
+	for i in $(git status --porcelain | grep dotfiles); do
+		case "$(echo $i | cut -c 1-1)" in
+			"D")echo "Deleted $(echo $i | cut -c 13-)";;
+			"M")echo "Modified $(echo $i | cut -c 13-)";;
+			"A")echo "Added $(echo $i | cut -c 13-)";;
+			"R")echo "Renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g")";;
+		esac
 	done
 }
 
