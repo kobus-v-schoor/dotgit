@@ -18,16 +18,17 @@ Filelist syntax:
   .vimrc:host1,host2  --  Will only be restored if hostname of machine matches \"host1\" or \"host2\"
   .vimrc:host3        --  Will be kept seperate from .vimrc above and will only be restored on host3
   .xinitrc:category1  --  When category1 is specified as category only files with category1 suffix will be restored (or backed up) (also excludes common folder)
-  Comments are indicated with a // in the begining of the line (any line including // will be ignored)
+  Comments are indicated with a // in the begining of the line (any line including // will be ignored, so don't use comments at the end of a line)
 
 OPTIONS:
-  update        --  Update all the files in the repo with new versions from home folder
-                    If a category is passed to update as an argument only that category's files will be updated (not even the common folder will be updated)
-  restore       --  Restore all files from the repo to your home folder
-                    If a category is passed to restore as an argument only that category's files will be restored (not even the common folder will be restored)
+  update        --  If new files are added to the filelist, copy them to the repository and set up links in home folder
+                    If a category is passed as an argument only the category's changes in the filelist will be taken into account
+  restore       --  Set up links from repository in home folder
+                    If a category is passed as an argument only the category's files will be linked into home folder
+  generate      --  Generate a commit message, commit changes and push to remote
   add-remote    --  Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
-  init          --  Initialize current folder with new dotgit repo
-  diff          --  Show how dotgit repo will change after running dotgit update
+  init          --  Initialize current folder with new dotgit repo (create empty filelist and dotfiles folder)
+  diff          --  Show what files changed from previous commit in dotgit repository
   help          --  Show this message"
 }
 
