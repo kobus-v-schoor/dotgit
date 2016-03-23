@@ -52,18 +52,6 @@ function safeguards
 	fi
 }
 
-function ediff
-{
-	if [ ! -e $2 ]; then
-		echo " (new file)"
-		return
-	fi
-
-	if [ ! -z "$(diff "$1" "$2")" ]; then
-		echo " (changed)"
-	fi;
-}
-
 function pstatus
 {
 	type="Adding"
@@ -116,9 +104,41 @@ function update
 
 	cd $REPO;
 	cleanup
+}
 
-	git add --all
-	if [ -z "$(git status --porcelain)" ]; then echo "No changes made to any files..."; return; fi;
+function restore
+{
+	safeguards
+	echo "Commencing repo linking..."
+	cd "$REPO/dotfiles"
+
+	if [ -z "$1" ]; then
+		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
+			if [ "$(dirname "$i")" != "." ]; then
+				mkdir -p "$(dirname "$i")"
+			fi
+
+			ln -s "$REPO/dotfiles/common/$i" "$HOME/$i"
+		done
+
+		for i in $(grep -v "//" "$REPO/filelist" | grep "$HOSTNAME"); do
+			filename=$(echo $i | sed s/\:.*//);
+			if [ "$(dirname "$filename")" != "." ]; then
+				mkdir -p "$(dirname "$filename")"
+			fi
+
+			ln -s "$REPO/dotfiles/$HOSTNAME/$filename" "$HOME/$filename"
+		done
+	else
+		for i in $(grep -v "//" "$REPO/filelist" | grep "$1"); do
+			filename=$(echo $i | sed s/\:.*//);
+			if [ "$(dirname "$filename")" != "." ]; then
+				mkdir -p "$(dirname "$filename")"
+			fi
+
+			ln -s "$REPO/dotfiles/$1/$filename" "$HOME/$filename"
+		done
+	fi
 }
 
 function generate
