@@ -73,6 +73,9 @@ function update
 			if [ ! -f "$REPO/dotfiles/common/$i" ]; then
 				pstatus $i "common"
 				cp --parents "$i" "$REPO/dotfiles/common"
+
+				rm "$HOME/$i"
+				ln -s "$REPO/dotfiles/common/$i" "$HOME/$i"
 			fi
 		done;
 
@@ -81,15 +84,18 @@ function update
 			filename=$(echo $i | sed s/\:.*//)
 			for k in $(seq 0 `expr ${#hosts[@]} - 1`); do
 
-				if [ ! -d "$REPO/dotfiles/$k" ]; then mkdir "$REPO/dotfiles/$k"; fi
+				if [ ! -d "$REPO/dotfiles/${hosts[$k]}" ]; then mkdir "$REPO/dotfiles/${hosts[$k]}"; fi
 
-				if [ ! -f "$REPO/dotfiles/$k/$filename" ]; then
+				if [ ! -f "$REPO/dotfiles/${hosts[$k]}/$filename" ]; then
 					if [ $k == "0" ]; then
-						pstatus "$filename" "$k"
-						cp --parents "$filename" "$REPO/dotfiles/$k"
+						pstatus "$filename" "${hosts[0]}"
+						cp --parents "$filename" "$REPO/dotfiles/${hosts[0]}"
+
+						rm "$HOME/$filename"
+						ln -s "$REPO/dotfiles/${hosts[0]}/$filename" "$HOME/$filename"
 					else
-						pstatus "$filename" "$k (${hosts[0]})" "Linking"
-						ln -s "$REPO/dotfiles/${hosts[0]}/$filename" "$REPO/dotfiles/$k/$filename"
+						pstatus "$filename" "${hosts[$k]} (${hosts[0]})" "Linking"
+						ln -s "$REPO/dotfiles/${hosts[0]}/$filename" "$REPO/dotfiles/${hosts[$k]}/$filename"
 					fi
 				fi
 			done;
@@ -104,12 +110,30 @@ function update
 			if [ ! -f "$REPO/dotfiles/$1/$i" ]; then
 				pstatus "$i" "$1"
 				cp --parents "$i" "$REPO/dotfiles/$1"
+
+				rm "$HOME/$i"
+				ln -s "$REPO/dotfiles/$1/$i" "$HOME/$i"
 			fi
 		done
 	fi
 
 	cd $REPO;
 	cleanup
+}
+
+function lnconf
+{
+	if [ -f "$2" ]; then
+		echo -n "File $3 already exists in home directory. Do you want to overwrite it? [N/y] "
+		read ans
+
+		if [ $ans == "Y" ] || [ $ans == "y" ]; then
+			rm "$2"
+		else
+			return
+		fi
+	fi
+	ln -s "$1" "$2"
 }
 
 function restore
@@ -124,7 +148,7 @@ function restore
 				mkdir -p "$(dirname "$i")"
 			fi
 
-			ln -s "$REPO/dotfiles/common/$i" "$HOME/$i"
+			lnconf  "$REPO/dotfiles/common/$i" "$HOME/$i" "$i"
 		done
 
 		for i in $(grep -v "//" "$REPO/filelist" | grep "$HOSTNAME"); do
@@ -133,7 +157,7 @@ function restore
 				mkdir -p "$(dirname "$filename")"
 			fi
 
-			ln -s "$REPO/dotfiles/$HOSTNAME/$filename" "$HOME/$filename"
+			lnconf "$REPO/dotfiles/$HOSTNAME/$filename" "$HOME/$filename" "$filename"
 		done
 	else
 		for i in $(grep -v "//" "$REPO/filelist" | grep "$1"); do
@@ -142,7 +166,7 @@ function restore
 				mkdir -p "$(dirname "$filename")"
 			fi
 
-			ln -s "$REPO/dotfiles/$1/$filename" "$HOME/$filename"
+			lnconf "$REPO/dotfiles/$1/$filename" "$HOME/$filename" "$filename"
 		done
 	fi
 }
