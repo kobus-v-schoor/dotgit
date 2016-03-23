@@ -1,6 +1,6 @@
 _dotgit() {
 	COMPREPLY=()
-	COMPREPLY=( $(IFS=" "; compgen -W "update restore add-remote init diff help" -- "${COMP_WORDS[$COMP_CWORD]}") )
+	COMPREPLY=( $(IFS=" "; compgen -W "update restore generate hard-restore add-remote init diff help" -- "${COMP_WORDS[$COMP_CWORD]}") )
 }
 
 complete -o nospace -F _dotgit dotgit

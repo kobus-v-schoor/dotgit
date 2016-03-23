@@ -26,10 +26,30 @@ OPTIONS:
   restore       --  Set up links from repository in home folder
                     If a category is passed as an argument only the category's files will be linked into home folder
   generate      --  Generate a commit message, commit changes and push to remote
+  hard-restore  --  Make a hard copy from the dotgit repository into home folder.
+                    If a category is specified only the category will be copied into home folder
   add-remote    --  Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
   init          --  Initialize current folder with new dotgit repo (create empty filelist and dotfiles folder)
   diff          --  Show what files changed from previous commit in dotgit repository
   help          --  Show this message"
+}
+
+function safeguards
+{
+	if [ ! -e "$REPO/filelist" ]; then
+		echo "Filelist not found. Aborting..."
+		exit;
+	fi;
+
+	if [ -z "$(grep -v "//" "$REPO/filelist")" ]; then
+		echo "Filelist empty. Aborting..."
+		exit
+	fi
+
+	if [ ! -d "$REPO/dotfiles" ]; then
+		echo "Dotfiles folder not found. Aborting..."
+		exit
+	fi
 }
 
 function ediff
@@ -46,8 +66,8 @@ function ediff
 
 function pstatus
 {
-	type="Updating"
-	if [ ! -z $3 ]; then
+	type="Adding"
+	if [ -n "$3" ]; then
 		type="$3"
 	fi;
 
@@ -56,28 +76,16 @@ function pstatus
 
 function update
 {
-	if [ ! -e "$REPO/filelist" ]; then
-		echo "Filelist not found. Aborting..."
-		exit;
-	fi;
-
-	if [ -z "$(grep -v "//" "$REPO/filelist")" ]; then
-		echo "Filelist empty. Aborting..."
-		exit
-	fi
-
-	if [ ! -d "$REPO/dotfiles" ]; then
-		echo "Dotfiles folder not found. Aborting..."
-		exit
-	fi
-
-	echo "Commencing update..."
+	safeguards
+	echo "Commencing filelist update..."
 	cd $HOME;
 
 	if [ -z "$1" ]; then
 		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
-			pstatus $i "common$(ediff "$i" "$REPO/dotfiles/common/$i")"
-			cp --parents "$i" "$REPO/dotfiles/common"
+			if [ ! -f "$REPO/dotfiles/common/$i" ]; then
+				pstatus $i "common"
+				cp --parents "$i" "$REPO/dotfiles/common"
+			fi
 		done;
 
 		for i in $(grep -v "//" "$REPO/filelist" | grep "$HOSTNAME"); do
@@ -86,8 +94,10 @@ function update
 			for k in $hosts; do
 				if [ ! -d "$REPO/dotfiles/$k" ]; then mkdir "$REPO/dotfiles/$k"; fi
 
-				pstatus "$filename" "$k$(ediff "$filename" "$REPO/dotfiles/$k/$filename")"
-				cp --parents "$filename" "$REPO/dotfiles/$k"
+				if [ ! -f "$REPO/dotfiles/$k/$filename" ]; then
+					pstatus "$filename" "$k"
+					cp --parents "$filename" "$REPO/dotfiles/$k"
+				fi
 			done;
 		done;
 	else
@@ -97,8 +107,10 @@ function update
 
 		for i in $(grep -v "//" "$REPO/filelist" | grep "$1"); do
 			i=$(echo $i | sed s/\:.*//)
-			pstatus "$i" "$1$(ediff "$i" "$REPO/dotfiles/$1/$i")"
-			cp --parents "$i" "$REPO/dotfiles/$1"
+			if [ ! -f "$REPO/dotfiles/$1/$i" ]; then
+				pstatus "$i" "$1"
+				cp --parents "$i" "$REPO/dotfiles/$1"
+			fi
 		done
 	fi
 
@@ -107,41 +119,30 @@ function update
 
 	git add --all
 	if [ -z "$(git status --porcelain)" ]; then echo "No changes made to any files..."; return; fi;
+}
 
-	echo -n "Do you want to create a commit for new update? [Y/n] "
-	read ans
-	if [ -z $ans ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
-		echo -n "Do you want to generate a commit message? [Y/n] "
+function generate
+{
+	message="Changes: "
+	for i in $(git status --porcelain | grep dotfiles); do
+		case "$(echo $i | cut -c 1-1)" in
+			"D")message=$(echo "$message deleted $(echo $i | cut -c 13-); ");;
+			"M")message=$(echo "$message modified $(echo $i | cut -c 13-); ");;
+			"A")message=$(echo "$message added $(echo $i | cut -c 13-); ");;
+			"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g"); ");;
+		esac
+	done
+	message=$(echo $message | rev | cut -c 2- | rev)
+	git commit -q -m "$message"
+
+	if ! git remote >> /dev/null; then
+		echo -n "Remote detected, do you want to push (sync) to it? [Y/n] "
 		read ans
-		message="Changes: "
-		if [ -z $ans ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
-			for i in $(git status --porcelain | grep dotfiles); do
-				case "$(echo $i | cut -c 1-1)" in
-					"D")message=$(echo "$message deleted $(echo $i | cut -c 13-); ");;
-					"M")message=$(echo "$message modified $(echo $i | cut -c 13-); ");;
-					"A")message=$(echo "$message added $(echo $i | cut -c 13-); ");;
-					"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g"); ");;
-				esac
-			done
-			IFS=$OLDIFS
-			message=$(echo $message | rev | cut -c 2- | rev)
-		else
-			echo "Enter commit message:"
-			read message
+		if [ -z "$ans" ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
+			for i in $(git remote); do
+				git push -q -u $i "$(git branch | grep \* | cut -c 3-)"
+			done;
 		fi
-		git commit -m "$message"
-
-		if [ ! -z "$(git remote)" ]; then
-			echo -n "Remote detected, do you want to push (sync) to it? [Y/n] "
-			read ans
-			if [ -z "$ans" ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
-				for i in $(git remote); do
-					git push -u $i "$(git branch | grep \* | cut -c 3-)"
-				done;
-			fi
-		fi
-	else
-		git reset -q
 	fi
 }
 
@@ -192,9 +193,9 @@ function confcpy
 	fi
 }
 
-function restore
+function hardRestore
 {
-	echo "Commencing file restore..."
+	echo "Commencing hard restore..."
 	cd dotfiles
 
 	if [ -z "$1" ]; then
@@ -303,6 +304,8 @@ fi;
 case "$1" in
 	"update")update "$2";;
 	"restore")restore "$2";;
+	"generate")generate;;
+	"hard-restore")hardRestore "$2";;
 	"init")init;;
 	"diff")pdiff;;
 	"help")phelp;;
