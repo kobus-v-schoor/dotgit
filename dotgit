@@ -38,6 +38,11 @@ OPTIONS:
 
 function safeguards
 {
+	if [ "$REPO" == "$HOME" ]; then
+		echo "You shouldn't run this in your home folder, make a seperate folder for your dotfiles"
+		exit
+	fi
+
 	if [ ! -e "$REPO/filelist" ]; then
 		echo "Filelist not found. Aborting..."
 		exit;
