@@ -143,10 +143,10 @@ function lnconf
 	fi
 
 	if [ -f "$2" ] && [ ! -h "$2" ]; then
-		echo -n "File $3 already exists in home directory. Do you want to overwrite it? [N/y] "
+		echo -n "File $3 already exists in home directory. Do you want to overwrite it? [Y/n] "
 		read ans
 
-		if [ "$ans" == "Y" ] || [ "$ans" == "y" ]; then
+		if [ "$ans" == "Y" ] || [ "$ans" == "y" ] || [ -z "$ans" ]; then
 			rm "$2"
 		else
 			return
@@ -277,7 +277,7 @@ function hardRestore
 			if [ -f "$HOME/$i" ]; then
 				rm "$HOME/$i"
 			fi
-			cp --parents "$i" "$HOME"
+			cp -L --parents "$i" "$HOME"
 		done
 	else
 		if [ -d "$1" ]; then
@@ -292,7 +292,7 @@ function hardRestore
 			if [ -f "$HOME/$i" ]; then
 				rm "$HOME/$i"
 			fi
-			cp --parents "$i" "$HOME"
+			cp -L --parents "$i" "$HOME"
 		done
 	fi
 
