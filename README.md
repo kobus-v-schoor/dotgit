@@ -24,6 +24,11 @@ Dotgit also:
 
 It's written in bash so its easy to set up and use :) If you have any questions or feature requests please feel free to request them!
 
+## Installation
+[AUR Package](https://aur.archlinux.org/packages/dotgit)
+
+If you are running a different distro you can just copy the dotgit script over to your local bin folder and it will run happily :) (Any help with packaging for a different distro will be appreciated)
+
 ## Instructions
 Remember that this is simply a git repo so all the usual git tricks work perfectly :)
 There are two way to start up a repo: First is to create your online repo, clone it and then run `dotgit init` (alias for `git init` and creating a file and folder needed for dotgit) in it or you can simply make an empty dir, run `dotgit init` inside of it and then `dotgit add-remote "repo url"`.
