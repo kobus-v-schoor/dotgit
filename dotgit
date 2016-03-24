@@ -204,9 +204,7 @@ function generate
 		echo -n "Remote detected, do you want to push (sync) to it? [Y/n] "
 		read ans
 		if [ -z "$ans" ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
-			for i in $(git remote); do
-				git push -q -u $i "$(git branch | grep \* | cut -c 3-)"
-			done;
+			git push
 		fi
 	fi
 }
