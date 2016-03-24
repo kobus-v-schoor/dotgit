@@ -59,7 +59,7 @@ function pstatus
 		type="$3"
 	fi;
 
-	echo -n "-->$type    "; printf "%-30s" $1 $2; printf "\n"
+	printf "%-30s"  "-->$type"; printf "%-30s" $1 $2; printf "\n"
 }
 
 function update
@@ -82,6 +82,7 @@ function update
 		for i in $(grep -v "//" "$REPO/filelist" | grep "$HOSTNAME"); do
 			hosts=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 			filename=$(echo $i | sed s/\:.*//)
+			hosts=($(for z in ${hosts[@]}; do echo $z; done | sort))
 			for k in $(seq 0 `expr ${#hosts[@]} - 1`); do
 
 				if [ ! -d "$REPO/dotfiles/${hosts[$k]}" ]; then mkdir "$REPO/dotfiles/${hosts[$k]}"; fi
@@ -89,12 +90,31 @@ function update
 				if [ ! -f "$REPO/dotfiles/${hosts[$k]}/$filename" ]; then
 					if [ $k == "0" ]; then
 						pstatus "$filename" "${hosts[0]}"
-						cp --parents "$filename" "$REPO/dotfiles/${hosts[0]}"
+						cp -L --parents "$filename" "$REPO/dotfiles/${hosts[0]}"
 
 						rm "$HOME/$filename"
 						ln -s "$REPO/dotfiles/${hosts[0]}/$filename" "$HOME/$filename"
 					else
 						pstatus "$filename" "${hosts[$k]} (${hosts[0]})" "Linking"
+						ln -s "$REPO/dotfiles/${hosts[0]}/$filename" "$REPO/dotfiles/${hosts[$k]}/$filename"
+					fi
+				else
+					if [ "$k" == "0" ] && [ -h "$REPO/dotfiles/${hosts[$k]}/$filename" ]; then
+						rm "$REPO/dotfiles/${hosts[$k]}/$filename"
+						cp -L --parents "$filename" "$REPO/dotfiles/${hosts[$k]}"
+
+						rm "$HOME/$filename"
+						ln -s "$REPO/dotfiles/${hosts[0]}/$filename" "$HOME/$filename"
+					fi
+
+					if [ "$k" != "0" ] && [ ! -h "$REPO/dotfiles/${hosts[$k]}/$filename" ]; then
+						pstatus "$filename" "${hosts[0]}" "Linking"
+						rm "$REPO/dotfiles/${hosts[$k]}/$filename"
+						ln -s "$REPO/dotfiles/${hosts[0]}/$filename" "$REPO/dotfiles/${hosts[$k]}/$filename"
+					fi
+
+					if [ "$k" != "0" ] && [ -h "$REPO/dotfiles/${hosts[$k]}/$filename" ]; then
+						rm "$REPO/dotfiles/${hosts[$k]}/$filename"
 						ln -s "$REPO/dotfiles/${hosts[0]}/$filename" "$REPO/dotfiles/${hosts[$k]}/$filename"
 					fi
 				fi
@@ -222,7 +242,7 @@ function cleanup
 			fi
 
 			if [ -z "$(grep -v "//" "$REPO/filelist" | grep "$k" | grep "$z" )" ]; then
-				pstatus "$k" "$i" "Removing"
+				pstatus "$i/$k" "$i" "Removing"
 				rm "$k"
 			fi;
 		done;
