@@ -43,22 +43,22 @@ function safeguards
 {
 	if [ "$REPO" == "$HOME" ]; then
 		echo "You shouldn't run this in your home folder, make a seperate folder for your dotfiles"
-		exit
+		exit 1
 	fi
 
-	if [ ! -e "$REPO/filelist" ]; then
+	if [ ! -f "$REPO/filelist" ]; then
 		echo "Filelist not found. Aborting..."
-		exit;
+		exit 1
 	fi;
 
-	if [ -z "$(grep -v "//" "$REPO/filelist")" ]; then
+	if ! grep -q -v "//" "$REPO/filelist"; then
 		echo "Filelist empty. Aborting..."
-		exit
+		exit 1
 	fi
 
 	if [ ! -d "$REPO/dotfiles" ]; then
 		echo "Dotfiles folder not found. Aborting..."
-		exit
+		exit 1
 	fi
 }
 
@@ -75,6 +75,7 @@ function pstatus
 function update
 {
 	safeguards
+
 	echo "Commencing filelist update..."
 	cd $HOME;
 	owner=$1
@@ -139,6 +140,18 @@ function update
 	cleanup
 }
 
+function yesno
+{
+	echo -n "$1"
+	read ans
+
+	if [ "$ans" == "Y" ] || [ "$ans" == "y" ] || [ -z "$ans" ]; then
+		return 1
+	else
+		return 0
+	fi
+}
+
 function lnconf
 {
 	if [ -h "$2" ]; then
@@ -146,10 +159,9 @@ function lnconf
 	fi
 
 	if [ -f "$2" ] && [ ! -h "$2" ]; then
-		echo -n "File $3 already exists in home directory. Do you want to overwrite it? [Y/n] "
-		read ans
+		yesno "File $3 already exists in home directory. Do you want to overwrite it? [Y/n] "
 
-		if [ "$ans" == "Y" ] || [ "$ans" == "y" ] || [ -z "$ans" ]; then
+		if [ "$?" == 1 ]; then
 			rm "$2"
 		else
 			return
@@ -209,9 +221,8 @@ function generate
 	git commit -m "$message"
 
 	if git remote >> /dev/null; then
-		echo -n "Remote detected, do you want to push (sync) to it? [Y/n] "
-		read ans
-		if [ -z "$ans" ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
+		yesno "Remote detected, do you want to push (sync) to it? [Y/n] "
+		if [ "$?" == 1 ]; then
 			git push
 		fi
 	fi
@@ -330,18 +341,17 @@ function addRemote
 {
 	if [ -z "$1" ]; then
 		echo "Error: you need to specify a remote repo"
-		return
+		exit 1
 	fi
 
 	if [ ! -z "$(git remote)" ]; then
-		echo -n "This repository already has a remote repository to sync to (remote name $(git remote)), remove it? [Y/n] "
-		read ans
-		if [ -z $ans ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
+		yesno "This repository already has a remote repository to sync to (remote name $(git remote)), remove it? [Y/n] "
+		if [ "$?" == 1 ]; then
 			echo "Removed $(git remote)"
 			git remote remove $(git remote)
 		else
 			echo "Aborting..."
-			return
+			exit 1
 		fi
 	fi
 
@@ -364,7 +374,7 @@ case "$1" in
 	"diff")pdiff;;
 	"help")phelp;;
 	"add-remote")addRemote "$2";;
-	*)echo -e "\n$1 is not a valid argument.\n"; phelp;;
+	*)echo -e "\n$1 is not a valid argument.\n"; phelp; exit 1;;
 esac;
 
 IFS=$OLDIFS
