@@ -22,6 +22,9 @@ Filelist syntax:
   Categories and host use exactly the same syntax. This also means that you can specify a file to belong to multiple categories (and keep them synced)
   Comments are indicated with a // in the begining of the line (any line including // will be ignored, so don't use comments at the end of a line)
 
+  After making any changes to the filelist you should run dotgit update, commit and push your changes and then run dotgit restore on all other hosts you use
+  This ensures that the symlinking hierarchy stays up-to-date
+
 OPTIONS:
   If an argument is passed to the relevant functions only files pertaining to that category or hostname will be taken into account
 
