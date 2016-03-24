@@ -18,20 +18,22 @@ Filelist syntax:
   .vimrc:host1,host2  --  Will only be restored if hostname of machine matches \"host1\" or \"host2\"
   .vimrc:host3        --  Will be kept seperate from .vimrc above and will only be restored on host3
   .xinitrc:category1  --  When category1 is specified as category only files with category1 suffix will be restored (or backed up) (also excludes common folder)
+
+  Categories and host use exactly the same syntax. This also means that you can specify a file to belong to multiple categories (and keep them synced)
   Comments are indicated with a // in the begining of the line (any line including // will be ignored, so don't use comments at the end of a line)
 
 OPTIONS:
-  update        --  If new files are added to the filelist, copy them to the repository and set up links in home folder
-                    If a category is passed as an argument only the category's changes in the filelist will be taken into account
-  restore       --  Set up links from repository in home folder
-                    If a category is passed as an argument only the category's files will be linked into home folder
-  generate      --  Generate a commit message, commit changes and push to remote
-  hard-restore  --  Make a hard copy from the dotgit repository into home folder.
-                    If a category is specified only the category will be copied into home folder
-  add-remote    --  Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
-  init          --  Initialize current folder with new dotgit repo (create empty filelist and dotfiles folder)
-  diff          --  Show what files changed from previous commit in dotgit repository
-  help          --  Show this message"
+  If an argument is passed to the relevant functions only files pertaining to that category or hostname will be taken into account
+
+  update (arg)        --  If new files are added to the filelist, copy them to the repository and set up links in home folder
+                          If any changes are made to the filelist you should run dotgit with the update option to keep symlinks up-to-date
+  restore (arg)       --  Set up links in home folder to repository
+  generate            --  Generate a commit message, commit changes and push to remote
+  hard-restore (arg)  --  Make a copy from the dotgit repository into home folder.
+  add-remote (url)    --  Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
+  init                --  Initialize current folder with new dotgit repo (create empty filelist and dotfiles folder)
+  diff                --  Show what files changed from previous commit in dotgit repository
+  help                --  Show this message"
 }
 
 function safeguards
@@ -59,7 +61,7 @@ function pstatus
 		type="$3"
 	fi;
 
-	printf "%-30s"  "-->$type"; printf "%-30s" $1 $2; printf "\n"
+	printf "%-30s" "-->$type"; printf "%-30s" $1 $2; printf "\n"
 }
 
 function update
@@ -99,7 +101,8 @@ function update
 					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename"
 				else
 					pstatus "$filename" "${ownrs[$k]} (${ownrs[0]})" "Linking"
-					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					mkdir -p "$(dirname "$REPO/dotfiles/${ownrs[$k]}/$filename")"
+					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
 			else
 				if [ "$k" == "0" ] && [ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
@@ -113,12 +116,12 @@ function update
 				if [ "$k" != "0" ] && [ ! -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
 					pstatus "$filename" "${ownrs[0]}" "Linking"
 					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
-					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
 
 				if [ "$k" != "0" ] && [ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
 					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
-					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
 			fi
 		done;
@@ -155,7 +158,7 @@ function restore
 				mkdir -p "$(dirname "$i")"
 			fi
 
-			lnconf  "$REPO/dotfiles/common/$i" "$HOME/$i" "$i"
+			lnconf "$REPO/dotfiles/common/$i" "$HOME/$i" "$i"
 		done
 
 		for i in $(grep -v "//" "$REPO/filelist" | grep "$HOSTNAME"); do
@@ -197,7 +200,7 @@ function generate
 	message=$(echo $message | rev | cut -c 2- | rev)
 	git commit -m "$message"
 
-	if ! git remote >> /dev/null; then
+	if git remote >> /dev/null; then
 		echo -n "Remote detected, do you want to push (sync) to it? [Y/n] "
 		read ans
 		if [ -z "$ans" ] || [ $ans == 'Y' ] || [ $ans == 'y' ]; then
