@@ -138,11 +138,15 @@ function update
 
 function lnconf
 {
-	if [ -f "$2" ]; then
+	if [ -h "$2" ]; then
+		rm "$2"
+	fi
+
+	if [ -f "$2" ] && [ ! -h "$2" ]; then
 		echo -n "File $3 already exists in home directory. Do you want to overwrite it? [N/y] "
 		read ans
 
-		if [ $ans == "Y" ] || [ $ans == "y" ]; then
+		if [ "$ans" == "Y" ] || [ "$ans" == "y" ]; then
 			rm "$2"
 		else
 			return
@@ -156,6 +160,7 @@ function restore
 	safeguards
 	echo "Commencing repo linking..."
 	cd "$REPO/dotfiles"
+	owner=$1
 
 	if [ -z "$1" ]; then
 		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
@@ -165,25 +170,20 @@ function restore
 
 			lnconf "$REPO/dotfiles/common/$i" "$HOME/$i" "$i"
 		done
-
-		for i in $(grep -v "//" "$REPO/filelist" | grep "$HOSTNAME"); do
-			filename=$(echo $i | sed s/\:.*//);
-			if [ "$(dirname "$filename")" != "." ]; then
-				mkdir -p "$(dirname "$filename")"
-			fi
-
-			lnconf "$REPO/dotfiles/$HOSTNAME/$filename" "$HOME/$filename" "$filename"
-		done
-	else
-		for i in $(grep -v "//" "$REPO/filelist" | grep "$1"); do
-			filename=$(echo $i | sed s/\:.*//);
-			if [ "$(dirname "$filename")" != "." ]; then
-				mkdir -p "$(dirname "$filename")"
-			fi
-
-			lnconf "$REPO/dotfiles/$1/$filename" "$HOME/$filename" "$filename"
-		done
+		owner=$HOSTNAME
 	fi
+
+	for i in $(grep -v "//" "$REPO/filelist" | grep "$owner"); do
+		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
+		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
+		filename=$(echo $i | sed s/\:.*//);
+
+		if [ "$(dirname "$filename")" != "." ]; then
+			mkdir -p "$(dirname "$filename")"
+		fi
+
+		lnconf "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename" "$filename"
+	done
 }
 
 function generate
