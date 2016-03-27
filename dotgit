@@ -203,6 +203,7 @@ function restore
 
 function generate
 {
+	safeguards
 	message="Changes:"
 	git add --all
 	for i in $(git status --porcelain | grep dotfiles); do
