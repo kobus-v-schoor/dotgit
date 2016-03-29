@@ -180,7 +180,7 @@ function restore
 	if [ -z "$1" ]; then
 		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
 			if [ "$(dirname "$i")" != "." ]; then
-				mkdir -p "$(dirname "$i")"
+				mkdir -p "$(dirname "$HOME/$i")"
 			fi
 
 			lnconf "$REPO/dotfiles/common/$i" "$HOME/$i" "$i"
@@ -194,7 +194,7 @@ function restore
 		filename=$(echo $i | sed s/\:.*//);
 
 		if [ "$(dirname "$filename")" != "." ]; then
-			mkdir -p "$(dirname "$filename")"
+			mkdir -p "$(dirname "$HOME/$filename")"
 		fi
 
 		lnconf "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename" "$filename"
