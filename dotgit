@@ -14,28 +14,54 @@ function phelp
 	echo "Usage: dotgit [option] (optional args)
 
 Filelist syntax:
-  .bashrc             --  Will be in \"common\" folder and will be restored to home folder, regardless of hostname (unless category is specified)
-  .vimrc:host1,host2  --  Will only be restored if hostname of machine matches \"host1\" or \"host2\"
-  .vimrc:host3        --  Will be kept seperate from .vimrc above and will only be restored on host3
-  .xinitrc:category1  --  When category1 is specified as category only files with category1 suffix will be restored (or backed up) (also excludes common folder)
+  .bashrc             --  Will be in \"common\" folder and will be restored to
+                          home folder, regardless of hostname (unless category
+                          is specified)
+  .vimrc:host1,host2  --  Will only be restored if hostname of machine matches
+                          \"host1\" or \"host2\"
+  .vimrc:host3        --  Will be kept seperate from .vimrc above and will only
+                          be restored on host3
+  .xinitrc:category1  --  When category1 is specified as category only files
+                          with category1 suffix will be restored (or backed up)
+                          (also excludes common folder)
 
-  Categories and host use exactly the same syntax. This also means that you can specify a file to belong to multiple categories (and keep them synced)
-  Comments are indicated with a // in the begining of the line (any line including // will be ignored, so don't use comments at the end of a line)
+  Categories and host use exactly the same syntax. This also means that you can
+  specify a file to belong to multiple categories (and keep them synced)
+  Comments are indicated with a // in the begining of the line (any line
+  including // will be ignored, so don't use comments at the end of a line)
 
-  After making any changes to the filelist you should run dotgit update, commit and push your changes and then run dotgit restore on all other hosts you use
+  After making any changes to the filelist you should run dotgit update, commit
+  and push your changes and then run dotgit restore on all other hosts you use
   This ensures that the symlinking hierarchy stays up-to-date
 
-OPTIONS:
-  If an argument is passed to the relevant functions only files pertaining to that category or hostname will be taken into account
+  If you prefer not to use symlinks in your home directory, but rather copies
+  you have two options. Firstly if you are only going to use the repo once you
+  can run use the hard-restore option. If you would always like to use copies
+  you can add //--hard--// to the top of your filelist. Read options to see how
+  this will change how dotgit functions.
 
-  update (arg)        --  If new files are added to the filelist, copy them to the repository and set up links in home folder
-                          If any changes are made to the filelist you should run dotgit with the update option to keep symlinks up-to-date
+OPTIONS:
+  If an argument is passed to the relevant functions only files pertaining to
+  that category or hostname will be taken into account
+
+  update (arg)        --  If new files are added to the filelist, copy them to
+                          the repository and set up links in home folder
+                          If any changes are made to the filelist you should run
+                          dotgit with the update option to keep symlinks
+                          up-to-date
+                          //--hard--//: Will copy files into repository and
+                          leave the files in the home dir intact
   restore (arg)       --  Set up links in home folder to repository
-  generate            --  Generate a commit message, commit changes and push to remote
-  hard-restore (arg)  --  Make a copy from the dotgit repository into home folder.
-  add-remote (url)    --  Add a url for an online repository to push (sync) files to (example https://github.com/Cube777/dotfiles)
-  init                --  Initialize current folder with new dotgit repo (create empty filelist and dotfiles folder)
-  diff                --  Show what files changed from previous commit in dotgit repository
+                          //--hard--//: Same as hard-restore
+  generate            --  Generate a commit message, commit changes and push to
+                          remote
+  hard-restore (arg)  --  Make a copy from the dotgit repository into home dir
+  add-remote (url)    --  Add a url for an online repository to push (sync)
+                          files to (example https://github.com/Cube777/dotfiles)
+  init                --  Initialize current folder with new dotgit repo (create
+                          empty filelist and dotfiles folder)
+  diff                --  Show what files changed from previous commit in dotgit
+                          repository
   help                --  Show this message"
 }
 
