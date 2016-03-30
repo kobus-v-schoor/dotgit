@@ -69,12 +69,51 @@ function pstatus
 		type="$3"
 	fi;
 
-	printf "%-30s" "-->$type"; printf "%-30s" $1 $2; printf "\n"
+	printf "%-15s" "-->$type"; printf "%-20s" $2 $1; printf "\n"
+}
+
+function hardUpdate
+{
+	echo "Commencing hard update..."
+	cd $HOME
+	owner=$1
+
+	if [ -z "$1" ]; then
+		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
+			pstatus $i "common" "Copying"
+			if [ ! "$HOME/$i" -ef "$REPO/dotfiles/common/$i" ]; then
+				cp -L --parents "$i" "$REPO/dotfiles/common"
+			fi
+		done;
+		owner=$HOSTNAME
+	fi
+
+	for i in $(grep -v "//" "$REPO/filelist" | grep "$owner"); do
+		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
+		filename=$(echo $i | sed s/\:.*//)
+
+		for k in "${ownrs[@]}"; do
+			if [ ! -d "$REPO/dotfiles/$k" ]; then mkdir "$REPO/dotfiles/$k"; fi
+
+			pstatus "$filename" "$k" "Copying"
+			if [ -h "$REPO/dotfiles/$k/$filename" ]; then
+				rm "$REPO/dotfiles/$k/$filename"
+			fi
+			if [ ! "$HOME/$filename" -ef "$REPO/dotfiles/$k/$filename" ]; then
+				cp -L --parents "$filename" "$REPO/dotfiles/$k"
+			fi
+		done
+	done
+
+	cd $REPO
+	cleanup
 }
 
 function update
 {
 	safeguards
+
+	if grep "//--hard--//" "$REPO/filelist" >> /dev/null ; then hardUpdate; exit; fi
 
 	echo "Commencing filelist update..."
 	cd $HOME;
@@ -84,7 +123,7 @@ function update
 		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
 			if [ ! -f "$REPO/dotfiles/common/$i" ]; then
 				pstatus $i "common"
-				cp --parents "$i" "$REPO/dotfiles/common"
+				cp -L --parents "$i" "$REPO/dotfiles/common"
 
 				rm "$HOME/$i"
 				ln -s "$REPO/dotfiles/common/$i" "$HOME/$i"
@@ -109,12 +148,13 @@ function update
 					rm "$HOME/$filename"
 					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename"
 				else
-					pstatus "$filename" "${ownrs[$k]} (${ownrs[0]})" "Linking"
+					pstatus "(${ownrs[0]})  $filename" "${ownrs[$k]}" "Linking"
 					mkdir -p "$(dirname "$REPO/dotfiles/${ownrs[$k]}/$filename")"
 					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
 			else
 				if [ "$k" == "0" ] && [ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+					pstatus "$filename" "${ownrs[0]}"
 					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
 					cp -L --parents "$filename" "$REPO/dotfiles/${ownrs[$k]}"
 
@@ -123,7 +163,7 @@ function update
 				fi
 
 				if [ "$k" != "0" ] && [ ! -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
-					pstatus "$filename" "${ownrs[0]}" "Linking"
+					pstatus "(${ownrs[0]}) $filename" "${ownrs[$k]}" "Linking"
 					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
 					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
@@ -173,6 +213,9 @@ function lnconf
 function restore
 {
 	safeguards
+
+	if grep "//--hard--//" "$REPO/filelist" >> /dev/null; then hardRestore; exit; fi
+
 	echo "Commencing repo linking..."
 	cd "$REPO/dotfiles"
 	owner=$1
@@ -233,7 +276,7 @@ function cleanup
 {
 	echo "Commencing cleanup..."
 
-	cd dotfiles
+	cd "$REPO/dotfiles"
 	for i in *; do
 		echo "Entering $i..."
 		cd "$i"
@@ -245,7 +288,7 @@ function cleanup
 			k=$(echo $k | cut -c 3-);
 
 			z=""
-			if [ $i != "common" ]; then
+			if [ "$i" != "common" ]; then
 				z="$i"
 			fi
 
