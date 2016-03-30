@@ -16,7 +16,7 @@ Using dotgit will allow you to effortlessly store all your dotfiles in a single 
 * If you're uncomfortable with git, let dotgit work with git for you. But, if you prefer to work with git yourself you can easily do that - a dotgit repository is just a normal git repository, no frills
 * Equally good support for both symlinks and copies
 * No dependencies, just a bash script
-* Intuitive filelist - easily create a complex repository storing all you different configs
+* Intuitive filelist - easily create a complex repository storing all you're different configs
 * Easily work with only a group of files in your repo (categories)
 * Straightforward file-hierarchy
 
