@@ -7,13 +7,28 @@ Using dotgit will allow you to effortlessly store all your dotfiles in a single 
 * Make it possible to store different versions of the same file in a single repo, but also to
 * Make it possible to share the same file between more than one host/category
 * Make use of an intuitive filelist
-* Use one-liners to set up symlinks between repo and host for all the files and also the reverse
+* Use (easy) one-liners to set up repository on new host
 * Categorise files
-* Make usage with git convenient (things like generating commit messages for you)
+* Make usage with git convenient and easy, but don't impair git's power
 * Keep ALL the dotfiles in one, single repository
 
-This makes the following situation possible:
+## Why use dotgit?
+* If you're uncomfortable with git, let dotgit work with git for you. But, if you prefer to work with git yourself you can easily do that - a dotgit repository is just a normal git repository, no frills
+* Equally good support for both symlinks and copies
+* No dependencies, just a bash script
+* Intuitive filelist - easily create a complex repository storing all you different configs
+* Easily work with only a group of files in your repo (categories)
+* Straightforward file-hierarchy
 
+## What make dotgit different?
+While dotgit is one of many dotfile managers, there are some key differences when compared with others:
+* [yadm](https://github.com/TheLocehiliosan/yadm) - dotgit's way of separating files for different hosts is a lot easier and doesn't involve renaming the files.
+* [vcsh](https://github.com/RichiH/vcsh) - While vcsh is very powerful, dotgit is a lot easier to set up, use and maintain over multiple machines (the only time you run a dotgit command is when you changed the filelist). vcsh also uses multiple repositories, something I personally wanted to avoid when I tried versioning my dotfiles.
+* [homeshick](https://github.com/andsens/homeshick) - dotgit also allows multiple configs (categories), but still keeps them in a single repository.
+
+All the above tools are great, and I encourage you to check them out. Dotgit combines the features that I find lacking in the above tools, but this is only my 2 cents :)
+
+## Usage example
 Say you have a vimrc that you prefer to share between a laptop and a desktop (with the terribly original hostnames `laptop` and `desktop`) but you also have a Raspberry Pi where you prefer to keep another vimrc (with the hostname `pi`). There's also a .bashrc that you'd like to share between all three and a .foo file that you would like to have only on all of your servers. After initializing a folder with "dotgit init" you'd use this filelist:
 
 ```
@@ -22,23 +37,9 @@ Say you have a vimrc that you prefer to share between a laptop and a desktop (wi
 .bashrc -- Will be shared between every device that shares this repo, regardless of hostname (unless a category is used)
 .foo:server -- Will only be linked into the home folder if you use the category server
 ```
-Simply running `dotgit update` in your dotgit repo would set up ymlinking hierarchy and link all the files into your home directory. Restoring all your symlinks from the repository is just as simple. Run `dotgit restore` and all the files that are relevant to the host will be symlinked into your home folder.
+Simply running `dotgit update` in your dotgit repo would set up symlinking hierarchy (or copy files into repo) and link all the files into your home directory. Restoring all your symlinks (or copies) from the repository is just as simple. Run `dotgit restore` and all the files that are relevant to the host will be symlinked (ord copied) into your home folder.
 
-If you'd like to see a dotgit repo in action you can look at my [dotfiles](https://github.com/Cube777/dotfiles) to see how my filelist is set up and also the hierarchy used to store the dotfiles.
-
-Dotgit also:
-* Generates commit messages
-* Automatically push the repo to a remote
-* Supports files that reside in folders (like .scripts/backup.sh)
-* Written only in bash with no external dependencies (besides git)
-
-## What make dotgit different?
-While dotgit is one of many dotfile managers, there are some key differences when compared with others:
-* [yadm](https://github.com/TheLocehiliosan/yadm) - dotgit's way of separating files for different hosts is a lot easier and doesn't involve renaming the files.
-* [vcsh](https://github.com/RichiH/vcsh) - While vcsh is very powerful, dotgit is a lot easier to set up, use and maintain over multiple machines (the only time you run a dotgit command is when you changed the filelist). vcsh also uses multiple repositories, something I personally tried to avoid when I tried versioning my dotfiles.
-* [homeshick](https://github.com/andsens/homeshick/blob/master/bin/homeshick) - dotgit also allows multiple configs (categories), but still keeps them in a single repository.
-
-All the above tools are great, and I encourage you to check them out. Dotgit combines the features that I find lacking in the above tools, but this is only my 2 cents :)
+If you'd like to see a dotgit repo in action you can look at my [dotfiles](https://github.com/Cube777/dotfiles)
 
 ## Installation
 Arch Linux- [AUR Package](https://aur.archlinux.org/packages/dotgit)
