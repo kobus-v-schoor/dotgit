@@ -20,7 +20,7 @@ Using dotgit will allow you to effortlessly store all your dotfiles in a single 
 * Easily work with only a group of files in your repo (categories)
 * Straightforward file-hierarchy
 
-## What make dotgit different?
+## What makes dotgit different?
 While dotgit is one of many dotfile managers, there are some key differences when compared with others:
 * [yadm](https://github.com/TheLocehiliosan/yadm) - dotgit's way of separating files for different hosts is a lot easier and doesn't involve renaming the files.
 * [vcsh](https://github.com/RichiH/vcsh) - While vcsh is very powerful, dotgit is a lot easier to set up, use and maintain over multiple machines (the only time you run a dotgit command is when you changed the filelist). vcsh also uses multiple repositories, something I personally wanted to avoid when I tried versioning my dotfiles.
