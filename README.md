@@ -56,6 +56,6 @@ echo 'export PATH="$PATH:$HOME/.bin"' >> ~/.bashrc
 
 ## Instructions
 Remember that this is simply a git repo so all the usual git tricks work perfectly :)
-There are two way to start up a repo: First is to create your online repo, clone it and then run `dotgit init` (alias for `git init` and creating a file and folder needed for dotgit) in it or you can simply make an empty dir, run `dotgit init` inside of it and then `dotgit add-remote "repo url"`.
+Create your online git repo, clone it (`git clone {repo_url}`) and then run `dotgit init` inside your repository (alias for `git init` and creating a file and folder needed for dotgit)
 
 Now all you have to do is edit the filelist (help message explains syntax) to your needs and you will be ready to do `dotgit update` :) The help message will explain the other options available to you, and I would recommend reading it as it has quite a few important notes. If you have any problems or feature requests please inform me of them and I will be glad to help.
