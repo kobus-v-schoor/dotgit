@@ -1,9 +1,11 @@
 #! /bin/bash
 
-# Dotgit is an easy-to-use and effective way to backup all your dotfiles and manage them in a repository
+# Dotgit is an easy-to-use and effective way to backup all your dotfiles and
+# manage them in a repository
 
 # Written by Kobus van Schoor
-# You are free to distrubute and modify this software in any way as long as you acknowledge the original author
+# You are free to distrubute and modify this software in any way as long as you
+# acknowledge the original author
 
 REPO="$PWD"
 OLDIFS=$IFS
@@ -11,14 +13,23 @@ IFS=$(echo -ne "\n\b")
 
 function phelp
 {
-	echo "Usage: dotgit [option] (optional args)
+	echo 'Usage: dotgit [option] (optional args)
+
+  To make a new dotgit repository first create your online repository, and then
+  clone it onto your target host (git clone {repo_url} {repo_dest}). Go into
+  your repository and then run dotgit init inside of it. The repository will
+  then be ready to be used with dotgit.
+
+  If you already have a dotgit repository and would like to use it on another
+  host, simply clone the repository onto the target host and the repository will
+  be ready to use with dotgit.
 
 Filelist syntax:
-  .bashrc             --  Will be in \"common\" folder and will be restored to
+  .bashrc             --  Will be in "common" folder and will be restored to
                           home folder, regardless of hostname (unless category
                           is specified)
   .vimrc:host1,host2  --  Will only be restored if hostname of machine matches
-                          \"host1\" or \"host2\"
+                          "host1" or "host2"
   .vimrc:host3        --  Will be kept seperate from .vimrc above and will only
                           be restored on host3
   .xinitrc:category1  --  When category1 is specified as category only files
@@ -28,7 +39,7 @@ Filelist syntax:
   Categories and host use exactly the same syntax. This also means that you can
   specify a file to belong to multiple categories (and keep them synced)
   Comments are indicated with a // in the begining of the line (any line
-  including // will be ignored, so don't use comments at the end of a line)
+  including // will be ignored, so do not use comments at the end of a line)
 
   After making any changes to the filelist you should run dotgit update, commit
   and push your changes and then run dotgit restore on all other hosts you use
@@ -56,19 +67,18 @@ OPTIONS:
   generate            --  Generate a commit message, commit changes and push to
                           remote
   hard-restore (arg)  --  Make a copy from the dotgit repository into home dir
-  add-remote (url)    --  Add a url for an online repository to push (sync)
-                          files to (example https://github.com/Cube777/dotfiles)
   init                --  Initialize current folder with new dotgit repo (create
                           empty filelist and dotfiles folder)
   diff                --  Show what files changed from previous commit in dotgit
                           repository
-  help                --  Show this message"
+  help                --  Show this message'
 }
 
 function safeguards
 {
 	if [ "$REPO" == "$HOME" ]; then
-		echo "You shouldn't run this in your home folder, make a seperate folder for your dotfiles"
+		echo "You shouldn't run this in your home folder, make a seperate" \
+		"folder for your dotfiles"
 		exit 1
 	fi
 
@@ -139,7 +149,8 @@ function update
 {
 	safeguards
 
-	if grep "//--hard--//" "$REPO/filelist" >> /dev/null ; then hardUpdate; exit; fi
+	if grep "//--hard--//" "$REPO/filelist" >> /dev/null ; then
+		hardUpdate; exit; fi
 
 	echo "Commencing filelist update..."
 	cd $HOME;
@@ -164,7 +175,8 @@ function update
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 		for k in $(seq 0 `expr ${#ownrs[@]} - 1`); do
 
-			if [ ! -d "$REPO/dotfiles/${ownrs[$k]}" ]; then mkdir "$REPO/dotfiles/${ownrs[$k]}"; fi
+			if [ ! -d "$REPO/dotfiles/${ownrs[$k]}" ]; then
+				mkdir "$REPO/dotfiles/${ownrs[$k]}"; fi
 
 			if [ ! -f "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
 				if [ $k == "0" ]; then
@@ -172,31 +184,40 @@ function update
 					cp -L --parents "$filename" "$REPO/dotfiles/${ownrs[0]}"
 
 					rm "$HOME/$filename"
-					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename"
+					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" \
+					"$HOME/$filename"
 				else
 					pstatus "(${ownrs[0]})  $filename" "${ownrs[$k]}" "Linking"
-					mkdir -p "$(dirname "$REPO/dotfiles/${ownrs[$k]}/$filename")"
-					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					mkdir -p "$(dirname  "$REPO/dotfiles/${ownrs[$k]}/\
+						$filename")"
+					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
+					"$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
 			else
-				if [ "$k" == "0" ] && [ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+				if [ "$k" == "0" ] && \
+					[ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
 					pstatus "$filename" "${ownrs[0]}"
 					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
 					cp -L --parents "$filename" "$REPO/dotfiles/${ownrs[$k]}"
 
 					rm "$HOME/$filename"
-					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename"
+					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" \
+					"$HOME/$filename"
 				fi
 
-				if [ "$k" != "0" ] && [ ! -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+				if [ "$k" != "0" ] && \
+					[ ! -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
 					pstatus "(${ownrs[0]}) $filename" "${ownrs[$k]}" "Linking"
 					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
-					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
+					"$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
 
-				if [ "$k" != "0" ] && [ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+				if [ "$k" != "0" ] && \
+					[ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
 					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
-					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
+					"$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
 			fi
 		done;
@@ -225,7 +246,8 @@ function lnconf
 	fi
 
 	if [ -f "$2" ] && [ ! -h "$2" ]; then
-		yesno "File $3 already exists in home directory. Do you want to overwrite it? [Y/n] "
+		yesno "File $3 already exists in home directory. Do you want to" \
+		"overwrite it? [Y/n] "
 
 		if [ "$?" == 1 ]; then
 			rm "$2"
@@ -240,7 +262,8 @@ function restore
 {
 	safeguards
 
-	if grep "//--hard--//" "$REPO/filelist" >> /dev/null; then hardRestore; exit; fi
+	if grep "//--hard--//" "$REPO/filelist" >> /dev/null; then
+		hardRestore; exit; fi
 
 	echo "Commencing repo linking..."
 	cd "$REPO/dotfiles"
@@ -266,7 +289,8 @@ function restore
 			mkdir -p "$(dirname "$HOME/$filename")"
 		fi
 
-		lnconf "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename" "$filename"
+		lnconf "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename" \
+		"$filename"
 	done
 }
 
@@ -280,7 +304,8 @@ function generate
 			"D")message=$(echo "$message deleted $(echo $i | cut -c 13-);");;
 			"M")message=$(echo "$message modified $(echo $i | cut -c 13-);");;
 			"A")message=$(echo "$message added $(echo $i | cut -c 13-);");;
-			"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g");");;
+			"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed \
+				's/dotfiles\///g');");;
 		esac
 	done
 	if [ "$message" == "Changes:" ]; then
@@ -290,7 +315,7 @@ function generate
 	message=$(echo $message | rev | cut -c 2- | rev)
 	git commit -m "$message"
 
-	if git remote >> /dev/null; then
+	if [ -n "$(git remote -v)" ]; then
 		yesno "Remote detected, do you want to push (sync) to it? [Y/n] "
 		if [ "$?" == 1 ]; then
 			git push
@@ -318,7 +343,8 @@ function cleanup
 				z="$i"
 			fi
 
-			if [ -z "$(grep -v "//" "$REPO/filelist" | grep "$k" | grep "$z" )" ]; then
+			if [ -z "$(grep -v "//" "$REPO/filelist" | grep "$k" | \
+				grep "$z" )" ]; then
 				pstatus "$i/$k" "$i" "Removing"
 				rm "$k"
 			fi;
@@ -407,29 +433,6 @@ function pdiff
 	git reset -q
 }
 
-function addRemote
-{
-	if [ -z "$1" ]; then
-		echo "Error: you need to specify a remote repo"
-		exit 1
-	fi
-
-	if [ ! -z "$(git remote)" ]; then
-		yesno "This repository already has a remote repository to sync to (remote name $(git remote)), remove it? [Y/n] "
-		if [ "$?" == 1 ]; then
-			echo "Removed $(git remote)"
-			git remote remove $(git remote)
-		else
-			echo "Aborting..."
-			exit 1
-		fi
-	fi
-
-	git remote add origin "$1"
-	echo "Added new repository $1"
-}
-
-
 if [[ $# -eq 0 ]]; then
 	phelp;
 	exit;
@@ -443,7 +446,6 @@ case "$1" in
 	"init")init;;
 	"diff")pdiff;;
 	"help")phelp;;
-	"add-remote")addRemote "$2";;
 	*)echo -e "\n$1 is not a valid argument.\n"; phelp; exit 1;;
 esac;
 
