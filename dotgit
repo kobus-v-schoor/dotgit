@@ -262,8 +262,14 @@ function restore
 {
 	safeguards
 
-	if grep "//--hard--//" "$REPO/filelist" >> /dev/null; then
-		hardRestore; exit; fi
+	if grep "//--hard--//" "$REPO/filelist" > /dev/null; then
+		hardRestore; exit;
+	fi
+
+	echo "Cleaning up old repo links..."
+	for i in $(find $HOME -type l -not -wholename "$REPOS/*"); do
+		if [[ `readlink $i` =~ $REPO ]]; then rm $i; fi
+	done
 
 	echo "Commencing repo linking..."
 	cd "$REPO/dotfiles"
