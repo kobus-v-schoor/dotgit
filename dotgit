@@ -161,9 +161,6 @@ function update
 			if [ ! -f "$REPO/dotfiles/common/$i" ]; then
 				pstatus $i "common"
 				cp -L --parents "$i" "$REPO/dotfiles/common"
-
-				rm "$HOME/$i"
-				ln -s "$REPO/dotfiles/common/$i" "$HOME/$i"
 			fi
 		done;
 		owner=$HOSTNAME
@@ -173,6 +170,24 @@ function update
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
+
+		splits=$(find "$REPO/dotfiles" -lname "*${ownrs[0]}/$filename")
+		for k in $(seq 0 `expr ${#ownrs[@]} - 1`); do
+			splits=$(echo "$splits" | grep -v "${ownrs[$k]}")
+		done
+
+		if [ -n "$splits" ] && [ -f "$REPO/dotfiles/${ownrs[0]}/$filename" ]
+		then
+			for k in $splits; do
+				temp="$REPO/dotfiles/"
+				z=$(echo $k | cut -c $(expr ${#temp} + 1)- | sed "s/\/.*//g")
+				pstatus "$filename" "$z" "Splitting"
+
+				rm $k
+				cp "$REPO/dotfiles/${ownrs[0]}/$filename" $k
+			done
+		fi
+
 		for k in $(seq 0 `expr ${#ownrs[@]} - 1`); do
 
 			if [ ! -d "$REPO/dotfiles/${ownrs[$k]}" ]; then
@@ -184,8 +199,6 @@ function update
 					cp -L --parents "$filename" "$REPO/dotfiles/${ownrs[0]}"
 
 					rm "$HOME/$filename"
-					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" \
-					"$HOME/$filename"
 				else
 					pstatus "(${ownrs[0]})  $filename" "${ownrs[$k]}" "Linking"
 					mkdir -p "$(dirname  "$REPO/dotfiles/${ownrs[$k]}/\
@@ -199,16 +212,58 @@ function update
 					pstatus "$filename" "${ownrs[0]}"
 					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
 					cp -L --parents "$filename" "$REPO/dotfiles/${ownrs[$k]}"
-
-					rm "$HOME/$filename"
-					ln -s "$REPO/dotfiles/${ownrs[0]}/$filename" \
-					"$HOME/$filename"
 				fi
 
 				if [ "$k" != "0" ] && \
 					[ ! -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+
+					echo "Different versions of the same file are now being" \
+					"linked together. Which version do you want to use?"
+
+					mergers=()
+					for z in $(seq 0 `expr ${#ownrs[@]} - 1`); do
+						if [ -f "$REPO/dotfiles/${ownrs[$z]}/$filename" ]; then
+							mergers=(${mergers[@]} ${ownrs[$z]})
+						fi
+					done
+
+					for z in $(seq 0 `expr ${#mergers[@]} - 1`); do
+						echo "$(expr $z + 1)) ${mergers[$z]}"
+					done
+
+					ans=""
+					while true; do
+						echo -ne "\nYour answer (1-${#mergers[@]}): "
+						read ans
+
+						if ! [[ $ans =~ ^[0-9]+$ ]]; then
+							echo "Please enter a number"
+							continue
+						fi
+
+						if [ $ans -ge 1 ] && [ $ans -le ${#mergers[@]} ]; then
+							break
+						else
+							echo "Invalid option, please enter a number "\
+								"between 1 and ${#mergers[@]}"
+						fi
+					done
+					ans=`expr $ans - 1`
+
+					if [ $ans -ne 0 ]; then
+						rm "$REPO/dotfiles/${ownrs[0]}/$filename"
+						cp "$REPO/dotfiles/${ownrs[$ans]}/$filename" \
+							"$REPO/dotfiles/${ownrs[0]}/$filename"
+					fi
+
+					for z in $(seq 1 `expr ${#ownrs[@]} - 1`); do
+						rm "$REPO/dotfiles/${ownrs[$z]}/$filename"
+					done
+
 					pstatus "(${ownrs[0]}) $filename" "${ownrs[$k]}" "Linking"
-					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					if [ -f "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+						rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					fi
 					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
 					"$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
@@ -224,6 +279,7 @@ function update
 	done;
 
 	cd $REPO;
+	restore $1
 	cleanup
 }
 
