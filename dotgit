@@ -211,8 +211,7 @@ function update
 					rm "$HOME/$filename"
 				else
 					pstatus "(${ownrs[0]})  $filename" "${ownrs[$k]}" "Linking"
-					mkdir -p "$(dirname  "$REPO/dotfiles/${ownrs[$k]}/\
-						$filename")"
+					mkdir -p "$(dirname "$REPO/dotfiles/${ownrs[$k]}/$filename")"
 					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
 					"$REPO/dotfiles/${ownrs[$k]}/$filename"
 				fi
@@ -227,6 +226,15 @@ function update
 				if [ "$k" != "0" ] && \
 					[ ! -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
 
+					if diff "$REPO/dotfiles/${ownrs[0]}/$filename" \
+						"$REPO/dotfiles/${ownrs[$k]}/$filename"; then
+						rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
+						ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
+							"$REPO/dotfiles/${ownrs[$k]}/$filename"
+						continue
+					fi
+
+					pstatus "$filename" "varies" "Merging"
 					echo "Different versions of the same file are now being" \
 					"linked together. Which version do you want to use?"
 
