@@ -227,7 +227,7 @@ function update
 					[ ! -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
 
 					if diff "$REPO/dotfiles/${ownrs[0]}/$filename" \
-						"$REPO/dotfiles/${ownrs[$k]}/$filename"; then
+						"$REPO/dotfiles/${ownrs[$k]}/$filename" > /dev/null;then
 						rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
 						ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
 							"$REPO/dotfiles/${ownrs[$k]}/$filename"
@@ -409,7 +409,7 @@ function cleanup
 
 	cd "$REPO/dotfiles"
 	for i in *; do
-		echo "Entering $i..."
+		echo "Cleanup - entering $i..."
 		cd "$i"
 
 		for k in $(find -not -type d); do
