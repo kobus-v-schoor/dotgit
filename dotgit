@@ -38,8 +38,8 @@ Filelist syntax:
 
   Categories and host use exactly the same syntax. This also means that you can
   specify a file to belong to multiple categories (and keep them synced)
-  Comments are indicated with a // in the begining of the line (any line
-  including // will be ignored, so do not use comments at the end of a line)
+  Comments are indicated with a # in the begining of the line (any line
+  including # will be ignored, so do not use comments at the end of a line)
 
   After making any changes to the filelist you should run dotgit update, commit
   and push your changes and then run dotgit restore on all other hosts you use
@@ -48,7 +48,7 @@ Filelist syntax:
   If you prefer not to use symlinks in your home directory, but rather copies
   you have two options. Firstly if you are only going to use the repo once you
   can run use the hard-restore option. If you would always like to use copies
-  you can add //--hard--// to the top of your filelist. Read options to see how
+  you can add #--hard--# to the top of your filelist. Read options to see how
   this will change how dotgit functions.
 
 OPTIONS:
@@ -60,10 +60,10 @@ OPTIONS:
                           If any changes are made to the filelist you should run
                           dotgit with the update option to keep symlinks
                           up-to-date
-                          //--hard--//: Will copy files into repository and
+                          #--hard--#: Will copy files into repository and
                           leave the files in the home dir intact
   restore (arg)       --  Set up links in home folder to repository
-                          //--hard--//: Same as hard-restore
+                          #--hard--#: Same as hard-restore
   generate            --  Generate a commit message, commit changes and push to
                           remote
   hard-restore (arg)  --  Make a copy from the dotgit repository into home dir
@@ -87,9 +87,14 @@ function safeguards
 		exit 1
 	fi;
 
-	if ! grep -q -v "//" "$REPO/filelist"; then
+	if ! grep -q -v "#" "$REPO/filelist"; then
 		echo "Filelist empty. Aborting..."
 		exit 1
+	fi
+
+	if grep -q "//" "$REPO/filelist"; then
+		echo "Converting filelist to new comment syntax (// -> #)..."
+		sed -i "s/\/\//#/g" "$REPO/filelist"
 	fi
 
 	if [ ! -d "$REPO/dotfiles" ]; then
@@ -115,7 +120,7 @@ function hardUpdate
 	owner=$1
 
 	if [ -z "$1" ]; then
-		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
+		for i in $(grep -v "#" "$REPO/filelist" | grep -v "\:"); do
 			pstatus $i "common" "Copying"
 			if [ ! "$HOME/$i" -ef "$REPO/dotfiles/common/$i" ]; then
 				cp -L --parents "$i" "$REPO/dotfiles/common"
@@ -124,7 +129,7 @@ function hardUpdate
 		owner=$HOSTNAME
 	fi
 
-	for i in $(grep -v "//" "$REPO/filelist" | grep "$owner"); do
+	for i in $(grep -v "#" "$REPO/filelist" | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 
@@ -149,7 +154,7 @@ function update
 {
 	safeguards
 
-	if grep "//--hard--//" "$REPO/filelist" >> /dev/null ; then
+	if grep "#--hard--#" "$REPO/filelist" >> /dev/null ; then
 		hardUpdate; exit; fi
 
 	echo "Commencing filelist update..."
@@ -157,7 +162,7 @@ function update
 	owner=$1
 
 	if [ -z "$1" ]; then
-		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
+		for i in $(grep -v "#" "$REPO/filelist" | grep -v "\:"); do
 			if [ ! -f "$REPO/dotfiles/common/$i" ]; then
 				pstatus $i "common"
 				cp -L --parents "$i" "$REPO/dotfiles/common"
@@ -166,7 +171,7 @@ function update
 		owner=$HOSTNAME
 	fi
 
-	for i in $(grep -v "//" "$REPO/filelist" | grep "$owner"); do
+	for i in $(grep -v "#" "$REPO/filelist" | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
@@ -318,7 +323,7 @@ function restore
 {
 	safeguards
 
-	if grep "//--hard--//" "$REPO/filelist" > /dev/null; then
+	if grep "#--hard--#" "$REPO/filelist" > /dev/null; then
 		hardRestore; exit;
 	fi
 
@@ -332,7 +337,7 @@ function restore
 	owner=$1
 
 	if [ -z "$1" ]; then
-		for i in $(grep -v "//" "$REPO/filelist" | grep -v "\:"); do
+		for i in $(grep -v "#" "$REPO/filelist" | grep -v "\:"); do
 			if [ "$(dirname "$i")" != "." ]; then
 				mkdir -p "$(dirname "$HOME/$i")"
 			fi
@@ -342,7 +347,7 @@ function restore
 		owner=$HOSTNAME
 	fi
 
-	for i in $(grep -v "//" "$REPO/filelist" | grep "$owner"); do
+	for i in $(grep -v "#" "$REPO/filelist" | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 		filename=$(echo $i | sed s/\:.*//);
@@ -405,7 +410,7 @@ function cleanup
 				z="$i"
 			fi
 
-			if [ -z "$(grep -v "//" "$REPO/filelist" | grep "$k" | \
+			if [ -z "$(grep -v "#" "$REPO/filelist" | grep "$k" | \
 				grep "$z" )" ]; then
 				pstatus "$i/$k" "$i" "Removing"
 				rm "$k"
