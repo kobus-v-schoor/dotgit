@@ -85,7 +85,12 @@ function safeguards
 	if [ ! -f "$REPO/filelist" ]; then
 		echo "Filelist not found. Aborting..."
 		exit 1
-	fi;
+	fi
+
+	if [ ! -d "$REPO/.git" ]; then
+		echo "This does not seem to be a git repository. Aborting..."
+		exit 1
+	fi
 
 	if ! grep -q -v "#" "$REPO/filelist"; then
 		echo "Filelist empty. Aborting..."
