@@ -320,8 +320,8 @@ function lnconf
 	fi
 
 	if [ -f "$2" ] && [ ! -h "$2" ]; then
-		yesno "File $3 already exists in home directory. Do you want to" \
-		"overwrite it? [Y/n] "
+		yesno "File $3 already exists in home directory. Do you want to "\
+"overwrite it? [Y/n] "
 
 		if [ "$?" == 1 ]; then
 			rm "$2"
