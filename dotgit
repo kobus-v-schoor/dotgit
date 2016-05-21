@@ -297,8 +297,8 @@ function update
 	done;
 
 	cd $REPO;
-	restore $1
 	cleanup
+	restore $1
 }
 
 function yesno
@@ -386,6 +386,9 @@ function generate
 			"A")message=$(echo "$message added $(echo $i | cut -c 13-);");;
 			"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed \
 				's/dotfiles\///g');");;
+			"C")message=$(echo "$message copied $(echo $i | cut -c 4- | sed \
+				's/dotfiles\///g');");;
+			"T")message=$(echo "$message typechange $(echo $i | cut -c 13-);");;
 		esac
 	done
 	if [ "$message" == "Changes:" ]; then
