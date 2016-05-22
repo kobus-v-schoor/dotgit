@@ -341,7 +341,7 @@ function restore
 	fi
 
 	echo "Cleaning up old repo links..."
-	for i in $(find $HOME -type l -not -wholename "$REPOS/*"); do
+	for i in $(find $HOME -type l -not -wholename "$REPO/*"); do
 		if [[ `readlink $i` =~ $REPO ]]; then rm $i; fi
 	done
 
