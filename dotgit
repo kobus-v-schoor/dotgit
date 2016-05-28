@@ -397,40 +397,60 @@ function lnconf
 
 function restore
 {
-	if grep "#--hard--#" "$REPO/filelist" > /dev/null; then
-		hardRestore; exit;
-	fi
-
 	echo "Cleaning up old repo links..."
 	for i in $(find $HOME -type l -not -wholename "$REPO/*"); do
 		if [[ `readlink $i` =~ $REPO ]]; then rm $i; fi
 	done
 
-	echo "Commencing repo linking..."
-	cd "$REPO/dotfiles"
-	owner=$1
+	echo "Commencing unencrypted repo linking..."
+	homelink "$NORMFILES" "$DOTFILES" "$1"
+	echo "Commencing encrypted repo linking..."
+	homelink "$CRYPTFILES" "$DMZ" "$1"
+}
 
-	if [ -z "$1" ]; then
+function homelink
+{
+	FILELIST=$1
+	CDFILES=$2
+	if grep "#--hard--#" "$REPO/filelist" > /dev/null; then
+		hardRestore; exit;
+	fi
+
+	cd "$CDFILES"
+	owner=$3
+
+	if [ -z "$owner" ]; then
 		for i in $(echo $FILELIST | grep -v "\:"); do
 			if [ "$(dirname "$i")" != "." ]; then
 				mkdir -p "$(dirname "$HOME/$i")"
 			fi
 
-			lnconf "$REPO/dotfiles/common/$i" "$HOME/$i" "$i"
+			if [ ! -f "$CDFILES/common/$filename" ]; then
+				echo "-->Can't link $filename (does not seem to be decrypted"\
+"yet)"
+				continue
+			fi
+
+			lnconf "$CDFILES/common/$i" "$HOME/$i" "$i"
 		done
 		owner=$HOSTNAME
 	fi
 
 	for i in $(echo $FILELIST | grep "$owner"); do
-		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
+		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 		filename=$(echo $i | sed s/\:.*//);
+
+		if [ ! -f "$CDFILES/${ownrs[0]}/$filename" ]; then
+			echo "-->Can't link $filename (does not seem to be decrypted yet)"
+			continue
+		fi
 
 		if [ "$(dirname "$filename")" != "." ]; then
 			mkdir -p "$(dirname "$HOME/$filename")"
 		fi
 
-		lnconf "$REPO/dotfiles/${ownrs[0]}/$filename" "$HOME/$filename" \
+		lnconf "$CDFILES/${ownrs[0]}/$filename" "$HOME/$filename" \
 		"$filename"
 	done
 }
