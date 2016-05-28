@@ -157,9 +157,7 @@ function encrypt
 		cp -P --parents "$i" "$DOTFILES"
 	done
 
-	if [ -z "$PASSWD" ]; then
-		pprompt "encryption"
-	fi
+	if [ -z "$PASSWD" ]; then pprompt "encryption"; fi
 
 	for i in $(find -not -type d -and -not -type l); do
 		echo "-->Encrypting $(echo $i | cut -c 3-)"
@@ -171,12 +169,62 @@ function encrypt
 	done
 }
 
+function decrypt
+{
+	cd "$DOTFILES"
+	if [ -z "$PASSWD" ]; then pprompt "decryption"; fi
+
+	for i in $(echo $CRYPTFILES | grep -v ":"); do
+		if [ "$(dirname "$i")" != "." ]; then
+			mkdir -p "$(dirname "$DMZ/$i")"
+		fi
+
+		if [ -f "$DMZ/$i" ]; then
+			rm "$DMZ/$i"
+		fi
+
+		echo "-->Decrypting $i"
+		if [ -h "$i" ]; then
+			cp -P --parents "$i" "$DMZ"
+		else
+			gpg --batch --passphrase-file "$REPO/tmp" -o "$DMZ/common/$i" \
+				"common/$i"
+		fi
+	done
+
+	for i in $(echo $CRYPTFILES); do
+		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
+		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
+		filename=$(echo $i | sed s/\:.*//);
+
+
+		for k in `seq 0 $(expr ${#ownrs[@]} - 1)`; do
+
+			mkdir -p "$(dirname "$DMZ/${ownrs[$k]}/$filename")"
+
+			if [ -f "$DMZ/${ownrs[$k]}/$filename" ]; then
+				rm "$DMZ/${ownrs[$k]}/$filename"
+			fi
+
+			if [ -h "${ownrs[$k]}/$filename" ]; then
+				cp -P --parents "${ownrs[$k]}/$filename" "$DMZ"
+			else
+				echo "-->Decrypting $filename"
+				gpg --batch --quiet --passphrase-file "$REPO/tmp" -o \
+					"$DMZ/${ownrs[$k]}/$filename" "${ownrs[$k]}/$filename"
+			fi
+		done
+	done
+}
+
 function update
 {
 	echo "Commencing normal files update..."
 	symlink "$NORMFILES" "$DOTFILES" "$1"
+
 	echo "Commencing encrypted files update..."
 	symlink "$CRYPTFILES" "$DMZ" "$1"
+
 	cd $REPO
 	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
 		if ! yesno "The cryptlist has changed since the last commit. Would you"\
@@ -184,6 +232,15 @@ function update
 			encrypt "$1"
 		fi
 	fi
+
+	restore "$1"
+
+	echo "Commencing normal files cleanup..."
+	cleanup "$NORMFILES" "$DOTFILES"
+
+	echo "Commencing encrypted files cleanup..."
+	cleanup "$CRYPTFILES" "$DMZ"
+
 }
 
 function hardUpdate
@@ -425,9 +482,9 @@ function homelink
 				mkdir -p "$(dirname "$HOME/$i")"
 			fi
 
-			if [ ! -f "$CDFILES/common/$filename" ]; then
-				echo "-->Can't link $filename (does not seem to be decrypted"\
-"yet)"
+			if [ ! -f "$CDFILES/common/$i" ]; then
+				echo "-->Can't link $i (does not seem to be decrypted"\
+" yet)"
 				continue
 			fi
 
@@ -488,9 +545,10 @@ function generate
 
 function cleanup
 {
-	echo "Commencing cleanup..."
+	FILELIST=$1
+	CDFILES=$2
 
-	cd "$REPO/dotfiles"
+	cd "$CDFILES"
 	for i in *; do
 		echo "Cleanup - entering $i..."
 		cd "$i"
@@ -515,7 +573,7 @@ function cleanup
 	done;
 
 	cd $REPO;
-	find dotfiles -empty -type d -delete
+	find $CDFILES -empty -type d -delete
 }
 
 function hardRestore
