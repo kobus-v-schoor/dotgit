@@ -81,6 +81,10 @@ OPTIONS:
 
 function safeguards
 {
+	if [ $1 == "init" ]; then
+		return
+	fi
+
 	if [ "$REPO" == "$HOME" ]; then
 		echo "You shouldn't run this in your home folder, make a seperate" \
 		"folder for your dotfiles"
@@ -162,8 +166,6 @@ function hardUpdate
 
 function update
 {
-	safeguards
-
 	if grep "#--hard--#" "$REPO/filelist" >> /dev/null ; then
 		hardUpdate; exit; fi
 
@@ -339,8 +341,6 @@ function lnconf
 
 function restore
 {
-	safeguards
-
 	if grep "#--hard--#" "$REPO/filelist" > /dev/null; then
 		hardRestore; exit;
 	fi
@@ -381,7 +381,6 @@ function restore
 
 function generate
 {
-	safeguards
 	message="Changes:"
 	git add --all
 	for i in $(git status --porcelain | grep dotfiles); do
@@ -447,7 +446,6 @@ function cleanup
 function hardRestore
 {
 	echo "Commencing hard restore..."
-	safeguards
 	cd dotfiles
 
 	if [ -z "$1" ]; then
@@ -525,6 +523,8 @@ if [[ $# -eq 0 ]]; then
 	phelp;
 	exit;
 fi;
+
+safeguards $1
 
 case "$1" in
 	"update")update "$2";;
