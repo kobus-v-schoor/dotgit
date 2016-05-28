@@ -3,17 +3,14 @@
 # Dotgit is an easy-to-use and effective way to backup all your dotfiles and
 # manage them in a repository
 
-# Written by Kobus van Schoor
-# You are free to distrubute and modify this software in any way as long as you
-# acknowledge the original author
+# Developer: Kobus van Schoor
 
 REPO="$PWD"
 NORMFILES=""
 CRYPTFILES=""
 DOTFILES=""
 DMZ=""
-OLDIFS=$IFS
-IFS=$(echo -ne '\n')
+PASSWD=""
 
 function cfilelist
 {
@@ -139,15 +136,51 @@ function pstatus
 	printf "%-15s" "-->$type"; printf "%-20s" $2 $1; printf "\n"
 }
 
+function pprompt
+{
+	echo -n "Please enter a password for $1 (nothing will be shown): "
+	stty -echo
+	read ans
+	stty echo
+	echo ""
+	PASSWD=$ans
+	echo $PASSWD > $REPO/tmp
+}
+
+function encrypt
+{
+	cd "$DMZ"
+	for i in $(find -type l); do
+		if [ -f "$DOTFILES/$i" ]; then
+			rm "$DOTFILES/$i"
+		fi
+		cp -P --parents "$i" "$DOTFILES"
+	done
+
+	if [ -z "$PASSWD" ]; then
+		pprompt "encryption"
+	fi
+
+	for i in $(find -not -type d -and -not -type l); do
+		echo "-->Encrypting $(echo $i | cut -c 3-)"
+		mkdir -p $(dirname "$DOTFILES/$i")
+		if [ -f "$DOTFILES/$i" ]; then
+			rm "$DOTFILES/$i"
+		fi
+		gpg -c --batch --passphrase-file "$REPO/tmp" -o "$DOTFILES/$i" "$i"
+	done
+}
+
 function update
 {
 	echo "Commencing normal files update..."
 	symlink "$NORMFILES" "$DOTFILES" "$1"
 	echo "Commencing encrypted files update..."
 	symlink "$CRYPTFILES" "$DMZ" "$1"
+	cd $REPO
 	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
-		if yesno "The cryptlist has changed since the last commit. Would you"\
-			"like to encrypt the changes? [Y/n]: "; then
+		if ! yesno "The cryptlist has changed since the last commit. Would you"\
+" like to encrypt the changes? [Y/n]: "; then
 			encrypt "$1"
 		fi
 	fi
@@ -211,7 +244,7 @@ function symlink
 	fi
 
 	for i in $(echo $FILELIST | grep "$owner"); do
-		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
+		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 
@@ -565,9 +598,13 @@ case "$1" in
 	"generate")generate;;
 	"hard-restore")hardRestore "$2";;
 	"init")init;;
+	"encrypt")encrypt;;
+	"decrypt")decrypt;;
 	"diff")pdiff;;
 	"help")phelp;;
 	*)echo -e "\n$1 is not a valid argument.\n"; phelp; exit 1;;
 esac;
 
-IFS=$OLDIFS
+if [ -f "$REPO/tmp" ]; then
+	rm "$REPO/tmp"
+fi
