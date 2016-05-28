@@ -8,8 +8,14 @@
 # acknowledge the original author
 
 REPO="$PWD"
+FILELIST=""
 OLDIFS=$IFS
-IFS=$(echo -ne "\n\b")
+IFS=$(echo -ne '\n')
+
+function cfilelist
+{
+	FILELIST=$(grep -v '^#' "$REPO/filelist" | grep -v "^$")
+}
 
 function phelp
 {
@@ -134,7 +140,7 @@ function hardUpdate
 	owner=$1
 
 	if [ -z "$1" ]; then
-		for i in $(grep -v "#" "$REPO/filelist" | grep -v "\:"); do
+		for i in $(echo $FILELIST | grep -v "\:"); do
 			pstatus $i "common" "Copying"
 			if [ ! "$HOME/$i" -ef "$REPO/dotfiles/common/$i" ]; then
 				cp -L --parents "$i" "$REPO/dotfiles/common"
@@ -143,7 +149,7 @@ function hardUpdate
 		owner=$HOSTNAME
 	fi
 
-	for i in $(grep -v "#" "$REPO/filelist" | grep "$owner"); do
+	for i in $(echo $FILELIST | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 
@@ -174,7 +180,7 @@ function update
 	owner=$1
 
 	if [ -z "$1" ]; then
-		for i in $(grep -v "#" "$REPO/filelist" | grep -v "\:"); do
+		for i in $(echo $FILELIST | grep -v "\:"); do
 			if [ ! -f "$REPO/dotfiles/common/$i" ]; then
 				pstatus $i "common"
 				cp -L --parents "$i" "$REPO/dotfiles/common"
@@ -183,7 +189,7 @@ function update
 		owner=$HOSTNAME
 	fi
 
-	for i in $(grep -v "#" "$REPO/filelist" | grep "$owner"); do
+	for i in $(echo $FILELIST | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
@@ -355,7 +361,7 @@ function restore
 	owner=$1
 
 	if [ -z "$1" ]; then
-		for i in $(grep -v "#" "$REPO/filelist" | grep -v "\:"); do
+		for i in $(echo $FILELIST | grep -v "\:"); do
 			if [ "$(dirname "$i")" != "." ]; then
 				mkdir -p "$(dirname "$HOME/$i")"
 			fi
@@ -365,7 +371,7 @@ function restore
 		owner=$HOSTNAME
 	fi
 
-	for i in $(grep -v "#" "$REPO/filelist" | grep "$owner"); do
+	for i in $(echo $FILELIST | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 		filename=$(echo $i | sed s/\:.*//);
@@ -430,8 +436,7 @@ function cleanup
 				z="$i"
 			fi
 
-			if [ -z "$(grep -v "#" "$REPO/filelist" | grep "$k" | \
-				grep "$z" )" ]; then
+			if [ -z "$(echo $FILELIST | grep "$k" | grep "$z" )" ]; then
 				pstatus "$i/$k" "$i" "Removing"
 				rm "$k"
 			fi;
@@ -525,6 +530,7 @@ if [[ $# -eq 0 ]]; then
 fi;
 
 safeguards $1
+cfilelist
 
 case "$1" in
 	"update")update "$2";;
