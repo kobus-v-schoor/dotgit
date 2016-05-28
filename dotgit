@@ -8,13 +8,19 @@
 # acknowledge the original author
 
 REPO="$PWD"
-FILELIST=""
+NORMFILES=""
+CRYPTFILES=""
+DOTFILES=""
+DMZ=""
 OLDIFS=$IFS
 IFS=$(echo -ne '\n')
 
 function cfilelist
 {
-	FILELIST=$(grep -v '^#' "$REPO/filelist" | grep -v "^$")
+	NORMFILES=$(grep -v '^#' "$REPO/filelist" | grep -v "^$")
+	CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$")
+	DOTFILES="$REPO/dotfiles"
+	DMZ="$REPO/dmz"
 }
 
 function phelp
@@ -133,6 +139,20 @@ function pstatus
 	printf "%-15s" "-->$type"; printf "%-20s" $2 $1; printf "\n"
 }
 
+function update
+{
+	echo "Commencing normal files update..."
+	symlink "$NORMFILES" "$DOTFILES" "$1"
+	echo "Commencing encrypted files update..."
+	symlink "$CRYPTFILES" "$DMZ" "$1"
+	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
+		if yesno "The cryptlist has changed since the last commit. Would you"\
+			"like to encrypt the changes? [Y/n]: "; then
+			encrypt "$1"
+		fi
+	fi
+}
+
 function hardUpdate
 {
 	echo "Commencing hard update..."
@@ -170,20 +190,21 @@ function hardUpdate
 	cleanup
 }
 
-function update
+function symlink
 {
+	FILELIST=$1
+	CDFILES=$2
 	if grep "#--hard--#" "$REPO/filelist" >> /dev/null ; then
 		hardUpdate; exit; fi
 
-	echo "Commencing filelist update..."
 	cd $HOME;
-	owner=$1
+	owner=$3
 
-	if [ -z "$1" ]; then
+	if [ -z "$owner" ]; then
 		for i in $(echo $FILELIST | grep -v "\:"); do
-			if [ ! -f "$REPO/dotfiles/common/$i" ]; then
+			if [ ! -f "$CDFILES/common/$i" ]; then
 				pstatus $i "common"
-				cp -L --parents "$i" "$REPO/dotfiles/common"
+				cp -L --parents "$i" "$CDFILES/common"
 			fi
 		done;
 		owner=$HOSTNAME
@@ -194,56 +215,56 @@ function update
 		filename=$(echo $i | sed s/\:.*//)
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 
-		splits=$(find "$REPO/dotfiles" -lname "*${ownrs[0]}/$filename")
+		splits=$(find "$CDFILES" -lname "*${ownrs[0]}/$filename")
 		for k in $(seq 0 `expr ${#ownrs[@]} - 1`); do
 			splits=$(echo "$splits" | grep -v "${ownrs[$k]}")
 		done
 
-		if [ -n "$splits" ] && [ -f "$REPO/dotfiles/${ownrs[0]}/$filename" ]
+		if [ -n "$splits" ] && [ -f "$CDFILES/${ownrs[0]}/$filename" ]
 		then
 			for k in $splits; do
-				temp="$REPO/dotfiles/"
+				temp="$CDFILES/"
 				z=$(echo $k | cut -c $(expr ${#temp} + 1)- | sed "s/\/.*//g")
 				pstatus "$filename" "$z" "Splitting"
 
 				rm $k
-				cp "$REPO/dotfiles/${ownrs[0]}/$filename" $k
+				cp "$CDFILES/${ownrs[0]}/$filename" $k
 			done
 		fi
 
 		for k in $(seq 0 `expr ${#ownrs[@]} - 1`); do
 
-			if [ ! -d "$REPO/dotfiles/${ownrs[$k]}" ]; then
-				mkdir "$REPO/dotfiles/${ownrs[$k]}"; fi
+			if [ ! -d "$CDFILES/${ownrs[$k]}" ]; then
+				mkdir "$CDFILES/${ownrs[$k]}"; fi
 
-			if [ ! -f "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+			if [ ! -f "$CDFILES/${ownrs[$k]}/$filename" ]; then
 				if [ $k == "0" ]; then
 					pstatus "$filename" "${ownrs[0]}"
-					cp -L --parents "$filename" "$REPO/dotfiles/${ownrs[0]}"
+					cp -L --parents "$filename" "$CDFILES/${ownrs[0]}"
 
 					rm "$HOME/$filename"
 				else
 					pstatus "(${ownrs[0]})  $filename" "${ownrs[$k]}" "Linking"
-					mkdir -p "$(dirname "$REPO/dotfiles/${ownrs[$k]}/$filename")"
-					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
-					"$REPO/dotfiles/${ownrs[$k]}/$filename"
+					mkdir -p "$(dirname "$CDFILES/${ownrs[$k]}/$filename")"
+					ln -rs "$CDFILES/${ownrs[0]}/$filename" \
+					"$CDFILES/${ownrs[$k]}/$filename"
 				fi
 			else
 				if [ "$k" == "0" ] && \
-					[ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+					[ -h "$CDFILES/${ownrs[$k]}/$filename" ]; then
 					pstatus "$filename" "${ownrs[0]}"
-					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
-					cp -L --parents "$filename" "$REPO/dotfiles/${ownrs[$k]}"
+					rm "$CDFILES/${ownrs[$k]}/$filename"
+					cp -L --parents "$filename" "$CDFILES/${ownrs[$k]}"
 				fi
 
 				if [ "$k" != "0" ] && \
-					[ ! -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
+					[ ! -h "$CDFILES/${ownrs[$k]}/$filename" ]; then
 
-					if diff "$REPO/dotfiles/${ownrs[0]}/$filename" \
-						"$REPO/dotfiles/${ownrs[$k]}/$filename" > /dev/null;then
-						rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
-						ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
-							"$REPO/dotfiles/${ownrs[$k]}/$filename"
+					if diff "$CDFILES/${ownrs[0]}/$filename" \
+						"$CDFILES/${ownrs[$k]}/$filename" > /dev/null;then
+						rm "$CDFILES/${ownrs[$k]}/$filename"
+						ln -rs "$CDFILES/${ownrs[0]}/$filename" \
+							"$CDFILES/${ownrs[$k]}/$filename"
 						continue
 					fi
 
@@ -253,7 +274,7 @@ function update
 
 					mergers=()
 					for z in $(seq 0 `expr ${#ownrs[@]} - 1`); do
-						if [ -f "$REPO/dotfiles/${ownrs[$z]}/$filename" ]; then
+						if [ -f "$CDFILES/${ownrs[$z]}/$filename" ]; then
 							mergers=(${mergers[@]} ${ownrs[$z]})
 						fi
 					done
@@ -282,36 +303,32 @@ function update
 					ans=`expr $ans - 1`
 
 					if [ $ans -ne 0 ]; then
-						rm "$REPO/dotfiles/${ownrs[0]}/$filename"
-						cp "$REPO/dotfiles/${ownrs[$ans]}/$filename" \
-							"$REPO/dotfiles/${ownrs[0]}/$filename"
+						rm "$CDFILES/${ownrs[0]}/$filename"
+						cp "$CDFILES/${ownrs[$ans]}/$filename" \
+							"$CDFILES/${ownrs[0]}/$filename"
 					fi
 
 					for z in $(seq 1 `expr ${#ownrs[@]} - 1`); do
-						rm "$REPO/dotfiles/${ownrs[$z]}/$filename"
+						rm "$CDFILES/${ownrs[$z]}/$filename"
 					done
 
 					pstatus "(${ownrs[0]}) $filename" "${ownrs[$k]}" "Linking"
-					if [ -f "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
-						rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
+					if [ -f "$CDFILES/${ownrs[$k]}/$filename" ]; then
+						rm "$CDFILES/${ownrs[$k]}/$filename"
 					fi
-					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
-					"$REPO/dotfiles/${ownrs[$k]}/$filename"
+					ln -rs "$CDFILES/${ownrs[0]}/$filename" \
+					"$CDFILES/${ownrs[$k]}/$filename"
 				fi
 
 				if [ "$k" != "0" ] && \
-					[ -h "$REPO/dotfiles/${ownrs[$k]}/$filename" ]; then
-					rm "$REPO/dotfiles/${ownrs[$k]}/$filename"
-					ln -rs "$REPO/dotfiles/${ownrs[0]}/$filename" \
-					"$REPO/dotfiles/${ownrs[$k]}/$filename"
+					[ -h "$CDFILES/${ownrs[$k]}/$filename" ]; then
+					rm "$CDFILES/${ownrs[$k]}/$filename"
+					ln -rs "$CDFILES/${ownrs[0]}/$filename" \
+					"$CDFILES/${ownrs[$k]}/$filename"
 				fi
 			fi
 		done;
 	done;
-
-	cd $REPO;
-	cleanup
-	restore $1
 }
 
 function yesno
@@ -502,12 +519,22 @@ function hardRestore
 
 function init
 {
-	echo "Initializing dotgit repo..."
-	mkdir dotfiles
-	mkdir dotfiles/common
-	git init
-	touch filelist
-	echo "Initialized new dotgit repo in $PWD"
+	if [ ! -d ".git" ]; then
+		echo "Initializing dotgit repo..."
+		mkdir -p dotfiles/common
+		mkdir -p dmz/common
+		git init
+		touch filelist
+		touch cryptlist
+		echo "dmz" >> .gitignore
+		echo "Initialized new dotgit repo in $PWD"
+	else
+		echo "Creating encryption hooks..."
+		echo "dotgit encrypt" >> .git/hooks/pre-commit
+		chmod +x .git/hooks/pre-commit
+		echo "dotgit decrypt" >> .git/hooks/post-merge
+		chmod +x .git/hooks/post-merge
+	fi
 }
 
 function pdiff
@@ -530,7 +557,7 @@ if [[ $# -eq 0 ]]; then
 fi;
 
 safeguards $1
-cfilelist
+if [[ $1 != "init" ]]; then cfilelist; fi
 
 case "$1" in
 	"update")update "$2";;
