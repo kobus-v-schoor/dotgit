@@ -25,6 +25,7 @@ function phelp
   be ready to use with dotgit.
 
 Filelist syntax:
+  #--hard--#          --  Do not use symlinks, see below for more details
   .bashrc             --  Will be in "common" folder and will be restored to
                           home folder, regardless of hostname (unless category
                           is specified)
@@ -38,18 +39,22 @@ Filelist syntax:
 
   Categories and host use exactly the same syntax. This also means that you can
   specify a file to belong to multiple categories (and keep them synced)
-  Comments are indicated with a # in the begining of the line (any line
-  including # will be ignored, so do not use comments at the end of a line)
+  Comments are indicated with a # at the begining of the line, comments at the
+  end of a line is not yet supported
 
   After making any changes to the filelist you should run dotgit update, commit
   and push your changes and then run dotgit restore on all other hosts you use
   This ensures that the symlinking hierarchy stays up-to-date
 
-  If you prefer not to use symlinks in your home directory, but rather copies
-  you have two options. Firstly if you are only going to use the repo once you
-  can run use the hard-restore option. If you would always like to use copies
-  you can add #--hard--# to the top of your filelist. Read options to see how
-  this will change how dotgit functions.
+  If you prefer not to use symlinks in your home dir (eg. if the repo will not
+  live on on the host or because of special filesystem setups) you have to
+  options. If you only want to copy the dotfiles once you can use the "hard"
+  versions of the various operations described below. If you want a long-term
+  solution simply add a line to your filelist only containing "#--hard--#"
+  without the qoutes. This will cause dotgit to simply invoke the "hard"
+  versions of the operation automatically when using their normal couterparts
+  (eg "dotgit update" will now be equivalent to "dotgit hard-update"). To see
+  what operations will be affected by this option see below.
 
 OPTIONS:
   If an argument is passed to the relevant functions only files pertaining to
