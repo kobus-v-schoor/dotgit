@@ -143,8 +143,8 @@ function pprompt
 	read ans
 	stty echo
 	echo ""
-	PASSWD=$ans
-	echo $PASSWD > $REPO/tmp
+	PASSWD=1
+	echo $ans > $REPO/tmp
 }
 
 function encrypt
@@ -235,12 +235,8 @@ function update
 
 	restore "$1"
 
-	echo "Commencing normal files cleanup..."
-	cleanup "$NORMFILES" "$DOTFILES"
-
-	echo "Commencing encrypted files cleanup..."
-	cleanup "$CRYPTFILES" "$DMZ"
-
+	echo "Commencing files cleanup..."
+	cleanup "$NORMFILES" "$CRYPTFILES"
 }
 
 function hardUpdate
@@ -545,10 +541,9 @@ function generate
 
 function cleanup
 {
-	FILELIST=$1
-	CDFILES=$2
+	FILELIST="$1 $2"
 
-	cd "$CDFILES"
+	cd "$DOTFILES"
 	for i in *; do
 		echo "Cleanup - entering $i..."
 		cd "$i"
@@ -573,7 +568,7 @@ function cleanup
 	done;
 
 	cd $REPO;
-	find $CDFILES -empty -type d -delete
+	find $DOTFILES -empty -type d -delete
 }
 
 function hardRestore
