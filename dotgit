@@ -532,11 +532,7 @@ function lnconf
 
 function restore
 {
-	echo "Cleaning up old repo links..."
-	for i in $(find $HOME -type l -not -wholename "$REPO/*"); do
-		if [[ `readlink $i` =~ $REPO ]]; then rm $i; fi
-	done
-
+	cleanhome
 	echo "Commencing unencrypted repo linking..."
 	homelink "$NORMFILES" "$DOTFILES" "$1"
 	echo "Commencing encrypted repo linking..."
@@ -654,6 +650,14 @@ function cleanup
 	find $DOTFILES -empty -type d -delete
 }
 
+function cleanhome
+{
+	echo "Cleaning up old repo links..."
+	for i in $(find $HOME -type l -not -wholename "$REPO/*"); do
+		if [[ `readlink $i` =~ $REPO ]]; then rm $i; fi
+	done
+}
+
 function hardRestore
 {
 	echo "Commencing hard restore..."
@@ -767,6 +771,7 @@ case "$1" in
 	"init")init;;
 	"encrypt")encrypt;;
 	"decrypt")decrypt;;
+	"clean")cleanhome;;
 	"passwd")passwd;;
 	"diff")pdiff;;
 	"help")phelp;;
