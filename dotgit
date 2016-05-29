@@ -65,6 +65,24 @@ Filelist syntax:
   (eg "dotgit update" will now be equivalent to "dotgit hard-update"). To see
   what operations will be affected by this option see below.
 
+ENCRYPTION:
+  AES encryption is supported by dotgit in both symlinking and "hard" mode. To
+  set up encryption just put the relevant filenames in the "cryptlist" file in
+  the root of the dotgit repo. The "cryptlist" file uses exactly the same syntax
+  as the normal filelist.
+
+  Unlike with the the unencrypted files encrypted files can''t be updated to the
+  repository automatically. They first need to be encrypted before they can be
+  commited and pushed to a remote. Because of this when linking or copying the
+  dotfiles to your home dir the encrypted files will first be decrypted and then
+  put in the "dmz" folder of dotgit. Inside this folder they are decrypted and
+  these files will be linked into your home dir. When you wan''t to commit your
+  changes to the repository these files will have to encrypted first and then
+  copied back into the repository. Automatic encryption and decryption can be
+  done with git hooks, so when you commit the files will be automatically
+  encrypted and when you pull new changes into your repo they will automatically
+  be decrypted.
+
 OPTIONS:
   If an argument is passed to the relevant functions only files pertaining to
   that category or hostname will be taken into account
@@ -76,15 +94,24 @@ OPTIONS:
                           up-to-date
                           #--hard--#: Will copy files into repository and
                           leave the files in the home dir intact
+
   restore (arg)       --  Set up links in home folder to repository
                           #--hard--#: Same as hard-restore
+
   generate            --  Generate a commit message, commit changes and push to
                           remote
+
   hard-restore (arg)  --  Make a copy from the dotgit repository into home dir
-  init                --  Initialize current folder with new dotgit repo (create
-                          empty filelist and dotfiles folder)
+                          NOTE: This will overwrite existing files without
+                          confirmation
+
+  init                --  Initialize current folder with new dotgit repo or if
+                          it is already initialized as a dotgit repo, setup git
+                          encryption hooks
+
   diff                --  Show what files changed from previous commit in dotgit
                           repository
+
   help                --  Show this message'
 }
 
@@ -138,11 +165,21 @@ function pstatus
 
 function pprompt
 {
+	if [ ! -f "$REPO/passwd" ]; then
+		echo "Password hash not found - please create one with dotgit passwd"\
+			"Aborting..."
+		exit 1
+	fi
+
 	echo -n "Please enter a password for $1 (nothing will be shown): "
 	stty -echo
 	read ans
 	stty echo
 	echo ""
+	if [ "$(echo $ans | sha1sum)" != "$(cat "$REPO/passwd")" ]; then
+		echo "Incorrect password. Aborting..."
+		exit 1
+	fi
 	PASSWD=1
 	touch "$REPO/tmp"
 	chmod 600 "$REPO/tmp"
@@ -237,6 +274,7 @@ function encrypt
 			rm "$DOTFILES/$i"
 		fi
 		gpg -c --batch --passphrase-file "$REPO/tmp" -o "$DOTFILES/$i" "$i"
+		chmod $(stat -c '%a' "$i") "$DOTFILES/$i"
 	done
 }
 
@@ -250,22 +288,37 @@ function decrypt
 			mkdir -p "$(dirname "$DMZ/$i")"
 		fi
 
-		if [ ! -f "common/$i"  ]; then
+		if [ ! -f "$DOTFILES/common/$i"  ]; then
 			echo "--> File $i does not yet exist in the repo. Please run"\
 				"update/encrypt to populate repository"
 			continue
 		fi
 
-		if [ -f "$DMZ/$i" ]; then
-			rm "$DMZ/$i"
-		fi
-
 		echo "-->Decrypting $i"
 		if [ -h "$i" ]; then
-			cp -P --parents "$i" "$DMZ"
+			if [ -f "$DMZ/common/$i" ]; then
+				rm "$DMZ/common/$i"
+				cp -P --parents "$i" "$DMZ"
+			fi
 		else
-			gpg --batch --passphrase-file "$REPO/tmp" -o "$DMZ/common/$i" \
-				"common/$i"
+			gpg --quiet --batch --decrypt --passphrase-file "$REPO/tmp" \
+				--output "$REPO/mid" "$DOTFILES/common/$i"
+			chmod $(stat -c '%a' "$DOTFILES/common/$i") "$REPO/mid"
+			if [ -f "$DMZ/common/$i" ]; then
+				if ! diff "$DMZ/common/$i" "$REPO/mid" > /dev/null; then
+					echo -e "Your local version of $i differs from the version"\
+						"decrypted from the repository\n";
+
+					if ! yesno "Do you want to overwrite the local version?"\
+						"[Y/n]: "; then
+						rm "$DMZ/common/$i"
+						cp "$REPO/mid" "$DMZ/common/$i"
+					fi
+				fi
+			else
+				cp "$REPO/mid" "$DMZ/common/$i"
+			fi
+			rm "$REPO/mid"
 		fi
 	done
 
@@ -310,7 +363,7 @@ function update
 	cd $REPO
 	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
 		if ! yesno "The cryptlist has changed since the last commit. Would you"\
-" like to encrypt the changes? [Y/n]: "; then
+			" like to encrypt the changes? [Y/n]: "; then
 			encrypt "$1"
 		fi
 	fi
@@ -323,39 +376,54 @@ function update
 
 function hardUpdate
 {
-	echo "Commencing hard update..."
-	cd $HOME
-	owner=$1
+	echo "Commencing hard update of normal files..."
+	copytorepo "$NORMFILES" "$DOTFILES" "$1"
+	echo "Commencing hard update of encrypted files..."
+	copytorepo "$CRYPTFILES" "$DMZ" "$1"
 
-	if [ -z "$1" ]; then
-		for i in $(echo $FILELIST | grep -v "\:"); do
+	cd "$REPO"
+	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
+		if ! yesno "The cryptlist has changed since the last commit. Would you"\
+			" like to encrypt the changes? [Y/n]: "; then
+			encrypt "$1"
+		fi
+	fi
+}
+
+function copytorepo
+{
+	FILELIST=$1
+	CDFILES=$2
+
+	cd $HOME
+	owner=$3
+
+	if [ -z "$owner" ]; then
+		for i in $(echo "$FILELIST" | grep -v "\:"); do
 			pstatus $i "common" "Copying"
-			if [ ! "$HOME/$i" -ef "$REPO/dotfiles/common/$i" ]; then
-				cp -L --parents "$i" "$REPO/dotfiles/common"
+			if [ ! "$HOME/$i" -ef "$CDFILES/common/$i" ]; then
+				cp -L --parents "$i" "$CDFILES/common"
 			fi
 		done;
 		owner=$HOSTNAME
 	fi
 
-	for i in $(echo $FILELIST | grep "$owner"); do
+	for i in $(echo "$FILELIST" | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 
 		for k in "${ownrs[@]}"; do
-			if [ ! -d "$REPO/dotfiles/$k" ]; then mkdir "$REPO/dotfiles/$k"; fi
+			if [ ! -d "$CDFILES/$k" ]; then mkdir "$CDFILES/$k"; fi
 
 			pstatus "$filename" "$k" "Copying"
-			if [ -h "$REPO/dotfiles/$k/$filename" ]; then
-				rm "$REPO/dotfiles/$k/$filename"
+			if [ -h "$CDFILES/$k/$filename" ]; then
+				rm "$CDFILES/$k/$filename"
 			fi
-			if [ ! "$HOME/$filename" -ef "$REPO/dotfiles/$k/$filename" ]; then
-				cp -L --parents "$filename" "$REPO/dotfiles/$k"
+			if [ ! "$HOME/$filename" -ef "$CDFILES/$k/$filename" ]; then
+				cp -L --parents "$filename" "$CDFILES/$k"
 			fi
 		done
 	done
-
-	cd $REPO
-	cleanup
 }
 
 function symlink
@@ -501,7 +569,7 @@ function symlink
 
 function yesno
 {
-	echo -n "$1"
+	echo -n $*
 	read ans
 
 	if [ "$ans" == "Y" ] || [ "$ans" == "y" ] || [ -z "$ans" ]; then
@@ -519,7 +587,7 @@ function lnconf
 
 	if [ -f "$2" ] && [ ! -h "$2" ]; then
 		yesno "File $3 already exists in home directory. Do you want to "\
-"overwrite it? [Y/n] "
+			"overwrite it? [Y/n] "
 
 		if [ "$?" == 1 ]; then
 			rm "$2"
@@ -660,10 +728,21 @@ function cleanhome
 
 function hardRestore
 {
-	echo "Commencing hard restore..."
-	cd dotfiles
+	echo "Commencing hard restore of normal files..."
+	copytohome "$NORMFILES" "$DOTFILES"
+	echo "Commencing hard restore of encrypted files..."
+	copytohome "$CRYPTFILES" "$DMZ"
+}
 
-	if [ -z "$1" ]; then
+function copytohome
+{
+	FILELIST=$1
+	CDFILES=$2
+	category=$3
+
+	cd "$CDFILES"
+
+	if [ -z "$category" ]; then
 		cd common
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
@@ -691,15 +770,15 @@ function hardRestore
 			cp -L --parents "$i" "$HOME"
 		done
 	else
-		if [ -d "$1" ]; then
-			cd "$1"
+		if [ -d "$category" ]; then
+			cd "$category"
 		else
-			echo "Category $1 not found..."
+			echo "Category $category not found..."
 		fi
 
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
-			pstatus "$i" "$1" "Copying"
+			pstatus "$i" "$category" "Copying"
 			if [ -f "$HOME/$i" ]; then
 				rm "$HOME/$i"
 			fi
