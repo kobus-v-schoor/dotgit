@@ -105,9 +105,30 @@ OPTIONS:
                           NOTE: This will overwrite existing files without
                           confirmation
 
+  passwd              --  If no password has been set, set new password. If
+                          there is already a password set, change password
+
+  encrypt             --  Encrypt all files currently in the dmz folder and put
+                          them in the dotfiles folder. This is neccesary when
+                          changes were made to files that are stored encrypted
+                          in the repo. When running the "generate" operation
+                          the relevant files will be automatically encrypted. If
+                          you choose to make commits yourself, you need to run
+                          encrypt before committing otherwise the changes you
+                          made to the files that should be encrypted will not be
+                          taken into account for the commit
+
+  decrypt             --  Decrypt all encrypted files in the repository. If the
+                          local "dmz" version differs from the decrypted version
+                          you will be given a choice of which file to keep
+
+  clean               --  Delete all links in your home dir that refers to this
+                          dotgit repo
+
   init                --  Initialize current folder with new dotgit repo or if
                           it is already initialized as a dotgit repo, setup git
-                          encryption hooks
+                          hooks that will automatically decrypt files after a
+                          git pull or merge
 
   diff                --  Show what files changed from previous commit in dotgit
                           repository
