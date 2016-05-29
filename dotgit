@@ -288,14 +288,18 @@ function encrypt
 
 
 	for i in $(find -not -type d -and -not -type l); do
-		if [ -z "$PASSWD" ]; then pprompt "encryption"; fi
-		echo "-->Encrypting $(echo $i | cut -c 3-)"
 		mkdir -p $(dirname "$DOTFILES/$i")
 		if [ -f "$DOTFILES/$i" ]; then
+			if [ "$(sha1sum "$i")" == "$(cat "$DOTFILES/$i.hash")" ]; then
+				continue;
+			fi
 			rm "$DOTFILES/$i"
 		fi
+		if [ -z "$PASSWD" ]; then pprompt "encryption"; fi
+		echo "-->Encrypting $(echo $i | cut -c 3-)"
 		gpg -c --batch --passphrase-file "$REPO/tmp" -o "$DOTFILES/$i" "$i"
 		chmod $(stat -c '%a' "$i") "$DOTFILES/$i"
+		sha1sum "$i" > "$DOTFILES/$i.hash"
 	done
 }
 
@@ -682,20 +686,28 @@ function generate
 	encrypt
 	cd "$REPO"
 	git add --all
-	message=$(git status -s | tr '\n' ';' | sed 's/;/;\ /g')
+	OLDIFS=$IFS
+	IFS=$(echo -en '\n')
+	message=$(git status --porcelain | grep "dotfiles" | grep -v '.hash' | \
+		tr '\n' ';')
+	IFS=$OLDIFS
+
+	message=$(echo $message |  sed 's/;/;\ /g')
 
 	message=$(echo $message | \
 		sed 's/dotfiles\///g' | \
-		sed 's/A/Added/g' | \
-		sed 's/R/Renamed/g' | \
-		sed 's/M/Modified/g' | \
-		sed 's/D/Deleted/g' | \
-		sed 's/C/Copied/g')
+		sed 's/A/added/g' | \
+		sed 's/R/renamed/g' | \
+		sed 's/M/modified/g' | \
+		sed 's/D/deleted/g' | \
+		sed 's/C/copied/g')
 
+	if [ -z "$message" ]; then
+		echo "No changes to repository..."
+		return
+	fi
 
-	echo $message
-
-	git commit -m "$message"
+	git commit -m "Changes: $(echo "$message" | rev | cut -c 2- | rev)"
 
 	if [ -n "$(git remote -v)" ]; then
 		yesno "Remote detected, do you want to push (sync) to it? [Y/n]: "
@@ -703,7 +715,7 @@ function generate
 			git push
 		fi
 	fi
-}
+} 
 
 function cleanup
 {
@@ -718,7 +730,7 @@ function cleanup
 			if [ $k == "." ]; then
 				continue;
 			fi
-			k=$(echo $k | cut -c 3-);
+			k=$(echo $k | cut -c 3- | sed 's/\.hash//g');
 
 			z=""
 			if [ "$i" != "common" ]; then
@@ -831,8 +843,8 @@ function init
 	fi
 
 	if [ $create -eq 1 ]; then
-		echo "dotgit encrypt" >> .git/hooks/pre-commit
-		chmod +x .git/hooks/pre-commit
+		# echo "dotgit encrypt" >> .git/hooks/pre-commit
+		# chmod +x .git/hooks/pre-commit
 		echo "dotgit decrypt" >> .git/hooks/post-merge
 		chmod +x .git/hooks/post-merge
 	fi
