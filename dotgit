@@ -166,7 +166,7 @@ function pstatus
 function pprompt
 {
 	if [ ! -f "$REPO/passwd" ]; then
-		echo "Password hash not found - please create one with dotgit passwd"\
+		echo "Password hash not found - please create one with dotgit passwd."\
 			"Aborting..."
 		exit 1
 	fi
@@ -192,7 +192,7 @@ function passwd
 		echo "The password you enter here will be hashed (SHA1) en then stored
 inside your repository to be used solely for verification. (This has
 no security implactions, it is simply used to ensure that you use the
-same password between runs"
+same password between runs)"
 
 		echo -e "\nPasswords will not be shown\n"
 		stty -echo
@@ -265,9 +265,9 @@ function encrypt
 		cp -P --parents "$i" "$DOTFILES"
 	done
 
-	if [ -z "$PASSWD" ]; then pprompt "encryption"; fi
 
 	for i in $(find -not -type d -and -not -type l); do
+		if [ -z "$PASSWD" ]; then pprompt "encryption"; fi
 		echo "-->Encrypting $(echo $i | cut -c 3-)"
 		mkdir -p $(dirname "$DOTFILES/$i")
 		if [ -f "$DOTFILES/$i" ]; then
@@ -360,6 +360,10 @@ function update
 	echo "Commencing encrypted files update..."
 	symlink "$CRYPTFILES" "$DMZ" "$1"
 
+	restore "$1"
+	echo "Commencing files cleanup..."
+	cleanup "$NORMFILES" "$CRYPTFILES"
+
 	cd $REPO
 	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
 		if ! yesno "The cryptlist has changed since the last commit. Would you"\
@@ -368,10 +372,6 @@ function update
 		fi
 	fi
 
-	restore "$1"
-
-	echo "Commencing files cleanup..."
-	cleanup "$NORMFILES" "$CRYPTFILES"
 }
 
 function hardUpdate
@@ -441,6 +441,7 @@ function symlink
 			if [ ! -f "$CDFILES/common/$i" ]; then
 				pstatus $i "common"
 				cp -L --parents "$i" "$CDFILES/common"
+				rm "$i"
 			fi
 		done;
 		owner=$HOSTNAME
@@ -657,29 +658,26 @@ function homelink
 
 function generate
 {
-	message="Changes:"
+	encrypt
+	cd "$REPO"
 	git add --all
-	for i in $(git status --porcelain | grep dotfiles); do
-		case "$(echo $i | cut -c 1-1)" in
-			"D")message=$(echo "$message deleted $(echo $i | cut -c 13-);");;
-			"M")message=$(echo "$message modified $(echo $i | cut -c 13-);");;
-			"A")message=$(echo "$message added $(echo $i | cut -c 13-);");;
-			"R")message=$(echo "$message renamed $(echo $i | cut -c 4- | sed \
-				's/dotfiles\///g');");;
-			"C")message=$(echo "$message copied $(echo $i | cut -c 4- | sed \
-				's/dotfiles\///g');");;
-			"T")message=$(echo "$message typechange $(echo $i | cut -c 13-);");;
-		esac
-	done
-	if [ "$message" == "Changes:" ]; then
-		echo "No changes to repository..."
-		exit
-	fi
-	message=$(echo $message | rev | cut -c 2- | rev)
+	message=$(git status -s | tr '\n' ';' | sed 's/;/;\ /g')
+
+	message=$(echo $message | \
+		sed 's/dotfiles\///g' | \
+		sed 's/A/Added/g' | \
+		sed 's/R/Renamed/g' | \
+		sed 's/M/Modified/g' | \
+		sed 's/D/Deleted/g' | \
+		sed 's/C/Copied/g')
+
+
+	echo $message
+
 	git commit -m "$message"
 
 	if [ -n "$(git remote -v)" ]; then
-		yesno "Remote detected, do you want to push (sync) to it? [Y/n] "
+		yesno "Remote detected, do you want to push (sync) to it? [Y/n]: "
 		if [ "$?" == 1 ]; then
 			git push
 		fi
@@ -799,6 +797,7 @@ function init
 	touch cryptlist
 	echo "dmz" >> .gitignore
 	echo "passwd" >> .gitignore
+	echo "tmp" >> .gitignore
 
 	echo "Creating encryption hooks..."
 	create=0
@@ -854,7 +853,7 @@ case "$1" in
 	"passwd")passwd;;
 	"diff")pdiff;;
 	"help")phelp;;
-	*)echo -e "\n$1 is not a valid argument.\n"; phelp; exit 1;;
+	*)echo -e "\n$1 is not a valid argument.\n"; exit 1;;
 esac;
 
 if [ -f "$REPO/tmp" ]; then
