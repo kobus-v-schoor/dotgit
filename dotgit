@@ -172,6 +172,30 @@ function safeguards
 		echo "Dotfiles folder not found. Aborting..."
 		exit 1
 	fi
+
+	OLDIFS=$IFS
+	IFS=$(echo -e '\n')
+
+	for i in $(grep -v "^#" "$REPO/filelist" | grep -v '^$'); do
+		if echo $i | grep -qv ":"; then
+			if grep "$i" "$REPO/cryptlist" | grep -qv ":"; then
+				echo "Duplicate filelist/cryptlist entry found ($i)."\
+					"Aborting..."
+				exit 1
+			fi
+		else
+			ownrs=($(echo $i | rev | sed 's/\:.*//' | sed 's/\,/\n/g' | rev))
+			filename=$(echo $i | sed 's/\:.*//')
+			for i in $ownrs; do
+				if grep "$filename" "$REPO/cryptlist" | grep ":" | grep -q "$i";
+				then echo "Duplicate filelist/cryptlist entry found"\
+					"($filename). Aborting..."
+					exit 1
+				fi
+			done
+		fi
+	done
+	IFS=$OLDIFS
 }
 
 function pstatus
@@ -390,13 +414,11 @@ function update
 	cleanup "$NORMFILES" "$CRYPTFILES"
 
 	cd $REPO
-	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
-		if ! yesno "The cryptlist has changed since the last commit. Would you"\
-			" like to encrypt the changes? [Y/n]: "; then
-			encrypt "$1"
-		fi
+	if ! git diff --exit-code "cryptlist" > /dev/null; then
+		yesno "The cryptlist has changed since the last commit. Would you like"\
+			"to encrypt the changes? [Y/n]: "
+		if [ $? == 1 ]; then encrypt; fi
 	fi
-
 }
 
 function hardUpdate
@@ -715,7 +737,7 @@ function generate
 			git push
 		fi
 	fi
-} 
+}
 
 function cleanup
 {
