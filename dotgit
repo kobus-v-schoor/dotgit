@@ -144,7 +144,78 @@ function pprompt
 	stty echo
 	echo ""
 	PASSWD=1
-	echo $ans > $REPO/tmp
+	touch "$REPO/tmp"
+	chmod 600 "$REPO/tmp"
+	echo "$ans" > "$REPO/tmp"
+}
+
+function passwd
+{
+	if [ ! -f "$REPO/passwd" ]; then
+		echo "The password you enter here will be hashed (SHA1) en then stored
+inside your repository to be used solely for verification. (This has
+no security implactions, it is simply used to ensure that you use the
+same password between runs"
+
+		echo -e "\nPasswords will not be shown\n"
+		stty -echo
+
+		echo -n "Please enter password to be used for encryption/decryption: "
+		read ans
+		echo ""
+		echo -n "Please verify password: "
+		read ans2
+		echo ""
+		stty echo
+
+		if [ "$ans" != "$ans2" ]; then
+			echo "Passwords do no match, aborting..."
+			stty echo
+			exit 1
+		fi
+
+		touch "$REPO/tmp"
+		chmod 600 "$REPO/tmp"
+		echo "$ans" > "$REPO/tmp"
+		echo "$ans" | sha1sum > "$REPO/passwd"
+	else
+		echo -e "\nPasswords will not be shown\n"
+		stty -echo
+
+		echo -n "Please enter current password: "
+		read ans
+		echo ""
+		hash=$(echo $ans | sha1sum)
+
+		if [ "$hash" != "$(cat "$REPO/passwd")" ]; then
+			echo "Incorrect password, aborting..."
+			stty echo
+			exit 1
+		fi
+
+		PASSWD=1
+		echo "$ans" > "$REPO/tmp"
+		decrypt
+
+		echo -n "Please enter new password to be used for"\
+			"encryption/decryption:"
+		read ans
+		echo ""
+		echo -n "Please verify password: "
+		read ans2
+		echo ""
+		stty echo
+
+		if [ "$ans" != "$ans2" ]; then
+			echo "Passwords do no match, aborting..."
+			stty echo
+			exit 1
+		fi
+
+		echo "$ans" | sha1sum > "$REPO/passwd"
+		echo "$ans" > "$REPO/tmp"
+		encrypt
+	fi
 }
 
 function encrypt
@@ -179,6 +250,12 @@ function decrypt
 			mkdir -p "$(dirname "$DMZ/$i")"
 		fi
 
+		if [ ! -f "common/$i"  ]; then
+			echo "--> File $i does not yet exist in the repo. Please run"\
+				"update/encrypt to populate repository"
+			continue
+		fi
+
 		if [ -f "$DMZ/$i" ]; then
 			rm "$DMZ/$i"
 		fi
@@ -192,11 +269,16 @@ function decrypt
 		fi
 	done
 
-	for i in $(echo $CRYPTFILES); do
+	for i in $(echo $CRYPTFILES | grep ":"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 		filename=$(echo $i | sed s/\:.*//);
 
+		if [ ! -f "${ownrs[$k]}/$filename"  ]; then
+			echo "--> File ${ownrs[$k]}/$filename does not yet exist in the"\
+				"repo.Please run update/encrypt to populate repository"
+			continue
+		fi
 
 		for k in `seq 0 $(expr ${#ownrs[@]} - 1)`; do
 
@@ -287,7 +369,7 @@ function symlink
 	owner=$3
 
 	if [ -z "$owner" ]; then
-		for i in $(echo $FILELIST | grep -v "\:"); do
+		for i in $(echo "$FILELIST" | grep -v "\:"); do
 			if [ ! -f "$CDFILES/common/$i" ]; then
 				pstatus $i "common"
 				cp -L --parents "$i" "$CDFILES/common"
@@ -296,7 +378,7 @@ function symlink
 		owner=$HOSTNAME
 	fi
 
-	for i in $(echo $FILELIST | grep "$owner"); do
+	for i in $(echo "$FILELIST" | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
@@ -473,14 +555,14 @@ function homelink
 	owner=$3
 
 	if [ -z "$owner" ]; then
-		for i in $(echo $FILELIST | grep -v "\:"); do
+		for i in $(echo "$FILELIST" | grep -v "\:"); do
 			if [ "$(dirname "$i")" != "." ]; then
 				mkdir -p "$(dirname "$HOME/$i")"
 			fi
 
 			if [ ! -f "$CDFILES/common/$i" ]; then
-				echo "-->Can't link $i (does not seem to be decrypted"\
-" yet)"
+				echo "-->Can't link $i (is either not yet decrypt or it has"\
+					"not been copied to the repository yet"
 				continue
 			fi
 
@@ -489,13 +571,14 @@ function homelink
 		owner=$HOSTNAME
 	fi
 
-	for i in $(echo $FILELIST | grep "$owner"); do
+	for i in $(echo "$FILELIST" | grep "$owner"); do
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 		filename=$(echo $i | sed s/\:.*//);
 
 		if [ ! -f "$CDFILES/${ownrs[0]}/$filename" ]; then
-			echo "-->Can't link $filename (does not seem to be decrypted yet)"
+			echo "-->Can't link $i (is either not yet decrypt or it has"\
+				"not been copied to the repository yet"
 			continue
 		fi
 
@@ -559,7 +642,7 @@ function cleanup
 				z="$i"
 			fi
 
-			if [ -z "$(echo $FILELIST | grep "$k" | grep "$z" )" ]; then
+			if [ -z "$(echo "$FILELIST" | grep "$k" | grep "$z" )" ]; then
 				pstatus "$i/$k" "$i" "Removing"
 				rm "$k"
 			fi;
@@ -625,22 +708,33 @@ function hardRestore
 
 function init
 {
-	if [ ! -d ".git" ]; then
-		echo "Initializing dotgit repo..."
-		mkdir -p dotfiles/common
-		mkdir -p dmz/common
-		git init
-		touch filelist
-		touch cryptlist
-		echo "dmz" >> .gitignore
-		echo "Initialized new dotgit repo in $PWD"
+	echo "Initializing dotgit repo..."
+	mkdir -p dotfiles/common
+	mkdir -p dmz/common
+	if [ ! -d "$REPO/dotgit" ]; then git init; fi
+	touch filelist
+	touch cryptlist
+	echo "dmz" >> .gitignore
+	echo "passwd" >> .gitignore
+
+	echo "Creating encryption hooks..."
+	create=0
+	if [ -f "$REPO/.git/hooks/pre-commit" ]; then
+		if ! grep "dotgit encrypt" "$REPO/.git/hooks/pre-commit"; then
+			create=1
+		fi
 	else
-		echo "Creating encryption hooks..."
+		create=1
+	fi
+
+	if [ $create -eq 1 ]; then
 		echo "dotgit encrypt" >> .git/hooks/pre-commit
 		chmod +x .git/hooks/pre-commit
 		echo "dotgit decrypt" >> .git/hooks/post-merge
 		chmod +x .git/hooks/post-merge
 	fi
+
+	echo "Initialized new dotgit repo in $PWD"
 }
 
 function pdiff
@@ -673,6 +767,7 @@ case "$1" in
 	"init")init;;
 	"encrypt")encrypt;;
 	"decrypt")decrypt;;
+	"passwd")passwd;;
 	"diff")pdiff;;
 	"help")phelp;;
 	*)echo -e "\n$1 is not a valid argument.\n"; phelp; exit 1;;
