@@ -14,8 +14,8 @@ PASSWD=""
 
 function cfilelist
 {
-	NORMFILES=$(grep -v '^#' "$REPO/filelist" | grep -v "^$" | sort -u)
-	CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$" | sort -u)
+	NORMFILES=$(grep -v '^#' "$REPO/filelist" | grep -v "^$" | awk '!a[$0]++')
+	CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$" | awk '!a[$0]++')
 	DOTFILES="$REPO/dotfiles"
 	DMZ="$REPO/dmz"
 }
@@ -140,9 +140,13 @@ OPTIONS:
 
 function safeguards
 {
-	if [ $1 == "init" ]; then
+	if [ $1 == "init" ] || \
+		[ $1 == "diff" ] || \
+		[ $1 == "help" ]; then
 		return
 	fi
+
+	echo "Running safeguards..."
 
 	if [ "$REPO" == "$HOME" ]; then
 		echo "You shouldn't run this in your home folder, make a seperate" \
@@ -327,7 +331,11 @@ function encrypt
 		mkdir -p $(dirname "$DOTFILES/$i")
 		if [ -f "$DOTFILES/$i" ]; then
 			sum=$(sha1sum "$i" | sed 's/\ .*//')
-			if [ "$sum" == "$(cat "$DOTFILES/$i.hash")" ]; then
+			compare=""
+			if [ -f "$DOTFILES/$i.hash" ]; then
+				compare=$(cat "$DOTFILES/$i.hash")
+			fi
+			if [ "$sum" == "$compare" ]; then
 				continue;
 			fi
 			rm "$DOTFILES/$i"
@@ -343,19 +351,19 @@ function encrypt
 function decrypt
 {
 	for i in $CRYPTFILES; do
-		if [[ ! $i =~ *:* ]]; then i=$(echo "$i:common"); fi
+		if echo $i | grep -qv ":"; then i=$(echo "$i:common"); fi
 
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 		filename=$(echo $i | sed s/\:.*//);
 
-		if [ ! -f "$DOTFILES/${ownrs[$k]}/$filename"  ]; then
-			echo "--> File ${ownrs[$k]}/$filename does not yet exist in the"\
-				"repo.Please run update/encrypt to populate repository"
-			continue
-		fi
-
 		for k in `seq 0 $(expr ${#ownrs[@]} - 1)`; do
+
+			if [ ! -f "$DOTFILES/${ownrs[$k]}/$filename"  ]; then
+				echo "--> File ${ownrs[$k]}/$filename does not yet exist in the"\
+					"repo. Please run update/encrypt to populate repository"
+				continue
+			fi
 
 			mkdir -p "$(dirname "$DMZ/${ownrs[$k]}/$filename")"
 
@@ -370,13 +378,17 @@ function decrypt
 					if [ -h "$temp" ]; then
 						temp=$(readlink "$temp")
 					fi
+					if [ ! -f "$temp" ]; then
+						temp=""
+					else
+						temp=$(cat "$temp.hash")
+					fi
 
-					if [ "$sum" != "$(cat "$temp.hash")" ]; then
+					if [ "$sum" != "$temp" ]; then
 						echo -e "Your local version of $filename differs from"\
 						"the version from the repository\n"
 
-						yesno "Do you want to overwrite the local version?"\
-						" [Y/n]: "
+						yesno "Do you want to overwrite the local version?"
 
 						if [ $? == 1 ]; then copy=1; fi
 					fi
@@ -420,13 +432,15 @@ function update
 	symlink "$CRYPTFILES" "$DMZ" "$1"
 
 	restore "$1"
-	echo "Commencing files cleanup..."
-	cleanup "$NORMFILES" "$CRYPTFILES"
+	echo "Commencing unencrypted files cleanup..."
+	cleanup "$DOTFILES" $NORMFILES $CRYPTFILES
+	echo "Commencing encrypted files cleanup..."
+	cleanup "$DMZ" $CRYPTFILES
 
 	cd $REPO
 	if ! git diff --exit-code "cryptlist" > /dev/null; then
 		yesno "The cryptlist has changed since the last commit. Would you like"\
-			"to encrypt the changes? [Y/n]: "
+			"to encrypt the changes?"
 		if [ $? == 1 ]; then encrypt; fi
 	fi
 }
@@ -441,7 +455,7 @@ function hardupdate
 	cd "$REPO"
 	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
 		if ! yesno "The cryptlist has changed since the last commit. Would you"\
-			" like to encrypt the changes? [Y/n]: "; then
+			"like to encrypt the changes?"; then
 			encrypt "$1"
 		fi
 	fi
@@ -494,6 +508,7 @@ function symlink
 	if [ -z "$owner" ]; then
 		for i in $(echo "$FILELIST" | grep -v "\:"); do
 			if [ ! -f "$CDFILES/common/$i" ]; then
+				mkdir -p "$CDFILES/common"
 				pstatus $i "common"
 				cp -L --parents "$i" "$CDFILES/common"
 				rm "$i"
@@ -625,7 +640,7 @@ function symlink
 
 function yesno
 {
-	echo -n $*
+	echo -n $* "[Y/n]: "
 	read ans
 
 	if [ "$ans" == "Y" ] || [ "$ans" == "y" ] || [ -z "$ans" ]; then
@@ -642,8 +657,8 @@ function lnconf
 	fi
 
 	if [ -f "$2" ] && [ ! -h "$2" ]; then
-		yesno "File $3 already exists in home directory. Do you want to "\
-			"overwrite it? [Y/n] "
+		yesno "File $3 already exists in home directory. Do you want to"\
+			"overwrite it?"
 
 		if [ "$?" == 1 ]; then
 			rm "$2"
@@ -680,7 +695,7 @@ function homelink
 			fi
 
 			if [ ! -f "$CDFILES/common/$i" ]; then
-				echo "-->Can't link $i (is either not yet decrypted or it has"\
+				echo "-->Can't link $i (its either not yet decrypted or it has"\
 					"not been copied to the repository yet)"
 				continue
 			fi
@@ -696,8 +711,8 @@ function homelink
 		filename=$(echo $i | sed s/\:.*//);
 
 		if [ ! -f "$CDFILES/${ownrs[0]}/$filename" ]; then
-			echo "-->Can't link $i (is either not yet decrypt or it has"\
-				"not been copied to the repository yet"
+			echo "-->Can't link $filename (its either not yet decrypted or it"\
+				"has not been copied to the repository yet)"
 			continue
 		fi
 
@@ -739,7 +754,7 @@ function generate
 	git commit -m "Changes: $(echo "$message" | rev | cut -c 2- | rev)"
 
 	if [ -n "$(git remote -v)" ]; then
-		yesno "Remote detected, do you want to push (sync) to it? [Y/n]: "
+		yesno "Remote detected, do you want to push (sync) to it?"
 		if [ "$?" == 1 ]; then
 			git push
 		fi
@@ -748,9 +763,14 @@ function generate
 
 function cleanup
 {
-	FILELIST="$1 $2"
+	CDFILES=$1
+	FILELIST=${@:2}
 
-	cd "$DOTFILES"
+	if [ -z "$(ls -A $CDFILES)" ]; then
+		return
+	fi
+
+	cd "$CDFILES"
 	for i in *; do
 		echo "Cleanup - entering $i..."
 		cd "$i"
@@ -759,23 +779,45 @@ function cleanup
 			if [ $k == "." ]; then
 				continue;
 			fi
-			k=$(echo $k | cut -c 3- | sed 's/\.hash//g');
+			k=$(echo $k | cut -c 3-);
 
 			z=""
 			if [ "$i" != "common" ]; then
 				z="$i"
 			fi
 
-			if [ -z "$(echo "$FILELIST" | grep "$k" | grep "$z" )" ]; then
-				pstatus "$i/$k" "$i" "Removing"
-				rm "$k"
-			fi;
+			if [[ $k =~ .hash$ ]] && [ "$z" != "common" ]; then
+				temp=$(echo $k | sed 's/\.hash//')
+				l=$(echo "$FILELIST" | grep "$temp" | grep "$z")
+
+				if [ -n "$l" ]; then
+					ownrs=($(echo $l| rev | sed s/\:.*// | sed s/\,/\ /g | rev))
+					ownrs=($(for p in ${ownrs[@]}; do echo $p; done | sort))
+					if [ "${ownrs[0]}" == "$z" ]; then
+						k=$temp
+					fi
+				fi
+			fi
+
+			if [ -n "$z" ]; then
+				if [ -z "$(echo "$FILELIST" | tr ' ' '\n' | grep "$k" | grep \
+					"[:,\,]$z\,\|[:,\,]$z\$" )" ]; then
+					pstatus "$i/$k" "$i" "Removing"
+					rm "$k"
+				fi;
+			else
+				if ! echo "$FILELIST" | tr ' ' '\n' | grep "$k" | grep -qv ":";
+				then
+					pstatus "$i/$k" "$i" "Removing"
+					rm "$k"
+				fi
+			fi
 		done;
-		cd ..
+		cd "$CDFILES"
 	done;
 
-	cd $REPO;
-	find $DOTFILES -empty -type d -delete
+	find "$CDFILES" -not -name "$(basename $CDFILES)" -and -empty -and -type d \
+	-delete
 }
 
 function cleanhome
