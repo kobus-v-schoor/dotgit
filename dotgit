@@ -876,15 +876,23 @@ function init
 
 function pdiff
 {
+	cd "$REPO"
 	git add --all
-	for i in $(git status --porcelain | grep dotfiles); do
-		case "$(echo $i | cut -c 1-1)" in
-			"D")echo "Deleted $(echo $i | cut -c 13-)";;
-			"M")echo "Modified $(echo $i | cut -c 13-)";;
-			"A")echo "Added $(echo $i | cut -c 13-)";;
-			"R")echo "Renamed $(echo $i | cut -c 4- | sed "s/dotfiles\///g")";;
-		esac
-	done
+	OLDIFS=$IFS
+	IFS=$(echo -en '\n')
+	message=$(git status --porcelain | grep "dotfiles" | grep -v '.hash')
+
+	message=$(echo $message | \
+		sed 's/dotfiles\///g' | \
+		sed 's/A/Added/g' | \
+		sed 's/R/Renamed/g' | \
+		sed 's/M/Modified/g' | \
+		sed 's/D/Deleted/g' | \
+		sed 's/C/Copied/g')
+
+	echo -e "\nPlease note that this will not show changes to encrypted files"\
+	"until you run 'dotgit encrypt'\n\n$message"
+
 	git reset -q
 }
 
