@@ -944,7 +944,7 @@ case "$1" in
 	"passwd")passwd;;
 	"diff")pdiff;;
 	"help")phelp;;
-	*)echo -e "\n$1 is not a valid argument.\n"; exit 1;;
+	*)echo -e "$1 is not a valid argument."; exit 1;;
 esac;
 
 ext 0
