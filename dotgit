@@ -187,10 +187,10 @@ function safeguards
 	fi
 
 	OLDIFS=$IFS
-	IFS=$(echo -e '\n')
+	IFS=$(echo -en '\n\b')
 
 	for i in $(grep -v "^#" "$REPO/filelist" | grep -v '^$'); do
-		if echo $i | grep -qv ":"; then
+		if echo "$i" | grep -qv ":"; then
 			if grep "$i" "$REPO/cryptlist" | grep -qv ":"; then
 				echo "Duplicate filelist/cryptlist entry found ($i)."\
 					"Aborting..."
@@ -248,9 +248,8 @@ function passwd
 {
 	if [ ! -f "$REPO/passwd" ]; then
 		echo "The password you enter here will be hashed (SHA1) en then stored
-inside your repository to be used solely for verification. (This has
-no security implactions, it is simply used to ensure that you use the
-same password between runs)"
+inside your repository to be used to ensure that you use the same password
+between runs"
 
 		echo -e "\nPasswords will not be shown\n"
 		stty -echo
@@ -914,6 +913,7 @@ function ext
 	if [ -f "$REPO/tmp" ]; then
 		rm "$REPO/tmp"
 	fi
+	stty sane
 
 	if [ -z "$1" ]; then
 		exit 1
