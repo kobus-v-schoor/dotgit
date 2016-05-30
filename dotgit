@@ -14,8 +14,8 @@ PASSWD=""
 
 function cfilelist
 {
-	NORMFILES=$(grep -v '^#' "$REPO/filelist" | grep -v "^$")
-	CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$")
+	NORMFILES=$(grep -v '^#' "$REPO/filelist" | grep -v "^$" | sort -u)
+	CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$" | sort -u)
 	DOTFILES="$REPO/dotfiles"
 	DMZ="$REPO/dmz"
 }
@@ -34,7 +34,6 @@ function phelp
   be ready to use with dotgit.
 
 Filelist syntax:
-  #--hard--#          --  Do not use symlinks, see below for more details
   .bashrc             --  Will be in "common" folder and will be restored to
                           home folder, regardless of hostname (unless category
                           is specified)
@@ -55,15 +54,16 @@ Filelist syntax:
   and push your changes and then run dotgit restore on all other hosts you use
   This ensures that the symlinking hierarchy stays up-to-date
 
+USE COPYING INSTEAD OF SYMLINKING:
   If you prefer not to use symlinks in your home dir (eg. if the repo will not
-  live on on the host or because of special filesystem setups) you have to
+  live on on the host or because of special filesystem setups) you have two
   options. If you only want to copy the dotfiles once you can use the "hard"
   versions of the various operations described below. If you want a long-term
-  solution simply add a line to your filelist only containing "#--hard--#"
-  without the qoutes. This will cause dotgit to simply invoke the "hard"
-  versions of the operation automatically when using their normal couterparts
-  (eg "dotgit update" will now be equivalent to "dotgit hard-update"). To see
-  what operations will be affected by this option see below.
+  solution simply add a file named "hard" to the root of your dotgit repo (file
+  can be empty). This will cause dotgit to simply invoke the "hard" versions of
+  the operation automatically when using their normal couterparts (eg "dotgit
+  restore" will now be equivalent to "dotgit hard-restore"). To see what
+  operations will be affected by this option see below.
 
 ENCRYPTION:
   AES encryption is supported by dotgit in both symlinking and "hard" mode. To
@@ -78,28 +78,33 @@ ENCRYPTION:
   put in the "dmz" folder of dotgit. Inside this folder they are decrypted and
   these files will be linked into your home dir. When you wan''t to commit your
   changes to the repository these files will have to encrypted first and then
-  copied back into the repository. Automatic encryption and decryption can be
-  done with git hooks, so when you commit the files will be automatically
-  encrypted and when you pull new changes into your repo they will automatically
-  be decrypted.
+  copied back into the repository. Automatic decryption can be done with git
+  hooks, so when you do a ''git pull'' the new files will be decrypted
+  automatically. New files will also be automatically encrypted when you run
+  ''dotgit generate''.
+
+  NOTE: When cloning a dotgit repo, you will first need to run ''dotgit init''
+  inside the repo to set up the git hooks as they cannot be stored inside the
+  repo when pushed to a remote.
 
 OPTIONS:
   If an argument is passed to the relevant functions only files pertaining to
-  that category or hostname will be taken into account
+  that category or hostname will be taken into account (if an argument is
+  supplied the "common" files will also be ignored)
 
   update (arg)        --  If new files are added to the filelist, copy them to
                           the repository and set up links in home folder
                           If any changes are made to the filelist you should run
                           dotgit with the update option to keep symlinks
-                          up-to-date
-                          #--hard--#: Will copy files into repository and
-                          leave the files in the home dir intact
+                          up-to-date.
+                          "Hard" option - Will copy files into repository and
+                          leave the files in the home dir intact.
 
-  restore (arg)       --  Set up links in home folder to repository
-                          #--hard--#: Same as hard-restore
+  restore (arg)       --  Set up links in home folder to repository.
+                          "Hard" option - Same as hard-restore.
 
-  generate            --  Generate a commit message, commit changes and push to
-                          remote
+  generate            --  Encrypt necessary files, generate a commit message,
+                          commit changes and push to remote.
 
   hard-restore (arg)  --  Make a copy from the dotgit repository into home dir
                           NOTE: This will overwrite existing files without
@@ -111,12 +116,9 @@ OPTIONS:
   encrypt             --  Encrypt all files currently in the dmz folder and put
                           them in the dotfiles folder. This is neccesary when
                           changes were made to files that are stored encrypted
-                          in the repo. When running the "generate" operation
-                          the relevant files will be automatically encrypted. If
-                          you choose to make commits yourself, you need to run
-                          encrypt before committing otherwise the changes you
-                          made to the files that should be encrypted will not be
-                          taken into account for the commit
+                          in the repo. This needs to be run if you are making
+                          commits manually but not if you use the "generate"
+                          operation. See "generate" for details.
 
   decrypt             --  Decrypt all encrypted files in the repository. If the
                           local "dmz" version differs from the decrypted version
@@ -145,22 +147,26 @@ function safeguards
 	if [ "$REPO" == "$HOME" ]; then
 		echo "You shouldn't run this in your home folder, make a seperate" \
 		"folder for your dotfiles"
-		exit 1
+		ext
 	fi
 
 	if [ ! -f "$REPO/filelist" ]; then
 		echo "Filelist not found. Aborting..."
-		exit 1
+		ext
 	fi
 
 	if [ ! -f "$REPO/cryptlist" ]; then
-		echo "Cryptlist not found. Aborting..."
-		exit 1
+		echo "Cryptlist not found. If this is a valid dotgit repo it is"\
+			"possible that this repo just has not been initialized again to"\
+			"support the new encryption. Please run 'dotgit init', this should"\
+			"resolve the error. Please also read the help message for further"\
+			"instructions regarding encryption. Aborting..."
+		ext
 	fi
 
 	if [ ! -d "$REPO/.git" ]; then
 		echo "This does not seem to be a git repository. Aborting..."
-		exit 1
+		ext
 	fi
 
 	if grep -q "//" "$REPO/filelist"; then
@@ -170,7 +176,14 @@ function safeguards
 
 	if [ ! -d "$REPO/dotfiles" ]; then
 		echo "Dotfiles folder not found. Aborting..."
-		exit 1
+		ext
+	fi
+
+	if grep "#--hard--" "$REPO/filelist" > /dev/null; then
+		echo "Converting 'hard' option to new syntax. Please read help message"\
+			"for further details"
+		grep -v "#--hard--#" "$REPO/filelist" > "$REPO/tmp"
+		mv "$REPO/tmp" "$REPO/filelist"
 	fi
 
 	OLDIFS=$IFS
@@ -181,7 +194,7 @@ function safeguards
 			if grep "$i" "$REPO/cryptlist" | grep -qv ":"; then
 				echo "Duplicate filelist/cryptlist entry found ($i)."\
 					"Aborting..."
-				exit 1
+				ext
 			fi
 		else
 			ownrs=($(echo $i | rev | sed 's/\:.*//' | sed 's/\,/\n/g' | rev))
@@ -190,7 +203,7 @@ function safeguards
 				if grep "$filename" "$REPO/cryptlist" | grep ":" | grep -q "$i";
 				then echo "Duplicate filelist/cryptlist entry found"\
 					"($filename). Aborting..."
-					exit 1
+					ext
 				fi
 			done
 		fi
@@ -213,7 +226,7 @@ function pprompt
 	if [ ! -f "$REPO/passwd" ]; then
 		echo "Password hash not found - please create one with dotgit passwd."\
 			"Aborting..."
-		exit 1
+		ext
 	fi
 
 	echo -n "Please enter a password for $1 (nothing will be shown): "
@@ -223,7 +236,7 @@ function pprompt
 	echo ""
 	if [ "$(echo $ans | sha1sum)" != "$(cat "$REPO/passwd")" ]; then
 		echo "Incorrect password. Aborting..."
-		exit 1
+		ext
 	fi
 	PASSWD=1
 	touch "$REPO/tmp"
@@ -253,7 +266,7 @@ same password between runs)"
 		if [ "$ans" != "$ans2" ]; then
 			echo "Passwords do no match, aborting..."
 			stty echo
-			exit 1
+			ext
 		fi
 
 		touch "$REPO/tmp"
@@ -272,7 +285,7 @@ same password between runs)"
 		if [ "$hash" != "$(cat "$REPO/passwd")" ]; then
 			echo "Incorrect password, aborting..."
 			stty echo
-			exit 1
+			ext
 		fi
 
 		PASSWD=1
@@ -291,7 +304,7 @@ same password between runs)"
 		if [ "$ans" != "$ans2" ]; then
 			echo "Passwords do no match, aborting..."
 			stty echo
-			exit 1
+			ext
 		fi
 
 		echo "$ans" | sha1sum > "$REPO/passwd"
@@ -399,6 +412,8 @@ function decrypt
 
 function update
 {
+	if [ -f "$REPO/hard" ]; then hardupdate; return; fi
+
 	echo "Commencing normal files update..."
 	symlink "$NORMFILES" "$DOTFILES" "$1"
 
@@ -417,7 +432,7 @@ function update
 	fi
 }
 
-function hardUpdate
+function hardupdate
 {
 	echo "Commencing hard update of normal files..."
 	copytorepo "$NORMFILES" "$DOTFILES" "$1"
@@ -473,8 +488,6 @@ function symlink
 {
 	FILELIST=$1
 	CDFILES=$2
-	if grep "#--hard--#" "$REPO/filelist" >> /dev/null ; then
-		hardUpdate; exit; fi
 
 	cd $HOME;
 	owner=$3
@@ -644,6 +657,8 @@ function lnconf
 
 function restore
 {
+	if [ -f "$REPO/hard" ]; then hardrestore; return; fi
+
 	cleanhome
 	echo "Commencing unencrypted repo linking..."
 	homelink "$NORMFILES" "$DOTFILES" "$1"
@@ -655,9 +670,6 @@ function homelink
 {
 	FILELIST=$1
 	CDFILES=$2
-	if grep "#--hard--#" "$REPO/filelist" > /dev/null; then
-		hardRestore; exit;
-	fi
 
 	cd "$CDFILES"
 	owner=$3
@@ -669,8 +681,8 @@ function homelink
 			fi
 
 			if [ ! -f "$CDFILES/common/$i" ]; then
-				echo "-->Can't link $i (is either not yet decrypt or it has"\
-					"not been copied to the repository yet"
+				echo "-->Can't link $i (is either not yet decrypted or it has"\
+					"not been copied to the repository yet)"
 				continue
 			fi
 
@@ -775,7 +787,7 @@ function cleanhome
 	done
 }
 
-function hardRestore
+function hardrestore
 {
 	echo "Commencing hard restore of normal files..."
 	copytohome "$NORMFILES" "$DOTFILES"
@@ -885,7 +897,7 @@ function pdiff
 		sed 's/D/Deleted/g' | \
 		sed 's/C/Copied/g')
 
-	echo -e "\nPlease note that this will not show changes to encrypted files"\
+	echo -e "Please note that this will not show changes to encrypted files"\
 	"until you run 'dotgit encrypt'\n"
 
 	if [ -z "$message" ]; then
@@ -897,6 +909,19 @@ function pdiff
 	git reset -q
 }
 
+function ext
+{
+	if [ -f "$REPO/tmp" ]; then
+		rm "$REPO/tmp"
+	fi
+
+	if [ -z "$1" ]; then
+		exit 1
+	else
+		exit $1
+	fi
+}
+
 if [[ $# -eq 0 ]]; then
 	phelp;
 	exit;
@@ -905,11 +930,13 @@ fi;
 safeguards $1
 if [[ $1 != "init" ]]; then cfilelist; fi
 
+trap ext SIGINT
+
 case "$1" in
 	"update")update "$2";;
 	"restore")restore "$2";;
 	"generate")generate;;
-	"hard-restore")hardRestore "$2";;
+	"hard-restore")hardrestore "$2";;
 	"init")init;;
 	"encrypt")encrypt;;
 	"decrypt")decrypt;;
@@ -920,6 +947,4 @@ case "$1" in
 	*)echo -e "\n$1 is not a valid argument.\n"; exit 1;;
 esac;
 
-if [ -f "$REPO/tmp" ]; then
-	rm "$REPO/tmp"
-fi
+ext 0
