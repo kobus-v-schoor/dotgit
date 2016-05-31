@@ -451,9 +451,13 @@ function hardupdate
 	copytorepo "$NORMFILES" "$DOTFILES" "$1"
 	echo "Commencing hard update of encrypted files..."
 	copytorepo "$CRYPTFILES" "$DMZ" "$1"
+	echo "Commencing unencrypted files cleanup..."
+	cleanup "$DOTFILES" $NORMFILES $CRYPTFILES
+	echo "Commencing encrypted files cleanup..."
+	cleanup "$DMZ" $CRYPTFILES
 
 	cd "$REPO"
-	if git diff --exit-code "$REPO/cryptlist" > /dev/null; then
+	if ! git diff --exit-code "$REPO/cryptlist" > /dev/null; then
 		if ! yesno "The cryptlist has changed since the last commit. Would you"\
 			"like to encrypt the changes?"; then
 			encrypt "$1"
@@ -471,6 +475,7 @@ function copytorepo
 
 	if [ -z "$owner" ]; then
 		for i in $(echo "$FILELIST" | grep -v "\:"); do
+			mkdir -p "$CDFILES/common"
 			pstatus $i "common" "Copying"
 			if [ ! "$HOME/$i" -ef "$CDFILES/common/$i" ]; then
 				cp -L --parents "$i" "$CDFILES/common"
