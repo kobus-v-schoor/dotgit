@@ -385,8 +385,9 @@ function decrypt
 					fi
 
 					if [ "$sum" != "$temp" ]; then
-						echo -e "Your local version of $filename differs from"\
-						"the version from the repository\n"
+						echo -e "Your local version of $filename"\
+							"(${ownrs[$k]}) differs from the version in the"\
+							"repository\n"
 
 						yesno "Do you want to overwrite the local version?"
 
@@ -398,10 +399,6 @@ function decrypt
 			fi
 
 			if [ $copy == 1 ]; then
-				if [ -f "$DMZ/${ownrs[$k]}/$filename" ]; then
-					rm "$DMZ/${ownrs[$k]}/$filename"
-				fi
-
 				if [ -h "$DOTFILES/${ownrs[$k]}/$filename" ]; then
 					cd "$DOTFILES"
 					cp -P --parents "${ownrs[$k]}/$filename" "$DMZ"
@@ -415,6 +412,11 @@ function decrypt
 					--output "$REPO/mid" "$DOTFILES/${ownrs[$k]}/$filename"
 				chmod $(stat -c '%a' "$DOTFILES/${ownrs[$k]}/$filename") \
 					"$REPO/mid"
+
+				if [ -f "$DMZ/${ownrs[$k]}/$filename" ]; then
+					rm "$DMZ/${ownrs[$k]}/$filename"
+				fi
+
 				mv "$REPO/mid" "$DMZ/${ownrs[$k]}/$filename"
 			fi
 		done
