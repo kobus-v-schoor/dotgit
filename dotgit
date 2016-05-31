@@ -547,7 +547,7 @@ function symlink
 		for k in $(seq 0 `expr ${#ownrs[@]} - 1`); do
 
 			if [ ! -d "$CDFILES/${ownrs[$k]}" ]; then
-				mkdir "$CDFILES/${ownrs[$k]}"; fi
+				mkdir -p "$CDFILES/${ownrs[$k]}"; fi
 
 			if [ ! -f "$CDFILES/${ownrs[$k]}/$filename" ]; then
 				if [ $k == "0" ]; then
@@ -899,19 +899,28 @@ function copytohome
 function init
 {
 	echo "Initializing dotgit repo..."
-	mkdir -p dotfiles/common
-	mkdir -p dmz/common
-	if [ ! -d "$REPO/dotgit" ]; then git init; fi
+	if [ ! -d "$REPO/.git" ]; then git init; fi
 	touch filelist
 	touch cryptlist
-	echo "dmz" >> .gitignore
-	echo "tmp" >> .gitignore
-	echo "mid" >> .gitignore
 
-	echo "Creating encryption hooks..."
+	ignore=0
+	if [ -f "$REPO/.gitignore" ]; then
+		if ! grep -q "dmz" "$REPO/.gitignore"; then
+			ignore=1
+		fi
+	else
+		ignore=1
+	fi
+
+	if [ $ignore -eq 1 ]; then
+		echo "dmz" >> .gitignore
+		echo "tmp" >> .gitignore
+		echo "mid" >> .gitignore
+	fi
+
 	create=0
 	if [ -f "$REPO/.git/hooks/post-merge" ]; then
-		if ! grep "dotgit decrypt" "$REPO/.git/hooks/post-merge"; then
+		if ! grep -q "dotgit decrypt" "$REPO/.git/hooks/post-merge"; then
 			create=1
 		fi
 	else
@@ -919,12 +928,13 @@ function init
 	fi
 
 	if [ $create -eq 1 ]; then
+		echo "Creating encryption hooks..."
 		echo "exec < /dev/tty" >> .git/hooks/post-merge
 		echo "dotgit decrypt" >> .git/hooks/post-merge
 		chmod +x .git/hooks/post-merge
 	fi
 
-	echo "Initialized new dotgit repo in $PWD"
+	echo "Initialized dotgit repo in $PWD"
 }
 
 function pdiff
@@ -943,13 +953,30 @@ function pdiff
 		sed 's/D/Deleted/g' | \
 		sed 's/C/Copied/g')
 
-	echo -e "Please note that this will not show changes to encrypted files"\
-	"until you run 'dotgit encrypt'\n"
-
 	if [ -z "$message" ]; then
-		echo "No changes to repo..."
+		echo "No changes to dotfiles folder..."
 	else
 		echo "$message"
+	fi
+	IFS=$OLDIFS
+
+	message=""
+	for i in $(find "$DMZ" -not -type l -and -not -type d); do
+		i=$(echo $i | cut -c `expr ${#DMZ} + 2`-)
+		if [ -f "$DOTFILES/$i.hash" ]; then
+			sum=$(sha1sum "$DMZ/$i" | sed 's/\ .*//')
+			comp=$(cat "$DOTFILES/$i.hash")
+			if [ $comp != $sum ]; then
+				message=$(echo -e "$message" "\nModified $i")
+			fi
+		else
+			message=$(echo -e "$message" "\nAdded $i")
+		fi
+	done
+
+	if [ -n "$message" ]; then
+		echo -e "\nUnencrypted changes (does not show removed files):"\
+			"$message\n"
 	fi
 
 	git reset -q
