@@ -953,7 +953,8 @@ function pdiff
 		sed 's/R/Renamed/g' | \
 		sed 's/M/Modified/g' | \
 		sed 's/D/Deleted/g' | \
-		sed 's/C/Copied/g')
+		sed 's/C/Copied/g' | \
+		sed 's/T/Typechange/g')
 
 	if [ -z "$message" ]; then
 		echo "No changes to dotfiles folder..."
