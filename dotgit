@@ -751,7 +751,8 @@ function generate
 		sed 's/R/renamed/g' | \
 		sed 's/M/modified/g' | \
 		sed 's/D/deleted/g' | \
-		sed 's/C/copied/g')
+		sed 's/C/copied/g' | \
+		sed 's/T/typechanged/g')
 
 	if [ -z "$message" ]; then
 		echo "No changes to repository..."
