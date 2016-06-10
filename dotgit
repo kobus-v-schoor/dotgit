@@ -794,12 +794,13 @@ function cleanup
 				z="$i"
 			fi
 
-			if [[ $k =~ .hash$ ]] && [ "$z" != "common" ]; then
+			if [[ $k =~ .hash$ ]]; then
 				temp=$(echo $k | sed 's/\.hash//')
-				l=$(echo "$FILELIST" | grep "$temp" | grep "$z")
+				l=$(echo "$FILELIST" | tr ' ' '\n' | grep "$temp" | grep "$z")
 
 				if [ -n "$l" ]; then
-					ownrs=($(echo $l| rev | sed s/\:.*// | sed s/\,/\ /g | rev))
+					ownrs=($(echo $l| rev | sed 's/\:.*//' | sed 's/\,/\ /g' | \
+						rev))
 					ownrs=($(for p in ${ownrs[@]}; do echo $p; done | sort))
 					if [ "${ownrs[0]}" == "$z" ]; then
 						k=$temp
