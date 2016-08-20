@@ -22,7 +22,18 @@ function cfilelist
 
 function phelp
 {
-	echo 'Usage: dotgit [option] (optional args)
+	echo 'SYNOPSIS:
+
+  Dotgit is an easy-to-use and versatile dotfiles manager. It allows for a wide
+  range of setups with features like encryption and especially support for
+  multiple hosts. You can link dotfiles of two hosts together or keep them
+  separated, all with an intuitive filelist. Dotgit does all the dirty work
+  involving git, allowing you to use dotgit even though you have no idea how git
+  works. For those of you who are seasoned git veterans, dotgit won''t impair
+  your power. Dotgit works with a single repo with no extra frills and a simple
+  file hierarchy, allowing you to wield your git powers without limits.
+
+INITIAL SETUP:
 
   To make a new dotgit repository first create your online repository, and then
   clone it onto your target host (git clone {repo_url} {repo_dest}). Go into
@@ -54,7 +65,7 @@ Filelist syntax:
   and push your changes and then run dotgit restore on all other hosts you use
   This ensures that the symlinking hierarchy stays up-to-date
 
-USE COPYING INSTEAD OF SYMLINKING:
+USING COPYING INSTEAD OF SYMLINKING:
   If you prefer not to use symlinks in your home dir (eg. if the repo will not
   live on on the host or because of special filesystem setups) you have two
   options. If you only want to copy the dotfiles once you can use the "hard"
@@ -66,28 +77,31 @@ USE COPYING INSTEAD OF SYMLINKING:
   operations will be affected by this option see below.
 
 ENCRYPTION:
-  AES encryption is supported by dotgit in both symlinking and "hard" mode. To
-  set up encryption just put the relevant filenames in the "cryptlist" file in
-  the root of the dotgit repo. The "cryptlist" file uses exactly the same syntax
-  as the normal filelist.
+  CAST5 (PGP default symmetric encryption algorithm) encryption is supported by
+  dotgit in both symlinking and "hard" mode. To set up encryption just put the
+  relevant filenames in the "cryptlist" file in the root of the dotgit repo. The
+  "cryptlist" file uses exactly the same syntax as the normal filelist.
 
-  Unlike with the the unencrypted files encrypted files can''t be updated to the
-  repository automatically. They first need to be encrypted before they can be
-  commited and pushed to a remote. Because of this when linking or copying the
-  dotfiles to your home dir the encrypted files will first be decrypted and then
-  put in the "dmz" folder of dotgit. Inside this folder they are decrypted and
-  these files will be linked into your home dir. When you wan''t to commit your
-  changes to the repository these files will have to encrypted first and then
-  copied back into the repository. Automatic decryption can be done with git
-  hooks, so when you do a ''git pull'' the new files will be decrypted
-  automatically. New files will also be automatically encrypted when you run
-  ''dotgit generate''.
+  Unlike with the unencrypted files encrypted files can''t be updated in the
+  repository automatically like the normal symlinks. They first need to be
+  encrypted before they can be commited and pushed to a remote. Because of this
+  when linking or copying the dotfiles to your home dir the encrypted files will
+  first be decrypted and then put in the "dmz" folder of dotgit. Inside this
+  folder they are decrypted and these files will be linked into your home dir.
+  When you wan''t to commit your changes to the repository these files will have
+  to be encrypted first and then copied back into the repository. Automatic
+  decryption can be done with git hooks, so when you do a ''git pull'' the new
+  files will be decrypted automatically. New files will also be automatically
+  encrypted when you run ''dotgit generate''.
 
   NOTE: When cloning a dotgit repo, you will first need to run ''dotgit init''
   inside the repo to set up the git hooks as they cannot be stored inside the
   repo when pushed to a remote.
 
 OPTIONS:
+
+  Usage: dotgit [option] (optional args)
+
   If an argument is passed to the relevant functions only files pertaining to
   that category or hostname will be taken into account (if an argument is
   supplied the "common" files will also be ignored)
@@ -96,11 +110,15 @@ OPTIONS:
                           the repository and set up links in home folder
                           If any changes are made to the filelist you should run
                           dotgit with the update option to keep symlinks
-                          up-to-date.
+                          up-to-date. DO NOT USE THIS IF YOU''RE JUST GOING TO
+                          RESTORE YOUR FILES. See the "restore" option made for
+                          this purpose.
                           "Hard" option - Will copy files into repository and
                           leave the files in the home dir intact.
 
-  restore (arg)       --  Set up links in home folder to repository.
+  restore (arg)       --  Set up links in home folder to repository. You will be
+                          prompted before overwriting normal files, but symlinks
+                          will be automatically overwritten
                           "Hard" option - Same as hard-restore.
 
   generate            --  Encrypt necessary files, generate a commit message,
@@ -135,7 +153,7 @@ OPTIONS:
   diff                --  Show what files changed from previous commit in dotgit
                           repository
 
-  help                --  Show this message'
+  help                --  Show this message' | less
 }
 
 function safeguards
@@ -183,35 +201,41 @@ function safeguards
 		ext
 	fi
 
-	if grep "#--hard--" "$REPO/filelist" > /dev/null; then
-		echo "Converting 'hard' option to new syntax. Please read help message"\
-			"for further details"
-		grep -v "#--hard--#" "$REPO/filelist" > "$REPO/tmp"
-		mv "$REPO/tmp" "$REPO/filelist"
+	if grep "\-\-hard\-\-" "$REPO/filelist" > /dev/null; then
+		echo "Using the --hard-- option in your filelist is now deprecated."\
+			"Please read the help under the \"Use copying instead of"\
+			"symlinking\" for details on new method."
+		ext
 	fi
 
 	OLDIFS=$IFS
 	IFS=$(echo -en '\n\b')
 
-	for i in $(grep -v "^#" "$REPO/filelist" | grep -v '^$'); do
-		if echo "$i" | grep -qv ":"; then
-			if grep "$i" "$REPO/cryptlist" | grep -qv ":"; then
+	list="filelist"
+	other="cryptlist";
+
+	for i in $(grep -v "^#" "$REPO/$list" | grep -v '^$'); do
+		if [[ $i =~ ^[^:]*$ ]]; then
+			if grep "^$i$" "$REPO/$other" | grep -qv ":"; then
 				echo "Duplicate filelist/cryptlist entry found ($i)."\
 					"Aborting..."
 				ext
 			fi
 		else
 			ownrs=($(echo $i | rev | sed 's/\:.*//' | sed 's/\,/\n/g' | rev))
-			filename=$(echo $i | sed 's/\:.*//')
-			for i in $ownrs; do
-				if grep "$filename" "$REPO/cryptlist" | grep ":" | grep -q "$i";
+			filename=$(echo $i | sed 's/:.*//')
+			for k in $ownrs; do
+				line=$(grep "$filename:.*$k" "$REPO/$other")
+				stat=$?
+				if [ $? -eq 0 ]
 				then echo "Duplicate filelist/cryptlist entry found"\
-					"($filename). Aborting..."
+					"($i, $line). Aborting..."
 					ext
 				fi
 			done
 		fi
 	done
+
 	IFS=$OLDIFS
 }
 
@@ -238,22 +262,29 @@ function pprompt
 	read ans
 	stty echo
 	echo ""
-	if [ "$(echo $ans | sha1sum)" != "$(cat "$REPO/passwd")" ]; then
+
+	pass=$ans
+	for count in  `seq 1 1500`; do
+		ans=$(echo $ans | sha256sum)
+	done
+
+	if [ "$ans" != "$(cat "$REPO/passwd")" ]; then
 		echo "Incorrect password. Aborting..."
 		ext
 	fi
+
 	PASSWD=1
 	touch "$REPO/tmp"
 	chmod 600 "$REPO/tmp"
-	echo "$ans" > "$REPO/tmp"
+	echo "$pass" > "$REPO/tmp"
 }
 
 function passwd
 {
 	if [ ! -f "$REPO/passwd" ]; then
-		echo "The password you enter here will be hashed (SHA1) en then stored
-inside your repository to be used to ensure that you use the same password
-between runs"
+		echo "The password you enter here will be hashed (SHA256 1500 times to"\
+			"prevent bruteforcing)  en then stored inside your repository to" \
+			"to ensure that you use the same password between runs" \
 
 		echo -e "\nPasswords will not be shown\n"
 		stty -echo
@@ -275,7 +306,12 @@ between runs"
 		touch "$REPO/tmp"
 		chmod 600 "$REPO/tmp"
 		echo "$ans" > "$REPO/tmp"
-		echo "$ans" | sha1sum > "$REPO/passwd"
+
+		for count in `seq 1 1500`; do
+			ans=$(echo $ans | sha256sum)
+		done
+
+		echo "$ans" > "$REPO/passwd"
 	else
 		echo -e "\nPasswords will not be shown\n"
 		stty -echo
@@ -283,7 +319,11 @@ between runs"
 		echo -n "Please enter current password: "
 		read ans
 		echo ""
-		hash=$(echo $ans | sha1sum)
+		for i in  `seq 1 1500`; do
+			ans=$(echo $ans | sha256sum)
+		done
+
+		hash=$ans
 
 		if [ "$hash" != "$(cat "$REPO/passwd")" ]; then
 			echo "Incorrect password, aborting..."
@@ -310,7 +350,11 @@ between runs"
 			ext
 		fi
 
-		echo "$ans" | sha1sum > "$REPO/passwd"
+		for i in  `seq 1 1500`; do
+			ans=$(echo $ans | sha256sum)
+		done
+
+		echo "$ans" > "$REPO/passwd"
 		echo "$ans" > "$REPO/tmp"
 		encrypt
 	fi
@@ -326,11 +370,10 @@ function encrypt
 		cp -P --parents "$i" "$DOTFILES"
 	done
 
-
 	for i in $(find -not -type d -and -not -type l); do
 		mkdir -p $(dirname "$DOTFILES/$i")
 		if [ -f "$DOTFILES/$i" ]; then
-			sum=$(sha1sum "$i" | sed 's/\ .*//')
+			sum=$(sha256sum "$i" | sed 's/\ .*//')
 			compare=""
 			if [ -f "$DOTFILES/$i.hash" ]; then
 				compare=$(cat "$DOTFILES/$i.hash")
@@ -344,7 +387,7 @@ function encrypt
 		echo "-->Encrypting $(echo $i | cut -c 3-)"
 		gpg -c --batch --passphrase-file "$REPO/tmp" -o "$DOTFILES/$i" "$i"
 		chmod $(stat -c '%a' "$i") "$DOTFILES/$i"
-		sha1sum "$i" | sed 's/\ .*//' > "$DOTFILES/$i.hash"
+		sha256sum "$i" | sed 's/\ .*//' > "$DOTFILES/$i.hash"
 	done
 }
 
@@ -372,7 +415,7 @@ function decrypt
 				if [ -h "$DMZ/${ownrs[$k]}/$filename" ]; then
 					copy=1
 				else
-					sum=$(sha1sum "$DMZ/${ownrs[$k]}/$filename" | \
+					sum=$(sha256sum "$DMZ/${ownrs[$k]}/$filename" | \
 						sed 's/\ .*//')
 					temp="$DOTFILES/${ownrs[$k]}/$filename"
 					if [ -h "$temp" ]; then
@@ -938,6 +981,9 @@ function init
 		chmod +x .git/hooks/post-merge
 	fi
 
+	mkdir -p $REPO/dotfiles
+	mkdir -p $REPO/dmz
+
 	echo "Initialized dotgit repo in $PWD"
 }
 
@@ -969,7 +1015,7 @@ function pdiff
 	for i in $(find "$DMZ" -not -type l -and -not -type d); do
 		i=$(echo $i | cut -c `expr ${#DMZ} + 2`-)
 		if [ -f "$DOTFILES/$i.hash" ]; then
-			sum=$(sha1sum "$DMZ/$i" | sed 's/\ .*//')
+			sum=$(sha256sum "$DMZ/$i" | sed 's/\ .*//')
 			comp=$(cat "$DOTFILES/$i.hash")
 			if [ $comp != $sum ]; then
 				message=$(echo -e "$message" "\nModified $i")
