@@ -839,7 +839,7 @@ function cleanup
 
 			if [[ $k =~ .hash$ ]]; then
 				temp=$(echo $k | sed 's/\.hash//')
-				l=$(echo "$FILELIST" | tr ' ' '\n' | grep "$temp" | grep "$z")
+				l=$(echo "$FILELIST" | grep "$temp" | grep "$z")
 
 				if [ -n "$l" ]; then
 					ownrs=($(echo $l| rev | sed 's/\:.*//' | sed 's/\,/\ /g' | \
@@ -852,13 +852,13 @@ function cleanup
 			fi
 
 			if [ -n "$z" ]; then
-				if [ -z "$(echo "$FILELIST" | tr ' ' '\n' | grep "$k" | grep \
+				if [ -z "$(echo "$FILELIST" | grep "$k" | grep \
 					"[:,\,]$z\,\|[:,\,]$z\$" )" ]; then
 					pstatus "$i/$k" "$i" "Removing"
 					rm "$k"
 				fi;
 			else
-				if ! echo "$FILELIST" | tr ' ' '\n' | grep "$k" | grep -qv ":";
+				if ! echo "$FILELIST" | grep "^$k$" | grep -qv ":";
 				then
 					pstatus "$i/$k" "$i" "Removing"
 					rm "$k"
@@ -1035,6 +1035,7 @@ function pdiff
 
 function ext
 {
+	IFS=$PIFS
 	if [ -f "$REPO/tmp" ]; then
 		rm "$REPO/tmp"
 	fi
@@ -1056,6 +1057,9 @@ safeguards $1
 if [[ $1 != "init" ]]; then cfilelist; fi
 
 trap ext SIGINT
+
+PIFS=$IFS
+IFS=$(echo -ne '\b\n')
 
 case "$1" in
 	"update")update "$2";;
