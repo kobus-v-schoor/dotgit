@@ -8,9 +8,65 @@
 REPO="$PWD"
 NORMFILES=""
 CRYPTFILES=""
+DIRFILES=""
+CDIRFILES=""
 DOTFILES=""
 DMZ=""
 PASSWD=""
+
+function addnormfiles
+{
+	dir=$1
+	loc=$2
+	suf=$3
+
+	if [ ! -d "$loc/$dir" ]; then return; fi
+
+	if [ "$suf" != "$dir" ]; then
+		suf=$(echo -n ":$suf")
+	else
+		suf=""
+	fi
+
+	for k in $(find -L "$loc/$dir" -not -type d | \
+		cut -c `expr ${#loc} + 2`-); do
+
+		if [ -z "$NORMFILES" ]; then
+			t=""
+		else
+			t="\n"
+		fi
+
+		NORMFILES=$(echo -ne "$NORMFILES$t" && echo -n "$k$suf")
+	done;
+}
+
+function addcryptfiles
+{
+	dir=$1
+	loc=$2
+	suf=$3
+
+	if [ ! -d "$loc/$dir" ]; then return; fi
+
+	if [ "$suf" != "$dir" ]; then
+		suf=$(echo -n ":$suf")
+	else
+		suf=""
+	fi
+
+	for k in $(find -L "$loc/$dir" -not -type d -and -not -name '*.hash'| \
+		cut -c `expr ${#loc} + 2`-); do
+
+		if [ -z "$CRYPTFILES" ]; then
+			t=""
+		else
+			t="\n"
+		fi
+
+		CRYPTFILES=$(echo -ne "$CRYPTFILES$t" && echo -n "$k$suf")
+	done;
+}
 
 function cfilelist
 {
@@ -23,33 +79,91 @@ function cfilelist
 	CDIRFILES=$(grep -v '^#' "$REPO/cryptdirlist" | grep -v "^$" \
 		| awk '!a[$0]++')
 
-	for i in $DIRFILES; do
-		for k in $(find -L "$HOME/$i" -not -type d | \
-			cut -c `expr ${#HOME} + 2`-); do
+	loc=1
 
-			if [ -z "$NORMFILES" ]; then
-				t=""
+	case "$1" in
+		"restore")loc=0;;
+		"generate")loc=0;;
+		"hard-restore")loc=0;;
+		"decrypt")loc=0;;
+		"passwd")loc=0;;
+	esac;
+
+	if [ $loc == 1 ]; then
+		for i in $DIRFILES; do
+			dir=$(echo $i | sed 's/:.*//')
+			suf=$(echo $i | rev | sed 's/:.*//' | rev)
+			addnormfiles "$dir" "$HOME" "$suf"
+		done
+
+		for i in $CDIRFILES; do
+			dir=$(echo $i | sed 's/:.*//')
+			suf=$(echo $i | rev | sed 's/:.*//' | rev)
+			addcryptfiles "$dir" "$HOME" "$suf"
+		done
+	else
+		for i in $DIRFILES; do
+			dir=$(echo $i | sed 's/:.*//')
+			suf=$(echo $i | rev | sed 's/:.*//' | rev)
+
+			if [[ $i =~ : ]]; then
+				if [ -z "$2" ]; then
+					addnormfiles "$i" "$DOTFILES/$HOSTNAME" "$suf"
+				else
+					addnormfiles "$i" "$DOTFILES/$2" "$suf"
+				fi
 			else
-				t="\n"
+				if [ -z "$2" ]; then
+					addnormfiles "$i" "$DOTFILES/common" "$suf"
+				fi
 			fi
+		done
 
-			NORMFILES=$(echo -ne "$NORMFILES$t" && echo -n "$k")
-		done;
-	done
+		for i in $CDIRFILES; do
+			dir=$(echo $i | sed 's/:.*//')
+			suf=$(echo $i | rev | sed 's/:.*//' | rev)
 
-	for i in $CDIRFILES; do
-		for k in $(find -L "$HOME/$i" -not -type d | \
-			cut -c `expr ${#HOME} + 2`-); do
-
-			if [ -z "$CRYPTFILES" ]; then
-				t=""
+			if [[ $i =~ : ]]; then
+				if [ -z "$2" ]; then
+					addcryptfiles "$i" "$DOTFILES/$HOSTNAME" "$suf"
+				else
+					addcryptfiles "$i" "$DOTFILES/$2" "$suf"
+				fi
 			else
-				t="\n"
+				if [ -z "$2" ]; then
+					addcryptfiles "$i" "$DOTFILES/common" "$suf"
+				fi
 			fi
+		done
+	fi
 
-			CRYPTFILES=$(echo -ne "$CRYPTFILES$t" && echo -n "$k")
-		done;
-	done
+	# for i in $DIRFILES; do
+	# 	for k in $(find -L "$HOME/$i" -not -type d | \
+	# 		cut -c `expr ${#HOME} + 2`-); do
+
+	# 		if [ -z "$NORMFILES" ]; then
+	# 			t=""
+	# 		else
+	# 			t="\n"
+	# 		fi
+
+	# 		NORMFILES=$(echo -ne "$NORMFILES$t" && echo -n "$k")
+	# 	done;
+	# done
+
+	# for i in $CDIRFILES; do
+	# 	for k in $(find -L "$HOME/$i" -not -type d | \
+	# 		cut -c `expr ${#HOME} + 2`-); do
+
+	# 		if [ -z "$CRYPTFILES" ]; then
+	# 			t=""
+	# 		else
+	# 			t="\n"
+	# 		fi
+
+	# 		CRYPTFILES=$(echo -ne "$CRYPTFILES$t" && echo -n "$k")
+	# 	done;
+	# done
 }
 
 function phelp
@@ -846,6 +960,7 @@ function generate
 
 function cleanup
 {
+	return
 	CDFILES=$1
 	FILELIST=${@:2}
 
@@ -1088,7 +1203,7 @@ if [[ $# -eq 0 ]]; then
 fi;
 
 safeguards $1
-if [[ $1 != "init" ]]; then cfilelist "$1"; fi
+if [[ $1 != "init" ]]; then cfilelist "$1" "$2"; fi
 
 trap ext SIGINT
 
