@@ -960,7 +960,6 @@ function generate
 
 function cleanup
 {
-	return
 	CDFILES=$1
 	FILELIST=${@:2}
 
@@ -999,13 +998,13 @@ function cleanup
 			fi
 
 			if [ -n "$z" ]; then
-				if [ -z "$(echo "$FILELIST" | grep "^$k" | grep \
+				if [ -z "$(echo "$FILELIST" | grep "$k" | grep \
 					"[:,\,]$z\,\|[:,\,]$z\$" )" ]; then
 					pstatus "$i/$k" "$i" "Removing"
 					rm "$k"
 				fi;
 			else
-				if ! echo "$FILELIST" | grep "^$k" | grep -qv ":";
+				if ! echo "$FILELIST" | grep "$k" | grep -qv ":";
 				then
 					pstatus "$i/$k" "$i" "Removing"
 					rm "$k"
