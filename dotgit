@@ -18,6 +18,38 @@ function cfilelist
 	CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$" | awk '!a[$0]++')
 	DOTFILES="$REPO/dotfiles"
 	DMZ="$REPO/dmz"
+
+	DIRFILES=$(grep -v '^#' "$REPO/dirlist" | grep -v "^$" | awk '!a[$0]++')
+	CDIRFILES=$(grep -v '^#' "$REPO/cryptdirlist" | grep -v "^$" \
+		| awk '!a[$0]++')
+
+	for i in $DIRFILES; do
+		for k in $(find -L "$HOME/$i" -not -type d | \
+			cut -c `expr ${#HOME} + 2`-); do
+
+			if [ -z "$NORMFILES" ]; then
+				t=""
+			else
+				t="\n"
+			fi
+
+			NORMFILES=$(echo -ne "$NORMFILES$t" && echo -n "$k")
+		done;
+	done
+
+	for i in $CDIRFILES; do
+		for k in $(find -L "$HOME/$i" -not -type d | \
+			cut -c `expr ${#HOME} + 2`-); do
+
+			if [ -z "$CRYPTFILES" ]; then
+				t=""
+			else
+				t="\n"
+			fi
+
+			CRYPTFILES=$(echo -ne "$CRYPTFILES$t" && echo -n "$k")
+		done;
+	done
 }
 
 function phelp
@@ -852,13 +884,13 @@ function cleanup
 			fi
 
 			if [ -n "$z" ]; then
-				if [ -z "$(echo "$FILELIST" | grep "$k" | grep \
+				if [ -z "$(echo "$FILELIST" | grep "^$k" | grep \
 					"[:,\,]$z\,\|[:,\,]$z\$" )" ]; then
 					pstatus "$i/$k" "$i" "Removing"
 					rm "$k"
 				fi;
 			else
-				if ! echo "$FILELIST" | grep "^$k$" | grep -qv ":";
+				if ! echo "$FILELIST" | grep "^$k" | grep -qv ":";
 				then
 					pstatus "$i/$k" "$i" "Removing"
 					rm "$k"
@@ -949,6 +981,8 @@ function init
 	if [ ! -d "$REPO/.git" ]; then git init; fi
 	touch filelist
 	touch cryptlist
+	touch dirlist
+	touch cryptdirlist
 
 	ignore=0
 	if [ -f "$REPO/.gitignore" ]; then
@@ -1054,12 +1088,12 @@ if [[ $# -eq 0 ]]; then
 fi;
 
 safeguards $1
-if [[ $1 != "init" ]]; then cfilelist; fi
+if [[ $1 != "init" ]]; then cfilelist "$1"; fi
 
 trap ext SIGINT
 
 PIFS=$IFS
-IFS=$(echo -ne '\b\n')
+IFS=$(echo -ne '\n\b')
 
 case "$1" in
 	"update")update "$2";;
