@@ -1,0 +1,14 @@
+Source: dotgit
+Section: misc
+Priority: extra
+Maintainer: Kobus van Schoor <e-mail@here.pls>
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.9.2
+Vcs-Git: git://github.com/Cube777/dotgit
+Vcs-Browser: https://github.com/Cube777/dotgit
+
+Package: dotgit
+Architecture: all
+Depends: git, bash, sed, grep
+Description: simple dotfiles manager
+ A simple bash program to store and manage all your dotfiles
