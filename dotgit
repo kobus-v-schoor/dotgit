@@ -1094,7 +1094,7 @@ function cleanhome
 function hardrestore
 {
 	echo "Commencing hard restore of normal files..."
-	copytohome "$DOTFILES" "$1 "${NORMFILES[@]}""
+	copytohome "$DOTFILES" "$1" "${NORMFILES[@]}"
 	echo "Commencing hard restore of encrypted files..."
 	copytohome "$DMZ" "$1" "${CRYPTFILES[@]}"
 }
@@ -1108,17 +1108,20 @@ function copytohome
 	cd "$CDFILES"
 
 	if [ -z "$category" ]; then
-		cd common
-		for i in $(find . -not -type d); do
-			i="$(echo $i | cut -c 3-)"
-			if ! echo "${FILELIST[@]}" | grep -q "$i"; then continue; fi
-			pstatus "$i" "common" "Copying"
-			if [ -f "$HOME/$i" ]; then
-				rm "$HOME/$i"
-			fi
-			cp --parents "$i" "$HOME"
-		done
-		cd ..
+		if [ -d common ]; then
+			cd common
+			for i in $(find . -not -type d); do
+				i="$(echo $i | cut -c 3-)"
+				if [[ $i =~ .hash ]]; then continue; fi
+				if ! echo "${FILELIST[@]}" | grep -q "$i"; then continue; fi
+				pstatus "$i" "common" "Copying"
+				if [ -f "$HOME/$i" ]; then
+					rm "$HOME/$i"
+				fi
+				cp --parents "$i" "$HOME"
+			done
+			cd ..
+		fi
 
 		if [ -d "$HOSTNAME" ]; then
 			cd "$HOSTNAME"
@@ -1129,6 +1132,9 @@ function copytohome
 
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
+			if [[ $i =~ .hash ]]; then continue; fi
+			if ! echo ${FILELIST[@]} | grep -q "$i.*$HOSTNAME"; then
+				continue; fi
 			pstatus "$i" "$HOSTNAME" "Copying"
 			if [ -f "$HOME/$i" ]; then
 				rm "$HOME/$i"
@@ -1145,6 +1151,9 @@ function copytohome
 
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
+			if [[ $i =~ .hash ]]; then continue; fi
+			if ! echo ${FILELIST[@]} | grep -q "$i.*$category"; then
+				continue; fi
 			if ! echo "${FILELIST[@]}" | grep -q "$i"; then continue; fi
 			pstatus "$i" "$category" "Copying"
 			if [ -f "$HOME/$i" ]; then
