@@ -9,6 +9,6 @@ Vcs-Browser: https://github.com/Cube777/dotgit
 
 Package: dotgit
 Architecture: all
-Depends: git, bash, sed, grep, gpg
+Depends: git, bash, sed, grep
 Description: simple dotfiles manager
  A comprehensive bash program to store and manage all your dotfiles
