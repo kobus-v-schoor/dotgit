@@ -1,5 +1,5 @@
 # dotgit
-## A simple bash program to store and manage all your dotfiles
+## A comprehensive and versatile dotfiles manager
 
 Using dotgit will allow you to effortlessly store all your dotfiles in a single
 git repository. dotgit doesn't only do storage - it also manages your dotfiles
