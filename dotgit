@@ -475,7 +475,7 @@ function passwd
 {
 	if [ ! -f "$REPO/passwd" ]; then
 		echo "The password you enter here will be hashed (SHA256 1500 times to"\
-			"prevent bruteforcing)  en then stored inside your repository to" \
+			"prevent bruteforcing) and then stored inside your repository to" \
 			"to ensure that you use the same password between runs" \
 
 		echo -e "\nPasswords will not be shown\n"
@@ -688,7 +688,7 @@ function hardupdate
 	echo "Commencing hard update of normal files..."
 	copytorepo "$DOTFILES" "$1" "${NORMFILES[@]}"
 	echo "Commencing hard update of encrypted files..."
-	copytorepo "$DMZ" "$1 "${CRYPTFILES[@]}""
+	copytorepo "$DMZ" "$1" "${CRYPTFILES[@]}"
 	echo "Commencing unencrypted files cleanup..."
 	cleanup "$DOTFILES" ${NORMFILES[@]} ${CRYPTFILES[@]}
 	echo "Commencing encrypted files cleanup..."
@@ -725,7 +725,7 @@ function copytorepo
 
 	for i in ${FILELIST[@]}; do
 		if ! [[ $i =~ $owner ]]; then continue; fi
-		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
+		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 
 		for k in "${ownrs[@]}"; do
