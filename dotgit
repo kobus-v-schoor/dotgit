@@ -6,10 +6,10 @@
 # Developer: Kobus van Schoor
 
 REPO="$PWD"
-NORMFILES=""
-CRYPTFILES=""
-DIRFILES=""
-CDIRFILES=""
+NORMFILES=()
+CRYPTFILES=()
+DIRFILES=()
+CDIRFILES=()
 DOTFILES=""
 DMZ=""
 PASSWD=""
@@ -37,7 +37,7 @@ function addnormfiles
 			t="\n"
 		fi
 
-		NORMFILES=$(echo -ne "$NORMFILES$t" && echo -n "$k$suf")
+		NORMFILES=$(${NORMFILES[@]} $k$suf)
 	done;
 }
 
@@ -65,6 +65,7 @@ function addcryptfiles
 		fi
 
 		CRYPTFILES=$(echo -ne "$CRYPTFILES$t" && echo -n "$k$suf")
+		CRYPTFILES=$(${CRYPTFILES[@]} $k$suf)
 	done;
 }
 
@@ -96,13 +97,6 @@ function cfilelist
 			CDIRFILES=( ${CDIRFILES[@]} "$p" )
 		fi
 	done < "$REPO/dir_cryptlist"
-
-	# NORMFILES=$(grep -v '^#' "$REPO/filelist" | grep -v "^$" | awk '!a[$0]++')
-	# CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$" | awk '!a[$0]++')
-	# DIRFILES=$(grep -v '^#' "$REPO/dir_filelist" | grep -v "^$" \
-	# 	| awk '!a[$0]++')
-	# CDIRFILES=$(grep -v '^#' "$REPO/dir_cryptlist" | grep -v "^$" \
-	# 	| awk '!a[$0]++')
 
 	loc=1
 
@@ -161,34 +155,6 @@ function cfilelist
 			fi
 		done
 	fi
-
-	# for i in $DIRFILES; do
-	# 	for k in $(find -L "$HOME/$i" -not -type d | \
-	# 		cut -c `expr ${#HOME} + 2`-); do
-
-	# 		if [ -z "$NORMFILES" ]; then
-	# 			t=""
-	# 		else
-	# 			t="\n"
-	# 		fi
-
-	# 		NORMFILES=$(echo -ne "$NORMFILES$t" && echo -n "$k")
-	# 	done;
-	# done
-
-	# for i in $CDIRFILES; do
-	# 	for k in $(find -L "$HOME/$i" -not -type d | \
-	# 		cut -c `expr ${#HOME} + 2`-); do
-
-	# 		if [ -z "$CRYPTFILES" ]; then
-	# 			t=""
-	# 		else
-	# 			t="\n"
-	# 		fi
-
-	# 		CRYPTFILES=$(echo -ne "$CRYPTFILES$t" && echo -n "$k")
-	# 	done;
-	# done
 }
 
 function phelp
@@ -620,7 +586,7 @@ function encrypt
 
 function decrypt
 {
-	for i in $CRYPTFILES; do
+	for i in ${CRYPTFILES[@]}; do
 		if echo $i | grep -qv ":"; then i=$(echo "$i:common"); fi
 
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
@@ -698,10 +664,10 @@ function update
 	if [ -f "$REPO/hard" ]; then hardupdate; return; fi
 
 	echo "Commencing normal files update..."
-	symlink "$NORMFILES" "$DOTFILES" "$1"
+	symlink "${NORMFILES[@]}" "$DOTFILES" "$1"
 
 	echo "Commencing encrypted files update..."
-	symlink "$CRYPTFILES" "$DMZ" "$1"
+	symlink "${CRYPTFILES[@]}" "$DMZ" "$1"
 
 	restore "$1"
 
@@ -721,13 +687,13 @@ function update
 function hardupdate
 {
 	echo "Commencing hard update of normal files..."
-	copytorepo "$NORMFILES" "$DOTFILES" "$1"
+	copytorepo "${NORMFILES[@]}" "$DOTFILES" "$1"
 	echo "Commencing hard update of encrypted files..."
-	copytorepo "$CRYPTFILES" "$DMZ" "$1"
+	copytorepo "${CRYPTFILES[@]}" "$DMZ" "$1"
 	echo "Commencing unencrypted files cleanup..."
 	cleanup "$DOTFILES" ${NORMFILES[@]} ${CRYPTFILES[@]}
 	echo "Commencing encrypted files cleanup..."
-	cleanup "$DMZ" ${NORMFILES[@]} ${CRYPTFILES[@]}
+	cleanup "$DMZ" ${CRYPTFILES[@]}
 
 	cd "$REPO"
 	if ! git diff --exit-code "$REPO/cryptlist" > /dev/null; then
@@ -747,7 +713,8 @@ function copytorepo
 	owner=$3
 
 	if [ -z "$owner" ]; then
-		for i in $(echo "$FILELIST" | grep -v "\:"); do
+		for i in ${FILELIST[@]}; do
+			if [[ $i =~ : ]]; then continue; fi
 			mkdir -p "$CDFILES/common"
 			pstatus $i "common" "Copying"
 			if [ ! "$HOME/$i" -ef "$CDFILES/common/$i" ]; then
@@ -757,7 +724,8 @@ function copytorepo
 		owner=$HOSTNAME
 	fi
 
-	for i in $(echo "$FILELIST" | grep "$owner"); do
+	for i in ${FILELIST[@]}; do
+		if ! [[ $i =~ $owner ]]; then continue; fi
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\\n/g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 
@@ -784,7 +752,8 @@ function symlink
 	owner=$3
 
 	if [ -z "$owner" ]; then
-		for i in $(echo "$FILELIST" | grep -v "\:"); do
+		for i in ${FILELIST[@]}; do
+			if [[ $i =~ : ]]; then continue; fi
 			if [ ! -f "$CDFILES/common/$i" ]; then
 				mkdir -p "$CDFILES/common"
 				pstatus $i "common"
@@ -795,7 +764,8 @@ function symlink
 		owner=$HOSTNAME
 	fi
 
-	for i in $(echo "$FILELIST" | grep "$owner"); do
+	for i in ${FILELIST[@]}; do
+		if ! [[ $i =~ $owner ]]; then continue; fi
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		filename=$(echo $i | sed s/\:.*//)
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
@@ -953,21 +923,22 @@ function restore
 
 	cleanhome
 	echo "Commencing unencrypted repo linking..."
-	homelink "$NORMFILES" "$DOTFILES" "$1"
+	homelink "$DOTFILES" "$1" "${NORMFILES[@]}"
 	echo "Commencing encrypted repo linking..."
-	homelink "$CRYPTFILES" "$DMZ" "$1"
+	homelink "$DMZ" "$1" "${CRYPTFILES[@]}"
 }
 
 function homelink
 {
-	FILELIST=$1
-	CDFILES=$2
+	FILELIST=${@:3}
+	CDFILES=$1
 
 	cd "$CDFILES"
-	owner=$3
+	owner=$2
 
 	if [ -z "$owner" ]; then
-		for i in $(echo "$FILELIST" | grep -v "\:"); do
+		for i in ${FILELIST[@]}; do
+			if [[ $i =~ : ]]; then continue; fi
 			if [ "$(dirname "$i")" != "." ]; then
 				mkdir -p "$(dirname "$HOME/$i")"
 			fi
@@ -983,7 +954,8 @@ function homelink
 		owner=$HOSTNAME
 	fi
 
-	for i in $(echo "$FILELIST" | grep "$owner"); do
+	for i in ${FILELIST[@]}; do
+		if ! [[ $i =~ $owner ]]; then continue; fi
 		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
 		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
 		filename=$(echo $i | sed s/\:.*//);
@@ -1123,9 +1095,9 @@ function cleanhome
 function hardrestore
 {
 	echo "Commencing hard restore of normal files..."
-	copytohome "$NORMFILES" "$DOTFILES" "$1"
+	copytohome "${NORMFILES[@]}" "$DOTFILES" "$1"
 	echo "Commencing hard restore of encrypted files..."
-	copytohome "$CRYPTFILES" "$DMZ" "$1"
+	copytohome "${NORMFILES[@]}" "${CRYPTFILES[@]}" "$DMZ" "$1"
 }
 
 function copytohome
@@ -1140,7 +1112,7 @@ function copytohome
 		cd common
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
-			if ! echo "$FILELIST" | grep -q "$i"; then continue; fi
+			if ! echo "${FILELIST[@]}" | grep -q "$i"; then continue; fi
 			pstatus "$i" "common" "Copying"
 			if [ -f "$HOME/$i" ]; then
 				rm "$HOME/$i"
@@ -1174,7 +1146,7 @@ function copytohome
 
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
-			if ! echo "$FILELIST" | grep -q "$i"; then continue; fi
+			if ! echo "${FILELIST[@]}" | grep -q "$i"; then continue; fi
 			pstatus "$i" "$category" "Copying"
 			if [ -f "$HOME/$i" ]; then
 				rm "$HOME/$i"
