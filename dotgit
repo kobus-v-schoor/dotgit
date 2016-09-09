@@ -37,7 +37,7 @@ function addnormfiles
 			t="\n"
 		fi
 
-		NORMFILES=$(${NORMFILES[@]} "$k$suf")
+		NORMFILES=(${NORMFILES[@]} "$k$suf")
 	done;
 }
 
@@ -64,7 +64,7 @@ function addcryptfiles
 			t="\n"
 		fi
 
-		CRYPTFILES=$(${CRYPTFILES[@]} "$k$suf")
+		CRYPTFILES=(${CRYPTFILES[@]} "$k$suf")
 	done;
 }
 
