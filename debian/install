@@ -1,0 +1,2 @@
+dotgit /usr/bin
+bash_completion /usr/share/bash-completion/completions/dotgit
