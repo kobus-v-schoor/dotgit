@@ -75,8 +75,9 @@ function cfilelist
 	DOTFILES="$REPO/dotfiles"
 	DMZ="$REPO/dmz"
 
-	DIRFILES=$(grep -v '^#' "$REPO/dirlist" | grep -v "^$" | awk '!a[$0]++')
-	CDIRFILES=$(grep -v '^#' "$REPO/cryptdirlist" | grep -v "^$" \
+	DIRFILES=$(grep -v '^#' "$REPO/dir_filelist" | grep -v "^$" \
+		| awk '!a[$0]++')
+	CDIRFILES=$(grep -v '^#' "$REPO/dir_cryptlist" | grep -v "^$" \
 		| awk '!a[$0]++')
 
 	loc=1
@@ -125,13 +126,13 @@ function cfilelist
 
 			if [[ $i =~ : ]]; then
 				if [ -z "$2" ]; then
-					addcryptfiles "$i" "$DOTFILES/$HOSTNAME" "$suf"
+					addcryptfiles "$i" "$DMZ/$HOSTNAME" "$suf"
 				else
-					addcryptfiles "$i" "$DOTFILES/$2" "$suf"
+					addcryptfiles "$i" "$DMZ/$2" "$suf"
 				fi
 			else
 				if [ -z "$2" ]; then
-					addcryptfiles "$i" "$DOTFILES/common" "$suf"
+					addcryptfiles "$i" "$DMZ/common" "$suf"
 				fi
 			fi
 		done
@@ -204,12 +205,19 @@ Filelist syntax:
 
   Categories and host use exactly the same syntax. This also means that you can
   specify a file to belong to multiple categories (and keep them synced)
-  Comments are indicated with a # at the begining of the line, comments at the
-  end of a line is not yet supported
+  Comments are indicated with a # at the begining of the line, inline comments
+  are not supported.
 
   After making any changes to the filelist you should run dotgit update, commit
   and push your changes and then run dotgit restore on all other hosts you use
   This ensures that the symlinking hierarchy stays up-to-date
+
+  Different filelists:
+
+  filelist: Main filelist
+  cryptlist: Files to be encrypted
+  dir_filelist: Directory list
+  dir_cryptlist: Directories to be encrypted
 
 USING COPYING INSTEAD OF SYMLINKING:
   If you prefer not to use symlinks in your home dir (eg. if the repo will not
@@ -230,7 +238,7 @@ ENCRYPTION:
 
   Unlike with the unencrypted files encrypted files can''t be updated in the
   repository automatically like the normal symlinks. They first need to be
-  encrypted before they can be commited and pushed to a remote. Because of this
+  encrypted before they can be committed and pushed to a remote. Because of this
   when linking or copying the dotfiles to your home dir the encrypted files will
   first be decrypted and then put in the "dmz" folder of dotgit. Inside this
   folder they are decrypted and these files will be linked into your home dir.
@@ -243,6 +251,21 @@ ENCRYPTION:
   NOTE: When cloning a dotgit repo, you will first need to run ''dotgit init''
   inside the repo to set up the git hooks as they cannot be stored inside the
   repo when pushed to a remote.
+
+DIRECTORY SUPPORT:
+  Due to the fact that dotgit cannot possibly know beforehand which files will
+  be present in a directory dotgit''s support for directories are not quite as
+  versatile as its support for files. Currently dotgit creates a pseudo filelist
+  from the files present the directory. This means the following applies: Should
+  you run 'dotgit update' ALL the files you want in the repo should be present
+  inside the dir you specified (either links to the repo or the files
+  themselves). This is unlike normal files for dotgit where partial updates are
+  possible. Any files not present in the dir but present in the repo will be
+  deleted from the repo. The same goes for "hard" version of the update
+  operation.
+
+  Apart from the previously mentioned limitation all the normal features works
+  with directories as well.
 
 OPTIONS:
 
@@ -324,11 +347,29 @@ function safeguards
 	fi
 
 	if [ ! -f "$REPO/cryptlist" ]; then
-		echo "Cryptlist not found. If this is a valid dotgit repo it is"\
+		echo "cryptlist not found. If this is a valid dotgit repo it is"\
 			"possible that this repo just has not been initialized again to"\
 			"support the new encryption. Please run 'dotgit init', this should"\
 			"resolve the error. Please also read the help message for further"\
 			"instructions regarding encryption. Aborting..."
+		ext
+	fi
+
+	if [ ! -f "$REPO/dir_filelist" ]; then
+		echo "dir_filelist not found. If this is a valid dotgit repo it is"\
+			"possible that this repo just has not been initialized again to"\
+			"support directories. Please run 'dotgit init', this should"\
+			"resolve the error. Please also read the help message for further"\
+			"instructions regarding directory support. Aborting..."
+		ext
+	fi
+
+	if [ ! -f "$REPO/dir_cryptlist" ]; then
+		echo "dir_cryptlist not found. If this is a valid dotgit repo it is"\
+			"possible that this repo just has not been initialized again to"\
+			"support directories. Please run 'dotgit init', this should"\
+			"resolve the error. Please also read the help message for further"\
+			"instructions regarding directory support. Aborting..."
 		ext
 	fi
 
@@ -1029,9 +1070,9 @@ function cleanhome
 function hardrestore
 {
 	echo "Commencing hard restore of normal files..."
-	copytohome "$NORMFILES" "$DOTFILES"
+	copytohome "$NORMFILES" "$DOTFILES" "$1"
 	echo "Commencing hard restore of encrypted files..."
-	copytohome "$CRYPTFILES" "$DMZ"
+	copytohome "$CRYPTFILES" "$DMZ" "$1"
 }
 
 function copytohome
@@ -1046,6 +1087,7 @@ function copytohome
 		cd common
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
+			if ! echo "$FILELIST" | grep -q "$i"; then continue; fi
 			pstatus "$i" "common" "Copying"
 			if [ -f "$HOME/$i" ]; then
 				rm "$HOME/$i"
@@ -1074,10 +1116,12 @@ function copytohome
 			cd "$category"
 		else
 			echo "Category $category not found..."
+			return
 		fi
 
 		for i in $(find . -not -type d); do
 			i="$(echo $i | cut -c 3-)"
+			if ! echo "$FILELIST" | grep -q "$i"; then continue; fi
 			pstatus "$i" "$category" "Copying"
 			if [ -f "$HOME/$i" ]; then
 				rm "$HOME/$i"
@@ -1095,8 +1139,8 @@ function init
 	if [ ! -d "$REPO/.git" ]; then git init; fi
 	touch filelist
 	touch cryptlist
-	touch dirlist
-	touch cryptdirlist
+	touch dir_filelist
+	touch dir_cryptlist
 
 	ignore=0
 	if [ -f "$REPO/.gitignore" ]; then
