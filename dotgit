@@ -75,25 +75,25 @@ function cfilelist
 
 	while read p; do
 		if ! [[ $p =~ ^$ ]] && ! [[ $p =~ ^# ]]; then
-			NORMFILES=( $NORMFILES "$p" )
+			NORMFILES=( ${NORMFILES[@]} "$p" )
 		fi
 	done < "$REPO/filelist"
 
 	while read p; do
 		if ! [[ $p =~ ^$ ]] && ! [[ $p =~ ^# ]]; then
-			CRYPTFILES=( $CRYPTFILES "$p" )
+			CRYPTFILES=( ${CRYPTFILES[@]} "$p" )
 		fi
 	done < "$REPO/cryptlist"
 
 	while read p; do
 		if ! [[ $p =~ ^$ ]] && ! [[ $p =~ ^# ]]; then
-			DIRFILES=( $DIRFILES "$p" )
+			DIRFILES=( ${DIRFILES[@]} "$p" )
 		fi
 	done < "$REPO/dir_filelist"
 
 	while read p; do
 		if ! [[ $p =~ ^$ ]] && ! [[ $p =~ ^# ]]; then
-			CDIRFILES=( $CDIRFILES "$p" )
+			CDIRFILES=( ${CDIRFILES[@]} "$p" )
 		fi
 	done < "$REPO/dir_cryptlist"
 
@@ -419,32 +419,51 @@ function safeguards
 		ext
 	fi
 
-	# OLDIFS=$IFS
-	# IFS=$(echo -en '\n\b')
+	for i in ${NORMFILES[@]}; do
+		if ! [[ $i =~ : ]]; then
+			for k in ${CRYPTFILES[@]}; do
+				if [ "$i" == "$k" ]; then
+					echo "Duplicate filelist/cryptlist entry found ($i)." \
+						"Aborting..."
+					ext
+				fi
+			done
+		else
+			for k in ${CRYPTFILES[@]}; do
+				nfile=$(echo $i | sed 's/:.*//g')
+				cfile=$(echo $k | sed 's/:.*//g')
 
-	# for i in $NORMFILES; do
-	# 	if [[ $i =~ ^[^:]*$ ]]; then
-	# 		if echo $CRYPTFILES | grep "^$i$" | grep -qv ":"; then
-	# 			echo "Duplicate filelist/cryptlist entry found ($i)."\
-	# 				"Aborting..."
-	# 			ext
-	# 		fi
-	# 	else
-	# 		ownrs=($(echo $i | rev | sed 's/\:.*//' | sed 's/\,/\n/g' | rev))
-	# 		filename=$(echo $i | sed 's/:.*//')
-	# 		for k in $ownrs; do
-	# 			line=$(echo $CRYPTFILES | grep "$filename:.*$k" )
-	# 			stat=$?
-	# 			if [ $? -eq 0 ]
-	# 			then echo "Duplicate filelist/cryptlist entry found"\
-	# 				"($i, $line). Aborting..."
-	# 				ext
-	# 			fi
-	# 		done
-	# 	fi
-	# done
+				if [ "$nfile" != "$cfile" ]; then continue; fi
 
-	# IFS=$OLDIFS
+				nown=()
+				cown=()
+
+				temp=$(echo $i | rev | sed 's/:.*//g' | rev)
+				temp=$(echo $temp | sed 's/,/ /g')
+
+				for d in $temp; do
+					nown=(${nown[@]} $d)
+				done
+
+				temp=$(echo $k | rev | sed 's/:.*//g' | rev)
+				temp=$(echo $temp | sed 's/,/ /g')
+
+				for d in $temp; do
+					cown=(${cown[@]} $d)
+				done
+
+				for d in ${nown[@]}; do
+					for l in ${cown[@]}; do
+						if [ "$d" == "$l" ]; then
+							echo "Duplicate filelist/cryptlist entry found" \
+								"($i - $k). Aborting..."
+							ext
+						fi
+					done
+				done
+			done
+		fi
+	done
 }
 
 function pstatus
@@ -685,10 +704,11 @@ function update
 	symlink "$CRYPTFILES" "$DMZ" "$1"
 
 	restore "$1"
+
 	echo "Commencing unencrypted files cleanup..."
-	cleanup "$DOTFILES" $NORMFILES $CRYPTFILES
+	cleanup "$DOTFILES" ${NORMFILES[@]} ${CRYPTFILES[@]}
 	echo "Commencing encrypted files cleanup..."
-	cleanup "$DMZ" $CRYPTFILES
+	cleanup "$DMZ" ${CRYPTFILES[@]}
 
 	cd $REPO
 	if ! git diff --exit-code "cryptlist" > /dev/null; then
@@ -705,9 +725,9 @@ function hardupdate
 	echo "Commencing hard update of encrypted files..."
 	copytorepo "$CRYPTFILES" "$DMZ" "$1"
 	echo "Commencing unencrypted files cleanup..."
-	cleanup "$DOTFILES" $NORMFILES $CRYPTFILES
+	cleanup "$DOTFILES" ${NORMFILES[@]} ${CRYPTFILES[@]}
 	echo "Commencing encrypted files cleanup..."
-	cleanup "$DMZ" $CRYPTFILES
+	cleanup "$DMZ" ${NORMFILES[@]} ${CRYPTFILES[@]}
 
 	cd "$REPO"
 	if ! git diff --exit-code "$REPO/cryptlist" > /dev/null; then
@@ -1022,7 +1042,6 @@ function generate
 
 function cleanup
 {
-	return
 	CDFILES=$1
 	FILELIST=${@:2}
 
@@ -1030,47 +1049,57 @@ function cleanup
 		return
 	fi
 
-	OLDIFS=$IFS
-	IFS=$(echo -ne '\n\b')
 	cd "$CDFILES"
 	for i in *; do
 		echo "Cleanup - entering $i..."
 		cd "$i"
 
-		for k in $(find -not -type d); do
-			if [ $k == "." ]; then
-				continue;
-			fi
+		find -not -type d | while read k; do
 			k=$(echo $k | cut -c 3-);
 
-			z=""
+			z=
 			if [ "$i" != "common" ]; then
 				z="$i"
 			fi
 
+			h=0
 			if [[ $k =~ .hash ]]; then
-				temp=$(echo $k | sed 's/\.hash//')
-				l=$(echo "$FILELIST" | grep "$temp" | grep "$z")
-
-				if [ -n "$l" ]; then
-					ownrs=($(echo $l| rev | sed 's/\:.*//' | sed 's/\,/\n/g' | \
-						rev))
-					ownrs=($(for p in ${ownrs[@]}; do echo $p; done | sort))
-					if [ "${ownrs[0]}" == "$z" ]; then
-						k=$temp
-					fi
-				fi
+				k=$(echo $k | sed 's/\.hash//')
+				h=1
 			fi
 
 			if [ -n "$z" ]; then
-				if [ -z "$(echo "$FILELIST" | grep "$k" | grep \
-					"[:,\,]$z\,\|[:,\,]$z\$" )" ]; then
+				flag=0
+				for f in ${FILELIST[@]}; do
+					only=$k:$z\$
+					first=$k:$z,
+					mid=$k:.\*,$z,
+					last=$k:.\*,$z\$
+
+					if [[ $f =~ $only ]] || [[ $f =~ $first ]] || \
+						[[ $f =~ $mid ]] || [[ $f =~ $last ]]; then
+						flag=1
+						break;
+					fi
+				done
+
+				if [ $flag == 0 ]; then
+					if [ $h == 1 ]; then k="$k.hash"; fi
 					pstatus "$i/$k" "$i" "Removing"
 					rm "$k"
 				fi;
 			else
-				if ! echo "$FILELIST" | grep "$k" | grep -qv ":";
-				then
+				flag=0
+				for f in ${FILELIST[@]}; do
+					reg="^$k\$"
+					if [[ $f =~ $reg ]]; then
+						flag=1
+						break
+					fi
+				done
+
+				if [ $flag == 0 ]; then
+					if [ $h == 1 ]; then k="$k.hash"; fi
 					pstatus "$i/$k" "$i" "Removing"
 					rm "$k"
 				fi
@@ -1081,7 +1110,6 @@ function cleanup
 
 	find "$CDFILES" -not -name "$(basename $CDFILES)" -and -empty -and -type d \
 	-delete
-	IFS=$OLDIFS
 }
 
 function cleanhome
@@ -1274,9 +1302,6 @@ if [[ $1 != "init" ]]; then cfilelist "$1" "$2"; fi
 safeguards $1
 
 trap ext SIGINT
-
-PIFS=$IFS
-# IFS=$(echo -ne '\n\b')
 
 case "$1" in
 	"update")update "$2";;
