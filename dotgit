@@ -37,7 +37,7 @@ function addnormfiles
 			t="\n"
 		fi
 
-		NORMFILES=$(${NORMFILES[@]} $k$suf)
+		NORMFILES=$(${NORMFILES[@]} "$k$suf")
 	done;
 }
 
@@ -64,8 +64,7 @@ function addcryptfiles
 			t="\n"
 		fi
 
-		CRYPTFILES=$(echo -ne "$CRYPTFILES$t" && echo -n "$k$suf")
-		CRYPTFILES=$(${CRYPTFILES[@]} $k$suf)
+		CRYPTFILES=$(${CRYPTFILES[@]} "$k$suf")
 	done;
 }
 
@@ -664,17 +663,17 @@ function update
 	if [ -f "$REPO/hard" ]; then hardupdate; return; fi
 
 	echo "Commencing normal files update..."
-	symlink "${NORMFILES[@]}" "$DOTFILES" "$1"
+	symlink "$DOTFILES" "$1" "${NORMFILES[@]}"
 
 	echo "Commencing encrypted files update..."
-	symlink "${CRYPTFILES[@]}" "$DMZ" "$1"
+	symlink "$DMZ" "$1" "${CRYPTFILES[@]}"
 
 	restore "$1"
 
 	echo "Commencing unencrypted files cleanup..."
-	cleanup "$DOTFILES" ${NORMFILES[@]} ${CRYPTFILES[@]}
+	cleanup "$DOTFILES" "${NORMFILES[@]}" "${CRYPTFILES[@]}"
 	echo "Commencing encrypted files cleanup..."
-	cleanup "$DMZ" ${CRYPTFILES[@]}
+	cleanup "$DMZ" "${CRYPTFILES[@]}"
 
 	cd $REPO
 	if ! git diff --exit-code "cryptlist" > /dev/null; then
@@ -687,9 +686,9 @@ function update
 function hardupdate
 {
 	echo "Commencing hard update of normal files..."
-	copytorepo "${NORMFILES[@]}" "$DOTFILES" "$1"
+	copytorepo "$DOTFILES" "$1" "${NORMFILES[@]}"
 	echo "Commencing hard update of encrypted files..."
-	copytorepo "${CRYPTFILES[@]}" "$DMZ" "$1"
+	copytorepo "$DMZ" "$1 "${CRYPTFILES[@]}""
 	echo "Commencing unencrypted files cleanup..."
 	cleanup "$DOTFILES" ${NORMFILES[@]} ${CRYPTFILES[@]}
 	echo "Commencing encrypted files cleanup..."
@@ -706,11 +705,11 @@ function hardupdate
 
 function copytorepo
 {
-	FILELIST=$1
-	CDFILES=$2
+	FILELIST=${@:3}
+	CDFILES=$1
 
 	cd $HOME
-	owner=$3
+	owner=$2
 
 	if [ -z "$owner" ]; then
 		for i in ${FILELIST[@]}; do
@@ -745,11 +744,11 @@ function copytorepo
 
 function symlink
 {
-	FILELIST=$1
-	CDFILES=$2
+	FILELIST=${@:3}
+	CDFILES=$1
 
 	cd $HOME;
-	owner=$3
+	owner=$2
 
 	if [ -z "$owner" ]; then
 		for i in ${FILELIST[@]}; do
@@ -1095,16 +1094,16 @@ function cleanhome
 function hardrestore
 {
 	echo "Commencing hard restore of normal files..."
-	copytohome "${NORMFILES[@]}" "$DOTFILES" "$1"
+	copytohome "$DOTFILES" "$1 "${NORMFILES[@]}""
 	echo "Commencing hard restore of encrypted files..."
-	copytohome "${NORMFILES[@]}" "${CRYPTFILES[@]}" "$DMZ" "$1"
+	copytohome "$DMZ" "$1" "${CRYPTFILES[@]}"
 }
 
 function copytohome
 {
-	FILELIST=$1
-	CDFILES=$2
-	category=$3
+	FILELIST=${@:3}
+	CDFILES=$1
+	category=$2
 
 	cd "$CDFILES"
 
