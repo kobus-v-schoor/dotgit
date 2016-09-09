@@ -70,15 +70,39 @@ function addcryptfiles
 
 function cfilelist
 {
-	NORMFILES=$(grep -v '^#' "$REPO/filelist" | grep -v "^$" | awk '!a[$0]++')
-	CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$" | awk '!a[$0]++')
 	DOTFILES="$REPO/dotfiles"
 	DMZ="$REPO/dmz"
 
-	DIRFILES=$(grep -v '^#' "$REPO/dir_filelist" | grep -v "^$" \
-		| awk '!a[$0]++')
-	CDIRFILES=$(grep -v '^#' "$REPO/dir_cryptlist" | grep -v "^$" \
-		| awk '!a[$0]++')
+	while read p; do
+		if ! [[ $p =~ ^$ ]] && ! [[ $p =~ ^# ]]; then
+			NORMFILES=( $NORMFILES "$p" )
+		fi
+	done < "$REPO/filelist"
+
+	while read p; do
+		if ! [[ $p =~ ^$ ]] && ! [[ $p =~ ^# ]]; then
+			CRYPTFILES=( $CRYPTFILES "$p" )
+		fi
+	done < "$REPO/cryptlist"
+
+	while read p; do
+		if ! [[ $p =~ ^$ ]] && ! [[ $p =~ ^# ]]; then
+			DIRFILES=( $DIRFILES "$p" )
+		fi
+	done < "$REPO/dir_filelist"
+
+	while read p; do
+		if ! [[ $p =~ ^$ ]] && ! [[ $p =~ ^# ]]; then
+			CDIRFILES=( $CDIRFILES "$p" )
+		fi
+	done < "$REPO/dir_cryptlist"
+
+	# NORMFILES=$(grep -v '^#' "$REPO/filelist" | grep -v "^$" | awk '!a[$0]++')
+	# CRYPTFILES=$(grep -v '^#' "$REPO/cryptlist" | grep -v "^$" | awk '!a[$0]++')
+	# DIRFILES=$(grep -v '^#' "$REPO/dir_filelist" | grep -v "^$" \
+	# 	| awk '!a[$0]++')
+	# CDIRFILES=$(grep -v '^#' "$REPO/dir_cryptlist" | grep -v "^$" \
+	# 	| awk '!a[$0]++')
 
 	loc=1
 
@@ -91,19 +115,19 @@ function cfilelist
 	esac;
 
 	if [ $loc == 1 ]; then
-		for i in $DIRFILES; do
+		for i in ${DIRFILES[@]}; do
 			dir=$(echo $i | sed 's/:.*//')
 			suf=$(echo $i | rev | sed 's/:.*//' | rev)
 			addnormfiles "$dir" "$HOME" "$suf"
 		done
 
-		for i in $CDIRFILES; do
+		for i in ${CDIRFILES[@]}; do
 			dir=$(echo $i | sed 's/:.*//')
 			suf=$(echo $i | rev | sed 's/:.*//' | rev)
 			addcryptfiles "$dir" "$HOME" "$suf"
 		done
 	else
-		for i in $DIRFILES; do
+		for i in ${DIRFILES[@]}; do
 			dir=$(echo $i | sed 's/:.*//')
 			suf=$(echo $i | rev | sed 's/:.*//' | rev)
 
@@ -120,7 +144,7 @@ function cfilelist
 			fi
 		done
 
-		for i in $CDIRFILES; do
+		for i in ${CRYPTFILES[@]}; do
 			dir=$(echo $i | sed 's/:.*//')
 			suf=$(echo $i | rev | sed 's/:.*//' | rev)
 
@@ -395,35 +419,32 @@ function safeguards
 		ext
 	fi
 
-	OLDIFS=$IFS
-	IFS=$(echo -en '\n\b')
+	# OLDIFS=$IFS
+	# IFS=$(echo -en '\n\b')
 
-	list="filelist"
-	other="cryptlist";
+	# for i in $NORMFILES; do
+	# 	if [[ $i =~ ^[^:]*$ ]]; then
+	# 		if echo $CRYPTFILES | grep "^$i$" | grep -qv ":"; then
+	# 			echo "Duplicate filelist/cryptlist entry found ($i)."\
+	# 				"Aborting..."
+	# 			ext
+	# 		fi
+	# 	else
+	# 		ownrs=($(echo $i | rev | sed 's/\:.*//' | sed 's/\,/\n/g' | rev))
+	# 		filename=$(echo $i | sed 's/:.*//')
+	# 		for k in $ownrs; do
+	# 			line=$(echo $CRYPTFILES | grep "$filename:.*$k" )
+	# 			stat=$?
+	# 			if [ $? -eq 0 ]
+	# 			then echo "Duplicate filelist/cryptlist entry found"\
+	# 				"($i, $line). Aborting..."
+	# 				ext
+	# 			fi
+	# 		done
+	# 	fi
+	# done
 
-	for i in $(grep -v "^#" "$REPO/$list" | grep -v '^$'); do
-		if [[ $i =~ ^[^:]*$ ]]; then
-			if grep "^$i$" "$REPO/$other" | grep -qv ":"; then
-				echo "Duplicate filelist/cryptlist entry found ($i)."\
-					"Aborting..."
-				ext
-			fi
-		else
-			ownrs=($(echo $i | rev | sed 's/\:.*//' | sed 's/\,/\n/g' | rev))
-			filename=$(echo $i | sed 's/:.*//')
-			for k in $ownrs; do
-				line=$(grep "$filename:.*$k" "$REPO/$other")
-				stat=$?
-				if [ $? -eq 0 ]
-				then echo "Duplicate filelist/cryptlist entry found"\
-					"($i, $line). Aborting..."
-					ext
-				fi
-			done
-		fi
-	done
-
-	IFS=$OLDIFS
+	# IFS=$OLDIFS
 }
 
 function pstatus
@@ -748,7 +769,7 @@ function symlink
 				mkdir -p "$CDFILES/common"
 				pstatus $i "common"
 				cp -L --parents "$i" "$CDFILES/common"
-				rm "$i"
+				rm -f "$i"
 			fi
 		done;
 		owner=$HOSTNAME
@@ -771,7 +792,7 @@ function symlink
 				z=$(echo $k | cut -c $(expr ${#temp} + 1)- | sed "s/\/.*//g")
 				pstatus "$filename" "$z" "Splitting"
 
-				rm $k
+				rm -f $k
 				cp "$CDFILES/${ownrs[0]}/$filename" $k
 			done
 		fi
@@ -786,7 +807,7 @@ function symlink
 					pstatus "$filename" "${ownrs[0]}"
 					cp -L --parents "$filename" "$CDFILES/${ownrs[0]}"
 
-					rm "$HOME/$filename"
+					rm -f "$HOME/$filename"
 				else
 					pstatus "(${ownrs[0]})  $filename" "${ownrs[$k]}" "Linking"
 					mkdir -p "$(dirname "$CDFILES/${ownrs[$k]}/$filename")"
@@ -806,7 +827,7 @@ function symlink
 
 					if diff "$CDFILES/${ownrs[0]}/$filename" \
 						"$CDFILES/${ownrs[$k]}/$filename" > /dev/null;then
-						rm "$CDFILES/${ownrs[$k]}/$filename"
+						rm -f "$CDFILES/${ownrs[$k]}/$filename"
 						ln -rs "$CDFILES/${ownrs[0]}/$filename" \
 							"$CDFILES/${ownrs[$k]}/$filename"
 						continue
@@ -866,7 +887,7 @@ function symlink
 
 				if [ "$k" != "0" ] && \
 					[ -h "$CDFILES/${ownrs[$k]}/$filename" ]; then
-					rm "$CDFILES/${ownrs[$k]}/$filename"
+					rm -f "$CDFILES/${ownrs[$k]}/$filename"
 					ln -rs "$CDFILES/${ownrs[0]}/$filename" \
 					"$CDFILES/${ownrs[$k]}/$filename"
 				fi
@@ -1001,6 +1022,7 @@ function generate
 
 function cleanup
 {
+	return
 	CDFILES=$1
 	FILELIST=${@:2}
 
@@ -1008,6 +1030,8 @@ function cleanup
 		return
 	fi
 
+	OLDIFS=$IFS
+	IFS=$(echo -ne '\n\b')
 	cd "$CDFILES"
 	for i in *; do
 		echo "Cleanup - entering $i..."
@@ -1024,12 +1048,12 @@ function cleanup
 				z="$i"
 			fi
 
-			if [[ $k =~ .hash$ ]]; then
+			if [[ $k =~ .hash ]]; then
 				temp=$(echo $k | sed 's/\.hash//')
 				l=$(echo "$FILELIST" | grep "$temp" | grep "$z")
 
 				if [ -n "$l" ]; then
-					ownrs=($(echo $l| rev | sed 's/\:.*//' | sed 's/\,/\ /g' | \
+					ownrs=($(echo $l| rev | sed 's/\:.*//' | sed 's/\,/\n/g' | \
 						rev))
 					ownrs=($(for p in ${ownrs[@]}; do echo $p; done | sort))
 					if [ "${ownrs[0]}" == "$z" ]; then
@@ -1057,6 +1081,7 @@ function cleanup
 
 	find "$CDFILES" -not -name "$(basename $CDFILES)" -and -empty -and -type d \
 	-delete
+	IFS=$OLDIFS
 }
 
 function cleanhome
@@ -1227,7 +1252,7 @@ function pdiff
 
 function ext
 {
-	IFS=$PIFS
+	# IFS=$PIFS
 	if [ -f "$REPO/tmp" ]; then
 		rm "$REPO/tmp"
 	fi
@@ -1245,13 +1270,13 @@ if [[ $# -eq 0 ]]; then
 	exit;
 fi;
 
-safeguards $1
 if [[ $1 != "init" ]]; then cfilelist "$1" "$2"; fi
+safeguards $1
 
 trap ext SIGINT
 
 PIFS=$IFS
-IFS=$(echo -ne '\n\b')
+# IFS=$(echo -ne '\n\b')
 
 case "$1" in
 	"update")update "$2";;
