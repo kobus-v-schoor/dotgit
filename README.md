@@ -14,6 +14,8 @@ between multiple computers and devices.
 * Categorise files
 * Make usage with git convenient and easy, but don't impair git's power
 * Keep ALL the dotfiles in one, single repository
+* Support for directories
+* Support for encryption
 
 ## Why use dotgit?
 * If you're uncomfortable with git, let dotgit work with git for you. If you
@@ -25,6 +27,8 @@ between multiple computers and devices.
   different configurations
 * Easily work with only a group of files in your repository (categories)
 * Straightforward file-hierarchy
+* Support for directories
+* Secure implementation of GnuPG CAST5 encryption
 
 ## What makes dotgit different?
 While dotgit is one of many dotfile managers, there are some key differences
