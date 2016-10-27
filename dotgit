@@ -220,7 +220,7 @@ USING COPYING INSTEAD OF SYMLINKING:
   operations will be affected by this option see below.
 
 ENCRYPTION:
-  CAST5 (PGP default symmetric encryption algorithm) encryption is supported by
+  AES (PGP default symmetric encryption algorithm) encryption is supported by
   dotgit in both symlinking and "hard" mode. To set up encryption just put the
   relevant filenames in the "cryptlist" file in the root of the dotgit repo. The
   "cryptlist" file uses exactly the same syntax as the normal filelist.

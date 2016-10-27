@@ -28,7 +28,7 @@ between multiple computers and devices.
 * Easily work with only a group of files in your repository (categories)
 * Straightforward file-hierarchy
 * Support for directories
-* Secure implementation of GnuPG CAST5 encryption
+* Secure implementation of GnuPG AES encryption
 
 ## What makes dotgit different?
 While dotgit is one of many dotfile managers, there are some key differences
