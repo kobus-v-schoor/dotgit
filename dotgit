@@ -256,6 +256,17 @@ DIRECTORY SUPPORT:
   Apart from the previously mentioned limitation all the normal features works
   with directories as well.
 
+UNSAFE MODE:
+  Extensive checks are made during the startup of dotgit. These checks along
+  with password hashing (needed to check validity of passwords) can take a lot
+  of time on low-powered devices. These checks can be disabled by creating a
+  file named 'unsafe' in the root directory of your dotfiles repository. Be
+  aware that this can have unintended side-effects as it is then possible to
+  create conflicts between the encrypted and normal files if duplicates occur.
+  There is also the possibility of encrypting your files with inconsistent
+  passwords. This can lead to partial decryption of your dotfiles leaving the
+  job of manually decrypting the files with GPG up to you.
+
 OPTIONS:
 
   Usage: dotgit [option] (optional args)
@@ -316,6 +327,10 @@ OPTIONS:
 
 function safeguards
 {
+	if [ -f "$REPO/unsafe" ]; then
+		return
+	fi
+
 	if [ $1 == "init" ] || \
 		[ $1 == "diff" ] || \
 		[ $1 == "help" ]; then
@@ -456,13 +471,15 @@ function pprompt
 	echo ""
 
 	pass=$ans
-	for count in  `seq 1 1500`; do
-		ans=$(echo $ans | sha256sum)
-	done
+	if ! [ -f "$REPO/unsafe" ]; then
+		for count in  `seq 1 1500`; do
+			ans=$(echo $ans | sha256sum)
+		done
 
-	if [ "$ans" != "$(cat "$REPO/passwd")" ]; then
-		echo "Incorrect password. Aborting..."
-		ext
+		if [ "$ans" != "$(cat "$REPO/passwd")" ]; then
+			echo "Incorrect password. Aborting..."
+			ext
+		fi
 	fi
 
 	PASSWD=1
@@ -1188,6 +1205,7 @@ function init
 		echo "dmz" >> .gitignore
 		echo "tmp" >> .gitignore
 		echo "mid" >> .gitignore
+		echo "unsafe" >> .gitignore
 	fi
 
 	create=0
