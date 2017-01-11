@@ -260,7 +260,7 @@ UNSAFE MODE:
   Extensive checks are made during the startup of dotgit. These checks along
   with password hashing (needed to check validity of passwords) can take a lot
   of time on low-powered devices. These checks can be disabled by creating a
-  file named 'unsafe' in the root directory of your dotfiles repository. Be
+  file named "unsafe" in the root directory of your dotfiles repository. Be
   aware that this can have unintended side-effects as it is then possible to
   create conflicts between the encrypted and normal files if duplicates occur.
   There is also the possibility of encrypting your files with inconsistent
