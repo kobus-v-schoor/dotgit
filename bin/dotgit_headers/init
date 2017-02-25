@@ -1,0 +1,125 @@
+# /bin/bash
+
+# Part of dotgit
+
+function safeguards
+{
+	if [ -f "$REPO/unsafe" ]; then
+		return
+	fi
+
+	if [ $1 == "init" ] || \
+		[ $1 == "diff" ] || \
+		[ $1 == "help" ]; then
+		return
+	fi
+
+	echo "Running safeguards..."
+
+	if [ "$REPO" == "$HOME" ]; then
+		echo "You shouldn't run this in your home folder, make a seperate" \
+		"folder for your dotfiles"
+		ext
+	fi
+
+	if [ ! -f "$REPO/filelist" ]; then
+		echo "Filelist not found. Aborting..."
+		ext
+	fi
+
+	if [ ! -f "$REPO/cryptlist" ]; then
+		echo "cryptlist not found. If this is a valid dotgit repo it is"\
+			"possible that this repo just has not been initialized again to"\
+			"support the new encryption. Please run 'dotgit init', this should"\
+			"resolve the error. Please also read the help message for further"\
+			"instructions regarding encryption. Aborting..."
+		ext
+	fi
+
+	if [ ! -f "$REPO/dir_filelist" ]; then
+		echo "dir_filelist not found. If this is a valid dotgit repo it is"\
+			"possible that this repo just has not been initialized again to"\
+			"support directories. Please run 'dotgit init', this should"\
+			"resolve the error. Please also read the help message for further"\
+			"instructions regarding directory support. Aborting..."
+		ext
+	fi
+
+	if [ ! -f "$REPO/dir_cryptlist" ]; then
+		echo "dir_cryptlist not found. If this is a valid dotgit repo it is"\
+			"possible that this repo just has not been initialized again to"\
+			"support directories. Please run 'dotgit init', this should"\
+			"resolve the error. Please also read the help message for further"\
+			"instructions regarding directory support. Aborting..."
+		ext
+	fi
+
+	if [ ! -d "$REPO/.git" ]; then
+		echo "This does not seem to be a git repository. Aborting..."
+		ext
+	fi
+
+	if grep -q "//" "$REPO/filelist"; then
+		echo "Converting filelist to new comment syntax (// -> #)..."
+		sed -i "s/\/\//#/g" "$REPO/filelist"
+	fi
+
+	if [ ! -d "$REPO/dotfiles" ]; then
+		echo "Dotfiles folder not found. Aborting..."
+		ext
+	fi
+
+	if grep "\-\-hard\-\-" "$REPO/filelist" > /dev/null; then
+		echo "Using the --hard-- option in your filelist is now deprecated."\
+			"Please read the help under the \"Use copying instead of"\
+			"symlinking\" for details on new method."
+		ext
+	fi
+
+	for i in ${NORMFILES[@]}; do
+		if ! [[ $i =~ : ]]; then
+			for k in ${CRYPTFILES[@]}; do
+				if [ "$i" == "$k" ]; then
+					echo "Duplicate filelist/cryptlist entry found ($i)." \
+						"Aborting..."
+					ext
+				fi
+			done
+		else
+			for k in ${CRYPTFILES[@]}; do
+				nfile=$(echo $i | sed 's/:.*//g')
+				cfile=$(echo $k | sed 's/:.*//g')
+
+				if [ "$nfile" != "$cfile" ]; then continue; fi
+
+				nown=()
+				cown=()
+
+				temp=$(echo $i | rev | sed 's/:.*//g' | rev)
+				temp=$(echo $temp | sed 's/,/ /g')
+
+				for d in $temp; do
+					nown=(${nown[@]} $d)
+				done
+
+				temp=$(echo $k | rev | sed 's/:.*//g' | rev)
+				temp=$(echo $temp | sed 's/,/ /g')
+
+				for d in $temp; do
+					cown=(${cown[@]} $d)
+				done
+
+				for d in ${nown[@]}; do
+					for l in ${cown[@]}; do
+						if [ "$d" == "$l" ]; then
+							echo "Duplicate filelist/cryptlist entry found" \
+								"($i - $k). Aborting..."
+							ext
+						fi
+					done
+				done
+			done
+		fi
+	done
+}
+
