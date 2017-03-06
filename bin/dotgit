@@ -8,136 +8,13 @@
 REPO="$PWD"
 DOTFILES=""
 DMZ=""
-PASSWD=""
 
 DG_H=$(dirname "$(readlink -f "$0")")/dotgit_headers
 
 source "$DG_H/files"
 source "$DG_H/help"
 source "$DG_H/init"
-
-function pstatus
-{
-	type="Adding"
-	if [ -n "$3" ]; then
-		type="$3"
-	fi;
-
-	printf "%-15s" "-->$type"; printf "%-20s" $2 $1; printf "\n"
-}
-
-function pprompt
-{
-	if [ ! -f "$REPO/passwd" ]; then
-		echo "Password hash not found - please create one with dotgit passwd."\
-			"Aborting..."
-		ext
-	fi
-
-	echo -n "Please enter a password for $1 (nothing will be shown): "
-	stty -echo
-	read ans
-	stty echo
-	echo ""
-
-	pass=$ans
-	if ! [ -f "$REPO/unsafe" ]; then
-		for count in  `seq 1 1500`; do
-			ans=$(echo $ans | sha256sum)
-		done
-
-		if [ "$ans" != "$(cat "$REPO/passwd")" ]; then
-			echo "Incorrect password. Aborting..."
-			ext
-		fi
-	fi
-
-	PASSWD=1
-	touch "$REPO/tmp"
-	chmod 600 "$REPO/tmp"
-	echo "$pass" > "$REPO/tmp"
-}
-
-function passwd
-{
-	if [ ! -f "$REPO/passwd" ]; then
-		echo "The password you enter here will be hashed (SHA256 1500 times to"\
-			"prevent bruteforcing) and then stored inside your repository to" \
-			"to ensure that you use the same password between runs" \
-
-		echo -e "\nPasswords will not be shown\n"
-		stty -echo
-
-		echo -n "Please enter password to be used for encryption/decryption: "
-		read ans
-		echo ""
-		echo -n "Please verify password: "
-		read ans2
-		echo ""
-		stty echo
-
-		if [ "$ans" != "$ans2" ]; then
-			echo "Passwords do no match, aborting..."
-			stty echo
-			ext
-		fi
-
-		touch "$REPO/tmp"
-		chmod 600 "$REPO/tmp"
-		echo "$ans" > "$REPO/tmp"
-
-		for count in `seq 1 1500`; do
-			ans=$(echo $ans | sha256sum)
-		done
-
-		echo "$ans" > "$REPO/passwd"
-	else
-		echo -e "\nPasswords will not be shown\n"
-		stty -echo
-
-		echo -n "Please enter current password: "
-		read ans
-		echo ""
-		for i in  `seq 1 1500`; do
-			ans=$(echo $ans | sha256sum)
-		done
-
-		hash=$ans
-
-		if [ "$hash" != "$(cat "$REPO/passwd")" ]; then
-			echo "Incorrect password, aborting..."
-			stty echo
-			ext
-		fi
-
-		PASSWD=1
-		echo "$ans" > "$REPO/tmp"
-		decrypt
-
-		echo -n "Please enter new password to be used for"\
-			"encryption/decryption:"
-		read ans
-		echo ""
-		echo -n "Please verify password: "
-		read ans2
-		echo ""
-		stty echo
-
-		if [ "$ans" != "$ans2" ]; then
-			echo "Passwords do no match, aborting..."
-			stty echo
-			ext
-		fi
-
-		for i in  `seq 1 1500`; do
-			ans=$(echo $ans | sha256sum)
-		done
-
-		echo "$ans" > "$REPO/passwd"
-		echo "$ans" > "$REPO/tmp"
-		encrypt
-	fi
-}
+source "$DG_H/prompts"
 
 function encrypt
 {
