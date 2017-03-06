@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Part of dotgit
+
 function update
 {
 	if [ -f "$REPO/hard" ]; then hardupdate; return; fi

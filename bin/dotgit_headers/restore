@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Part of dotgit
+
 function restore
 {
 	if [ -f "$REPO/hard" ]; then hardrestore; return; fi

@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Part of dotgit
+
 function init
 {
 	echo "Initializing dotgit repo..."

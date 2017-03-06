@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Part of dotgit
+
 function cleanup
 {
 	CDFILES=$1

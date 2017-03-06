@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Part of dotgit
+
 PASSWD=""
 
 function pstatus
