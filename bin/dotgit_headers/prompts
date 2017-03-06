@@ -125,3 +125,34 @@ function passwd
 	fi
 }
 
+function yesno
+{
+	echo -n $* "[Y/n]: "
+	read ans
+
+	if [ "$ans" == "Y" ] || [ "$ans" == "y" ] || [ -z "$ans" ]; then
+		return 1
+	else
+		return 0
+	fi
+}
+
+function lnconf
+{
+	if [ -h "$2" ]; then
+		rm "$2"
+	fi
+
+	if [ -f "$2" ] && [ ! -h "$2" ]; then
+		yesno "File $3 already exists in home directory. Do you want to"\
+			"overwrite it?"
+
+		if [ "$?" == 1 ]; then
+			rm "$2"
+		else
+			return
+		fi
+	fi
+	ln -s "$1" "$2"
+}
+
