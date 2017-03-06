@@ -1,0 +1,229 @@
+#! /bin/bash
+
+function update
+{
+	if [ -f "$REPO/hard" ]; then hardupdate; return; fi
+
+	echo "Commencing normal files update..."
+	symlink "$DOTFILES" "$1" "${NORMFILES[@]}"
+
+	echo "Commencing encrypted files update..."
+	symlink "$DMZ" "$1" "${CRYPTFILES[@]}"
+
+	restore "$1"
+
+	echo "Commencing unencrypted files cleanup..."
+	cleanup "$DOTFILES" "${NORMFILES[@]}" "${CRYPTFILES[@]}"
+	echo "Commencing encrypted files cleanup..."
+	cleanup "$DMZ" "${CRYPTFILES[@]}"
+
+	cd $REPO
+	if ! git diff --exit-code "cryptlist" > /dev/null; then
+		yesno "The cryptlist has changed since the last commit. Would you like"\
+			"to encrypt the changes?"
+		if [ $? == 1 ]; then encrypt; fi
+	fi
+}
+
+function hardupdate
+{
+	echo "Commencing hard update of normal files..."
+	copytorepo "$DOTFILES" "$1" "${NORMFILES[@]}"
+	echo "Commencing hard update of encrypted files..."
+	copytorepo "$DMZ" "$1" "${CRYPTFILES[@]}"
+	echo "Commencing unencrypted files cleanup..."
+	cleanup "$DOTFILES" ${NORMFILES[@]} ${CRYPTFILES[@]}
+	echo "Commencing encrypted files cleanup..."
+	cleanup "$DMZ" ${CRYPTFILES[@]}
+
+	cd "$REPO"
+	if ! git diff --exit-code "$REPO/cryptlist" > /dev/null; then
+		if ! yesno "The cryptlist has changed since the last commit. Would you"\
+			"like to encrypt the changes?"; then
+			encrypt "$1"
+		fi
+	fi
+}
+
+function copytorepo
+{
+	FILELIST=${@:3}
+	CDFILES=$1
+
+	cd $HOME
+	owner=$2
+
+	if [ -z "$owner" ]; then
+		for i in ${FILELIST[@]}; do
+			if [[ $i =~ : ]]; then continue; fi
+			mkdir -p "$CDFILES/common"
+			pstatus $i "common" "Copying"
+			if [ ! "$HOME/$i" -ef "$CDFILES/common/$i" ]; then
+				cp -L --parents "$i" "$CDFILES/common"
+			fi
+		done;
+		owner=$HOSTNAME
+	fi
+
+	for i in ${FILELIST[@]}; do
+		if ! [[ $i =~ $owner ]]; then continue; fi
+		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
+		filename=$(echo $i | sed s/\:.*//)
+
+		for k in "${ownrs[@]}"; do
+			if [ ! -d "$CDFILES/$k" ]; then mkdir "$CDFILES/$k"; fi
+
+			pstatus "$filename" "$k" "Copying"
+			if [ -h "$CDFILES/$k/$filename" ]; then
+				rm "$CDFILES/$k/$filename"
+			fi
+			if [ ! "$HOME/$filename" -ef "$CDFILES/$k/$filename" ]; then
+				cp -L --parents "$filename" "$CDFILES/$k"
+			fi
+		done
+	done
+}
+
+function symlink
+{
+	FILELIST=${@:3}
+	CDFILES=$1
+
+	cd $HOME;
+	owner=$2
+
+	if [ -z "$owner" ]; then
+		for i in ${FILELIST[@]}; do
+			if [[ $i =~ : ]]; then continue; fi
+			if [ ! -f "$CDFILES/common/$i" ]; then
+				mkdir -p "$CDFILES/common"
+				pstatus $i "common"
+				cp -L --parents "$i" "$CDFILES/common"
+				rm -f "$i"
+			fi
+		done;
+		owner=$HOSTNAME
+	fi
+
+	for i in ${FILELIST[@]}; do
+		if ! [[ $i =~ $owner ]]; then continue; fi
+		ownrs=($(echo $i | rev | sed s/\:.*// | sed s/\,/\ /g | rev))
+		filename=$(echo $i | sed s/\:.*//)
+		ownrs=($(for z in ${ownrs[@]}; do echo $z; done | sort))
+
+		splits=$(find "$CDFILES" -lname "*${ownrs[0]}/$filename")
+		for k in $(seq 0 `expr ${#ownrs[@]} - 1`); do
+			splits=$(echo "$splits" | grep -v "${ownrs[$k]}")
+		done
+
+		if [ -n "$splits" ] && [ -f "$CDFILES/${ownrs[0]}/$filename" ]
+		then
+			for k in $splits; do
+				temp="$CDFILES/"
+				z=$(echo $k | cut -c $(expr ${#temp} + 1)- | sed "s/\/.*//g")
+				pstatus "$filename" "$z" "Splitting"
+
+				rm -f $k
+				cp "$CDFILES/${ownrs[0]}/$filename" $k
+			done
+		fi
+
+		for k in $(seq 0 `expr ${#ownrs[@]} - 1`); do
+
+			if [ ! -d "$CDFILES/${ownrs[$k]}" ]; then
+				mkdir -p "$CDFILES/${ownrs[$k]}"; fi
+
+			if [ ! -f "$CDFILES/${ownrs[$k]}/$filename" ]; then
+				if [ $k == "0" ]; then
+					pstatus "$filename" "${ownrs[0]}"
+					cp -L --parents "$filename" "$CDFILES/${ownrs[0]}"
+
+					rm -f "$HOME/$filename"
+				else
+					pstatus "(${ownrs[0]})  $filename" "${ownrs[$k]}" "Linking"
+					mkdir -p "$(dirname "$CDFILES/${ownrs[$k]}/$filename")"
+					ln -rs "$CDFILES/${ownrs[0]}/$filename" \
+					"$CDFILES/${ownrs[$k]}/$filename"
+				fi
+			else
+				if [ "$k" == "0" ] && \
+					[ -h "$CDFILES/${ownrs[$k]}/$filename" ]; then
+					pstatus "$filename" "${ownrs[0]}"
+					rm "$CDFILES/${ownrs[$k]}/$filename"
+					cp -L --parents "$filename" "$CDFILES/${ownrs[$k]}"
+				fi
+
+				if [ "$k" != "0" ] && \
+					[ ! -h "$CDFILES/${ownrs[$k]}/$filename" ]; then
+
+					if diff "$CDFILES/${ownrs[0]}/$filename" \
+						"$CDFILES/${ownrs[$k]}/$filename" > /dev/null;then
+						rm -f "$CDFILES/${ownrs[$k]}/$filename"
+						ln -rs "$CDFILES/${ownrs[0]}/$filename" \
+							"$CDFILES/${ownrs[$k]}/$filename"
+						continue
+					fi
+
+					pstatus "$filename" "varies" "Merging"
+					echo "Different versions of the same file are now being" \
+					"linked together. Which version do you want to use?"
+
+					mergers=()
+					for z in $(seq 0 `expr ${#ownrs[@]} - 1`); do
+						if [ -f "$CDFILES/${ownrs[$z]}/$filename" ]; then
+							mergers=(${mergers[@]} ${ownrs[$z]})
+						fi
+					done
+
+					for z in $(seq 0 `expr ${#mergers[@]} - 1`); do
+						echo "$(expr $z + 1)) ${mergers[$z]}"
+					done
+
+					ans=""
+					while true; do
+						echo -ne "\nYour answer (1-${#mergers[@]}): "
+						read ans
+
+						if ! [[ $ans =~ ^[0-9]+$ ]]; then
+							echo "Please enter a number"
+							continue
+						fi
+
+						if [ $ans -ge 1 ] && [ $ans -le ${#mergers[@]} ]; then
+							break
+						else
+							echo "Invalid option, please enter a number "\
+								"between 1 and ${#mergers[@]}"
+						fi
+					done
+					ans=`expr $ans - 1`
+
+					if [ $ans -ne 0 ]; then
+						rm "$CDFILES/${ownrs[0]}/$filename"
+						cp "$CDFILES/${ownrs[$ans]}/$filename" \
+							"$CDFILES/${ownrs[0]}/$filename"
+					fi
+
+					for z in $(seq 1 `expr ${#ownrs[@]} - 1`); do
+						rm "$CDFILES/${ownrs[$z]}/$filename"
+					done
+
+					pstatus "(${ownrs[0]}) $filename" "${ownrs[$k]}" "Linking"
+					if [ -f "$CDFILES/${ownrs[$k]}/$filename" ]; then
+						rm "$CDFILES/${ownrs[$k]}/$filename"
+					fi
+					ln -rs "$CDFILES/${ownrs[0]}/$filename" \
+					"$CDFILES/${ownrs[$k]}/$filename"
+				fi
+
+				if [ "$k" != "0" ] && \
+					[ -h "$CDFILES/${ownrs[$k]}/$filename" ]; then
+					rm -f "$CDFILES/${ownrs[$k]}/$filename"
+					ln -rs "$CDFILES/${ownrs[0]}/$filename" \
+					"$CDFILES/${ownrs[$k]}/$filename"
+				fi
+			fi
+		done;
+	done;
+}
+
