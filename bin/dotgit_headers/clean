@@ -1,0 +1,82 @@
+#! /bin/bash
+
+function cleanup
+{
+	CDFILES=$1
+	FILELIST=${@:2}
+
+	if [ -z "$(ls -A $CDFILES)" ]; then
+		return
+	fi
+
+	cd "$CDFILES"
+	for i in *; do
+		echo "Cleanup - entering $i..."
+		cd "$i"
+
+		find -not -type d | while read k; do
+			k=$(echo $k | cut -c 3-);
+
+			z=
+			if [ "$i" != "common" ]; then
+				z="$i"
+			fi
+
+			h=0
+			if [[ $k =~ .hash ]]; then
+				k=$(echo $k | sed 's/\.hash//')
+				h=1
+			fi
+
+			if [ -n "$z" ]; then
+				flag=0
+				for f in ${FILELIST[@]}; do
+					only=$k:$z\$
+					first=$k:$z,
+					mid=$k:.\*,$z,
+					last=$k:.\*,$z\$
+
+					if [[ $f =~ $only ]] || [[ $f =~ $first ]] || \
+						[[ $f =~ $mid ]] || [[ $f =~ $last ]]; then
+						flag=1
+						break;
+					fi
+				done
+
+				if [ $flag == 0 ]; then
+					if [ $h == 1 ]; then k="$k.hash"; fi
+					pstatus "$i/$k" "$i" "Removing"
+					rm "$k"
+				fi;
+			else
+				flag=0
+				for f in ${FILELIST[@]}; do
+					reg="^$k\$"
+					if [[ $f =~ $reg ]]; then
+						flag=1
+						break
+					fi
+				done
+
+				if [ $flag == 0 ]; then
+					if [ $h == 1 ]; then k="$k.hash"; fi
+					pstatus "$i/$k" "$i" "Removing"
+					rm "$k"
+				fi
+			fi
+		done;
+		cd "$CDFILES"
+	done;
+
+	find "$CDFILES" -not -name "$(basename $CDFILES)" -and -empty -and -type d \
+	-delete
+}
+
+function cleanhome
+{
+	echo "Cleaning up old repo links..."
+	for i in $(find $HOME -type l -not -wholename "$REPO/*"); do
+		if [[ `readlink $i` =~ $REPO ]]; then rm $i; fi
+	done
+}
+
