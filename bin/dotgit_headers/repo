@@ -8,8 +8,8 @@ function errecho
 
 function init
 {
-	touch filelist
-	touch cryptlist
+	touch $FILELIST
+	touch $CRYPTLIST
 
 	if [ ! -d ".git" ]; then
 		git init
@@ -32,17 +32,39 @@ function safety_checks
 		exit 1
 	fi
 
-	if [ ! -f "filelist" ]; then
+	if [ ! -f $FILELIST ]; then
 		errecho "Cannot locate filelist. Please make sure this repository" \
 			"was initialised by dotgit."
 		exit 1
 	fi
 
-	if [ ! -f "cryptlist" ]; then
+	if [ ! -f $CRYPTLIST ]; then
 		errecho "Cannot locate cryptlist. Please make sure this repository" \
 			"was initialised by dotgit."
 		exit 1
 	fi
+}
+
+function init_flists
+{
+	local n=0
+
+	IFS=":"
+	for cur in $FILELIST $CRYPTLIST; do
+		while read line; do
+			local l=($line)
+			if [ $n -eq 0 ]; then
+				N_F=(${N_F[@]} ${l[0]})
+				N_C=(${N_C[@]} ${l[1]})
+			else
+				C_F=(${C_F[@]} ${l[0]})
+				C_C=(${C_C[@]} ${l[1]})
+			fi
+		done < "$cur"
+		n=1
+	done
+
+	unset cur
 }
 
 [ ! $DG_START ] && echo "Do not source this directly, it is used by dotgit"

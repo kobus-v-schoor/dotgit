@@ -9,13 +9,20 @@
 declare -r DG_START=0 # Marker for header files
 declare -r DG_H=$(dirname "$(readlink -f "$0")")/dotgit_headers # Headers DIR
 declare -r REPO="$PWD" # Original repo dir
+declare -r FILELIST="filelist"
+declare -r CRYPTLIST="cryptlist"
 
 # shellcheck source=dotgit_headers/help
 source "$DG_H/help"
 # shellcheck source=dotgit_headers/repo
 source "$DG_H/repo"
 
-declare -a CTG
+declare -a CTG # Active categories
+
+declare -a N_F # Normal files
+declare -a N_C # Normal categories
+declare -a C_F # Crypt files
+declare -a C_C # Crypt categories
 
 if [[ $# == 0 ]]; then
 	phelp
@@ -28,6 +35,7 @@ else
 fi
 
 [[ $1 != init ]] && safety_checks
+init_flists
 
 case "$1" in
 	"help")phelp;;
