@@ -1,42 +1,34 @@
 #! /bin/bash
+# shellcheck disable=SC2155
 
 # Dotgit is an easy-to-use and effective way to backup all your dotfiles and
 # manage them in a repository
 
 # Developer: Kobus van Schoor
 
-REPO="$PWD"
-DOTFILES=""
-DMZ=""
+declare -r DG_START=1 # Marker for header files
+declare -r DG_H=$(dirname "$(readlink -f "$0")")/dotgit_headers # Headers DIR
 
-DG_H=$(dirname "$(readlink -f "$0")")/dotgit_headers
-
-source "$DG_H/files"
+# shellcheck source=dotgit_headers/help
 source "$DG_H/help"
-source "$DG_H/init"
-source "$DG_H/prompts"
-source "$DG_H/security"
-source "$DG_H/update"
-source "$DG_H/restore"
-source "$DG_H/clean"
-source "$DG_H/info"
-source "$DG_H/cycle"
 
-if [[ $# -eq 0 ]]; then
+declare -a CTG
+
+if [[ $# == 0 ]]; then
 	phelp;
 	exit;
-fi;
-
-if [[ $1 != "init" ]]; then cfilelist "$1" "$2"; fi
-safeguards $1
-
-trap ext SIGINT
+elif [[ $# == 1 ]]; then
+	CTG=(common $HOSTNAME)
+else
+	# shellcheck disable=SC2034
+	CTG=(${@:2})
+fi
 
 case "$1" in
-	"update")update "$2";;
-	"restore")restore "$2";;
-	"generate")generate;;
-	"hard-restore")hardrestore "$2";;
+	"update")update CTG[@];;
+	"restore")restore CTG[@];;
+	"generate")generate CTG[@];;
+	"hard-restore")hardrestore CTG[@];;
 	"init")init;;
 	"encrypt")encrypt;;
 	"decrypt")decrypt;;
@@ -46,5 +38,3 @@ case "$1" in
 	"help")phelp;;
 	*)echo -e "$1 is not a valid argument."; exit 1;;
 esac;
-
-ext 0

@@ -11,7 +11,7 @@ function phelp
   multiple hosts. You can link dotfiles of two hosts together or keep them
   separated, all with an intuitive filelist. Dotgit does all the dirty work
   involving git, allowing you to use dotgit even though you have no idea how git
-  works. For those of you who are seasoned git veterans, dotgit won''t impair
+  works. For those of you who are seasoned git veterans, dotgit won'\''t impair
   your power. Dotgit works with a single repo with no extra frills and a simple
   file hierarchy, allowing you to wield your git powers without limits.
 
@@ -71,29 +71,29 @@ ENCRYPTION:
   relevant filenames in the "cryptlist" file in the root of the dotgit repo. The
   "cryptlist" file uses exactly the same syntax as the normal filelist.
 
-  Unlike with the unencrypted files encrypted files can''t be updated in the
+  Unlike with the unencrypted files encrypted files can'\''t be updated in the
   repository automatically like the normal symlinks. They first need to be
   encrypted before they can be committed and pushed to a remote. Because of this
   when linking or copying the dotfiles to your home dir the encrypted files will
   first be decrypted and then put in the "dmz" folder of dotgit. Inside this
   folder they are decrypted and these files will be linked into your home dir.
-  When you wan''t to commit your changes to the repository these files will have
-  to be encrypted first and then copied back into the repository. Automatic
-  decryption can be done with git hooks, so when you do a ''git pull'' the new
-  files will be decrypted automatically. New files will also be automatically
-  encrypted when you run ''dotgit generate''.
+  When you wan'\''t to commit your changes to the repository these files will
+  have to be encrypted first and then copied back into the repository. Automatic
+  decryption can be done with git hooks, so when you do a '\''git pull'\'' the
+  new files will be decrypted automatically. New files will also be
+  automatically encrypted when you run '\''dotgit generate'\''.
 
-  NOTE: When cloning a dotgit repo, you will first need to run ''dotgit init''
-  inside the repo to set up the git hooks as they cannot be stored inside the
-  repo when pushed to a remote.
+  NOTE: When cloning a dotgit repo, you will first need to run '\''dotgit
+  init'\'' inside the repo to set up the git hooks as they cannot be stored
+  inside the repo when pushed to a remote.
 
 DIRECTORY SUPPORT:
   Due to the fact that dotgit cannot possibly know beforehand which files will
-  be present in a directory dotgit''s support for directories are not quite as
+  be present in a directory dotgit'\''s support for directories are not quite as
   versatile as its support for files. Currently dotgit creates a pseudo filelist
   from the files present the directory. This means the following applies: Should
-  you run 'dotgit update' ALL the files you want in the repo should be present
-  inside the dir you specified (either links to the repo or the files
+  you run '\''dotgit update'\'' ALL the files you want in the repo should be
+  present inside the dir you specified (either links to the repo or the files
   themselves). This is unlike normal files for dotgit where partial updates are
   possible. Any files not present in the dir but present in the repo will be
   deleted from the repo. The same goes for "hard" version of the update
@@ -125,7 +125,7 @@ OPTIONS:
                           the repository and set up links in home folder
                           If any changes are made to the filelist you should run
                           dotgit with the update option to keep symlinks
-                          up-to-date. DO NOT USE THIS IF YOU''RE JUST GOING TO
+                          up-to-date. DO NOT USE THIS IF YOU'\''RE JUST GOING TO
                           RESTORE YOUR FILES. See the "restore" option made for
                           this purpose.
                           "Hard" option - Will copy files into repository and
@@ -171,3 +171,4 @@ OPTIONS:
   help                --  Show this message' | less
 }
 
+[ !$DG_START ] && echo "Do not source this directly, it is used by dotgit"
