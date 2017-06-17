@@ -6,17 +6,20 @@
 
 # Developer: Kobus van Schoor
 
-declare -r DG_START=1 # Marker for header files
+declare -r DG_START=0 # Marker for header files
 declare -r DG_H=$(dirname "$(readlink -f "$0")")/dotgit_headers # Headers DIR
+declare -r REPO="$PWD" # Original repo dir
 
 # shellcheck source=dotgit_headers/help
 source "$DG_H/help"
+# shellcheck source=dotgit_headers/repo
+source "$DG_H/repo"
 
 declare -a CTG
 
 if [[ $# == 0 ]]; then
-	phelp;
-	exit;
+	phelp
+	exit
 elif [[ $# == 1 ]]; then
 	CTG=(common $HOSTNAME)
 else
@@ -24,17 +27,19 @@ else
 	CTG=(${@:2})
 fi
 
+[[ $1 != init ]] && safety_checks
+
 case "$1" in
-	"update")update CTG[@];;
-	"restore")restore CTG[@];;
-	"generate")generate CTG[@];;
-	"hard-restore")hardrestore CTG[@];;
-	"init")init;;
-	"encrypt")encrypt;;
-	"decrypt")decrypt;;
-	"clean")cleanhome;;
-	"passwd")passwd;;
-	"diff")pdiff;;
 	"help")phelp;;
+	"init")init;;
+	# "update")update CTG[@];;
+	# "restore")restore CTG[@];;
+	# "generate")generate CTG[@];;
+	# "hard-restore")hardrestore CTG[@];;
+	# "encrypt")encrypt;;
+	# "decrypt")decrypt;;
+	# "clean")cleanhome;;
+	# "passwd")passwd;;
+	# "diff")pdiff;;
 	*)echo -e "$1 is not a valid argument."; exit 1;;
 esac;

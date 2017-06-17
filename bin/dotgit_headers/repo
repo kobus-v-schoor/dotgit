@@ -1,0 +1,48 @@
+#! /bin/bash
+# Part of dotgit
+
+function errecho
+{
+	>&2 echo $@
+}
+
+function init
+{
+	touch filelist
+	touch cryptlist
+
+	if [ ! -d ".git" ]; then
+		git init
+		git checkout -b master
+		git add --all
+		git commit -m "Initial dotgit commit"
+	fi
+}
+
+function safety_checks
+{
+	if [[ $REPO == $HOME ]]; then
+		errecho "Do not run dotgit in your home directory, run it in your" \
+			"dotfiles repository"
+		exit 1
+	fi
+
+	if [ ! -d ".git" ]; then
+		errecho "This does not appear to be a git directory. Aborting..."
+		exit 1
+	fi
+
+	if [ ! -f "filelist" ]; then
+		errecho "Cannot locate filelist. Please make sure this repository" \
+			"was initialised by dotgit."
+		exit 1
+	fi
+
+	if [ ! -f "cryptlist" ]; then
+		errecho "Cannot locate cryptlist. Please make sure this repository" \
+			"was initialised by dotgit."
+		exit 1
+	fi
+}
+
+[ ! $DG_START ] && echo "Do not source this directly, it is used by dotgit"
