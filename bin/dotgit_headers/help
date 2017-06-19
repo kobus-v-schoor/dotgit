@@ -170,4 +170,4 @@ OPTIONS:
   help                --  Show this message' | less
 }
 
-[ ! $DG_START ] && echo "Do not source this directly, it is used by dotgit"
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"

@@ -1,0 +1,96 @@
+#! /bin/bash
+
+function update
+{
+	# shellcheck disable=SC2155
+	local sym=$([ "$1" == "sym" ]; echo -n $?)
+	verecho "\nEntering update"
+	if ! cd "$REPO/$DG_DFDIR"; then
+		echo "Unable to enter dotfiles directory"
+		exit 1
+	fi
+	verecho "Entered dotfiles directory"
+
+	local f
+	local -a c
+	local e
+	IFS=$'\n'
+	for index in $(seq 1 ${#FN[@]}); do
+		index=$((index - 1))
+
+		f=${FN[$index]}
+		IFS=$','
+		c=(${FC[$index]})
+		e=${FE[$index]}
+
+		local found=0
+		for i in "${CTG[@]}"; do
+			for k in "${c[@]}"; do
+				if [[ $k == "$i" ]]; then
+					found=1;
+					break;
+				fi
+			done
+			[[ $found -eq 1 ]] && break
+		done
+		unset i
+		unset k
+
+		verecho " > Updating \"$f\" - ${c[*]} - $e"
+
+		if [[ $found -ne 1 ]]; then
+			verecho "  > Not in specified categories. Skipping..."
+			continue
+		fi
+
+		found=0
+		for i in "${c[@]}"; do
+			if [ -f  "$i/$f" ]; then
+				found=1
+				verecho "  > Found in $i"
+				break
+			fi
+		done
+		unset i
+
+		if [ $found -eq 0 ]; then
+			verecho "  > Not found in repo, adding to repo"
+			# shellcheck disable=SC2164
+			cd "$HOME"
+
+			if [ ! -f "$f" ]; then
+				verecho "  > Cannot find file in home folder. Skipping..."
+				continue
+			fi
+
+			mkdir -p "$REPO/$DG_DFDIR/${c[0]}"
+			cp --parents "$f" "$REPO/$DG_DFDIR/${c[0]}"
+			verecho "   > Root file added to repo"
+
+			for i in "${c[@]:1}"; do
+				if [[ $sym -eq 0 ]]; then
+					mkdir -p "$(dirname "$REPO/$DG_DFDIR/$i/$f")"
+					# Link other categories to "root" file (first in cat arr)
+					ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$REPO/$DG_DFDIR/$i/$f"
+					verecho "   > Co-category linked to root"
+				else
+					cp --parents "$f" "$REPO/$DG_DFDIR/$i"
+					verecho "   > Copied to co-category"
+				fi
+			done
+			unset i
+
+			if [[ $sym -eq 0 ]]; then
+				verecho "  > Removing file from home folder and linking to repo"
+				rm "$f"
+				ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$f"
+			fi
+		else
+			echo "TODO"
+		fi
+	done
+
+	unset index
+}
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"

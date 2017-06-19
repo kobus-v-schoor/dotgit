@@ -11,18 +11,23 @@ declare -r DG_H=$(dirname "$(readlink -f "$0")")/dotgit_headers # Headers DIR
 declare -r REPO="$PWD" # Original repo dir
 declare -r FILELIST="filelist"
 declare -r CRYPTLIST="cryptlist"
+declare -r DG_DFDIR="dotfiles"
+declare -r DG_VERBOSE=$([ "$1" == "verbose" ]; echo -n $?)
 
 # shellcheck source=dotgit_headers/help
 source "$DG_H/help"
 # shellcheck source=dotgit_headers/repo
 source "$DG_H/repo"
+# shellcheck source=dotgit_headers/update
+source "$DG_H/update"
 
 declare -a CTG # Active categories
 
-declare -a N_F # Normal files
-declare -a N_C # Normal categories
-declare -a C_F # Crypt files
-declare -a C_C # Crypt categories
+declare -a FN # File names
+declare -a FC # Normal categories
+declare -a FE # File encrypt flag
+
+[[ $DG_VERBOSE -eq 0 ]] && shift
 
 if [[ $# == 0 ]]; then
 	phelp
@@ -34,13 +39,15 @@ else
 	CTG=(${@:2})
 fi
 
+verecho "\nActive categories: ${CTG[*]}"
+
 [[ $1 != init ]] && safety_checks
 init_flists
 
 case "$1" in
 	"help")phelp;;
 	"init")init;;
-	# "update")update CTG[@];;
+	"update")update "sym";;
 	# "restore")restore CTG[@];;
 	# "generate")generate CTG[@];;
 	# "hard-restore")hardrestore CTG[@];;

@@ -3,13 +3,23 @@
 
 function errecho
 {
-	>&2 echo $@
+	>&2 echo "$@"
+}
+
+function verecho
+{
+	[[ $DG_VERBOSE -eq 0 ]] && echo -e "$@"
 }
 
 function init
 {
-	touch $FILELIST
-	touch $CRYPTLIST
+	if ! cd "$REPO"; then
+		errecho "Unable to enter repo."
+		exit 1
+	fi
+
+	touch "$FILELIST"
+	touch "$CRYPTLIST"
 
 	if [ ! -d ".git" ]; then
 		git init
@@ -21,7 +31,7 @@ function init
 
 function safety_checks
 {
-	if [[ $REPO == $HOME ]]; then
+	if [[ $REPO == "$HOME" ]]; then
 		errecho "Do not run dotgit in your home directory, run it in your" \
 			"dotfiles repository"
 		exit 1
@@ -32,15 +42,20 @@ function safety_checks
 		exit 1
 	fi
 
-	if [ ! -f $FILELIST ]; then
+	if [ ! -f "$FILELIST" ]; then
 		errecho "Cannot locate filelist. Please make sure this repository" \
 			"was initialised by dotgit."
 		exit 1
 	fi
 
-	if [ ! -f $CRYPTLIST ]; then
+	if [ ! -f "$CRYPTLIST" ]; then
 		errecho "Cannot locate cryptlist. Please make sure this repository" \
 			"was initialised by dotgit."
+		exit 1
+	fi
+
+	if ! mkdir -p "$REPO/$DG_DFDIR"; then
+		"Unable to create dotfiles dir"
 		exit 1
 	fi
 }
@@ -51,20 +66,17 @@ function init_flists
 
 	IFS=":"
 	for cur in $FILELIST $CRYPTLIST; do
-		while read line; do
+		while read -r line; do
 			local l=($line)
-			if [ $n -eq 0 ]; then
-				N_F=(${N_F[@]} ${l[0]})
-				N_C=(${N_C[@]} ${l[1]})
-			else
-				C_F=(${C_F[@]} ${l[0]})
-				C_C=(${C_C[@]} ${l[1]})
-			fi
+			FN=(${FN[@]} ${l[0]})
+			FC=(${FC[@]} ${l[1]:-"common"})
+			FE=(${FE[@]} $n)
 		done < "$cur"
 		n=1
 	done
 
+	unset line
 	unset cur
 }
 
-[ ! $DG_START ] && echo "Do not source this directly, it is used by dotgit"
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"
