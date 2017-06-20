@@ -39,10 +39,12 @@ else
 	CTG=(${@:2})
 fi
 
-verecho "\nActive categories: ${CTG[*]}"
+verecho "Active categories: ${CTG[*]}"
 
-[[ $1 != init ]] && safety_checks
-init_flists
+if [[ "$1" != init ]]; then
+	safety_checks
+	init_flists
+fi
 
 case "$1" in
 	"help")phelp;;

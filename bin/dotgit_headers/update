@@ -39,7 +39,7 @@ function update
 		verecho "$(levecho  1 "Updating \"$f\" - ${c[*]} - $e")"
 
 		if [[ $found -ne 1 ]]; then
-			verecho "  > Not in specified categories. Skipping..."
+			verecho "$(levecho 2 "Not in specified categories. Skipping...")"
 			continue
 		fi
 
@@ -47,35 +47,35 @@ function update
 		for i in "${c[@]}"; do
 			if [ -f  "$i/$f" ]; then
 				found=1
-				verecho "  > Found in $i"
+				verecho "$(levecho 2 "Found in $i")"
 				break
 			fi
 		done
 		unset i
 
 		if [ $found -eq 0 ]; then
-			verecho "  > Not found in repo, adding to repo"
+			verecho "$(levecho 2 "Not found in repo, adding to repo")"
 			# shellcheck disable=SC2164
 			cd "$HOME"
 
 			if [ ! -f "$f" ]; then
-				verecho "  > Cannot find file in home folder. Skipping..."
+				verecho "$(levecho 3 "Cannot find file in home folder.")"
 				continue
 			fi
 
 			mkdir -p "$REPO/$DG_DFDIR/${c[0]}"
 			cp --parents "$f" "$REPO/$DG_DFDIR/${c[0]}"
-			verecho "   > Root file added to repo"
+			verecho "$(levecho 3 "Root file added to repo")"
 
 			for i in "${c[@]:1}"; do
 				if [[ $sym -eq 0 ]]; then
 					mkdir -p "$(dirname "$REPO/$DG_DFDIR/$i/$f")"
 					# Link other categories to "root" file (first in cat arr)
 					ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$REPO/$DG_DFDIR/$i/$f"
-					verecho "   > Co-category linked to root"
+					verecho "$(levecho 3 "Co-category \"$i\" linked to root")"
 				else
 					cp --parents "$f" "$REPO/$DG_DFDIR/$i"
-					verecho "   > Copied to co-category"
+					verecho "$(levecho 3 "Copied to co-category")"
 				fi
 			done
 			unset i
