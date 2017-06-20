@@ -36,7 +36,7 @@ function update
 		unset i
 		unset k
 
-		verecho " > Updating \"$f\" - ${c[*]} - $e"
+		verecho "$(levecho  1 "Updating \"$f\" - ${c[*]} - $e")"
 
 		if [[ $found -ne 1 ]]; then
 			verecho "  > Not in specified categories. Skipping..."

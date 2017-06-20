@@ -11,6 +11,18 @@ function verecho
 	[[ $DG_VERBOSE -eq 0 ]] && echo -e "$@"
 }
 
+function levecho
+{
+	local tmp=
+	while [[ ${#tmp} -lt "$1" ]]; do
+		tmp=$(echo -n "$tmp ")
+	done
+	tmp=$(echo -n "$tmp>")
+
+	shift
+	echo -n "$tmp $*"
+}
+
 function init
 {
 	if ! cd "$REPO"; then
