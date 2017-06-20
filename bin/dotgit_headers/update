@@ -3,7 +3,6 @@
 function update
 {
 	# shellcheck disable=SC2155
-	local sym=$([ "$1" == "sym" ]; echo -n $?)
 	verecho "\nEntering update"
 	if ! cd "$REPO/$DG_DFDIR"; then
 		echo "Unable to enter dotfiles directory"
@@ -23,6 +22,8 @@ function update
 		c=(${FC[$index]})
 		e=${FE[$index]}
 
+		verecho "$(levecho 1 "Updating \"$f\" - ${c[*]} - $e")"
+
 		local found=0
 		for i in "${CTG[@]}"; do
 			for k in "${c[@]}"; do
@@ -36,10 +37,25 @@ function update
 		unset i
 		unset k
 
-		verecho "$(levecho  1 "Updating \"$f\" - ${c[*]} - $e")"
-
 		if [[ $found -ne 1 ]]; then
 			verecho "$(levecho 2 "Not in specified categories. Skipping...")"
+			continue
+		fi
+
+		if [[ ! "$1" == "sym" ]]; then
+			# shellcheck disable=SC2164
+			cd "$HOME"
+
+			if [ ! -f "$f" ]; then
+				verecho "$(levecho 2 "Cannot find file in home folder.")"
+				continue
+			fi
+
+			for i in "${c[@]}"; do
+				verecho "$(levecho 2 "Copying to category $i")"
+				mkdir -p "$REPO/$DG_DFDIR/$i"
+				cp --parents "$f" "$REPO/$DG_DFDIR/$i"
+			done
 			continue
 		fi
 
@@ -68,23 +84,17 @@ function update
 			verecho "$(levecho 3 "Root file added to repo")"
 
 			for i in "${c[@]:1}"; do
-				if [[ $sym -eq 0 ]]; then
-					mkdir -p "$(dirname "$REPO/$DG_DFDIR/$i/$f")"
-					# Link other categories to "root" file (first in cat arr)
-					ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$REPO/$DG_DFDIR/$i/$f"
-					verecho "$(levecho 3 "Co-category \"$i\" linked to root")"
-				else
-					cp --parents "$f" "$REPO/$DG_DFDIR/$i"
-					verecho "$(levecho 3 "Copied to co-category")"
-				fi
+				mkdir -p "$(dirname "$REPO/$DG_DFDIR/$i/$f")"
+				# Link other categories to "root" file (first in cat arr)
+				ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$REPO/$DG_DFDIR/$i/$f"
+				verecho "$(levecho 3 "Co-category \"$i\" linked to root")"
 			done
 			unset i
 
-			if [[ $sym -eq 0 ]]; then
-				verecho "  > Removing file from home folder and linking to repo"
-				rm "$f"
-				ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$f"
-			fi
+			verecho "$(levecho 2 "Removing file from home folder and" \
+				"linking to repo")"
+			rm "$f"
+			ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$f"
 		else
 			echo "TODO"
 		fi
