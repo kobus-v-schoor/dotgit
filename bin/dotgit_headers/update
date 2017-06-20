@@ -56,14 +56,24 @@ function update
 				mkdir -p "$REPO/$DG_DFDIR/$i"
 				cp --parents "$f" "$REPO/$DG_DFDIR/$i"
 			done
+			unset i
+
 			continue
 		fi
 
 		found=0
+		local -i fsym=0
+		local fcat=
 		for i in "${c[@]}"; do
-			if [ -f  "$i/$f" ]; then
+			if [ -a  "$i/$f" ]; then
 				found=1
+				fcat=$i
 				verecho "$(levecho 2 "Found in $i")"
+
+				if [ -h "$i/$f" ] ||  [ "$i" != "${c[0]}" ]; then
+					verecho "$(levecho 3 "Invalid root file")"
+					fsym=1
+				fi
 				break
 			fi
 		done
@@ -82,22 +92,44 @@ function update
 			mkdir -p "$REPO/$DG_DFDIR/${c[0]}"
 			cp --parents "$f" "$REPO/$DG_DFDIR/${c[0]}"
 			verecho "$(levecho 3 "Root file added to repo")"
+		elif [[ $fsym -eq 1 ]]; then
+			verecho "$(levecho 2 "Finding previous root file")"
+			# shellcheck disable=SC2155
+			local root=$(readlink -f "$REPO/$DG_DFDIR/$fcat/$f")
+
+			if [ ! -f "$root" ]; then
+				verecho "$(levecho 3 "Cannot find root file," \
+					"trying to find file in home folder")"
+				if [ ! -f "$HOME/$f" ]; then
+					verecho "$(levecho "Cannot find file in home folder.")"
+					continue
+				fi
+				root="$HOME/$f"
+			fi
+
+			verecho "$(levecho 2 "Creating new root - ${c[0]}")"
+
+			mkdir -p "$(dirname "$REPO/$DG_DFDIR/${c[0]}/$f")"
+			rm "$REPO/$DG_DFDIR/${c[0]}/$f" > /dev/null 2>&1
+			cp "$root" "$REPO/$DG_DFDIR/${c[0]}/$f"
 
 			for i in "${c[@]:1}"; do
-				mkdir -p "$(dirname "$REPO/$DG_DFDIR/$i/$f")"
-				# Link other categories to "root" file (first in cat arr)
-				ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$REPO/$DG_DFDIR/$i/$f"
-				verecho "$(levecho 3 "Co-category \"$i\" linked to root")"
+				rm "$REPO/$DG_DFDIR/$i/$f" > /dev/null 2>&1
 			done
 			unset i
 
-			verecho "$(levecho 2 "Removing file from home folder and" \
-				"linking to repo")"
-			rm "$f"
-			ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$f"
-		else
-			echo "TODO"
+			verecho "$(levecho 3 "Root file added to repo")"
 		fi
+
+		for i in "${c[@]:1}"; do
+			mkdir -p "$(dirname "$REPO/$DG_DFDIR/$i/$f")"
+			# Link other categories to "root" file (first in cat arr)
+			if [ ! -f "$REPO/$DG_DFDIR/$i/$f" ]; then
+				ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$REPO/$DG_DFDIR/$i/$f"
+				verecho "$(levecho 3 "Co-category \"$i\" linked to root")"
+			fi
+		done
+		unset i
 	done
 
 	unset index
