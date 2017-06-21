@@ -130,6 +130,10 @@ function update
 			fi
 		done
 		unset i
+
+		verecho "$(levecho 2 "Removing from home and creating link to repo")"
+		rm "$HOME/$f"
+		ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$HOME/$f"
 	done
 
 	unset index

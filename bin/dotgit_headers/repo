@@ -87,12 +87,22 @@ function init_flists
 {
 	local n=0
 
-	IFS=":"
+	IFS=$'\n'
 	for cur in $FILELIST $CRYPTLIST; do
 		while read -r line; do
-			local l=($line)
+			[ ! "$line" ] && continue
+			[[ $line =~ ^# ]] && continue
+
+			local -a l
+			IFS=$':' l=($line)
+
 			FN=(${FN[@]} ${l[0]})
-			FC=(${FC[@]} ${l[1]:-"common"})
+
+			local -a arr
+			IFS=$',' arr=(${l[1]:-"common"})
+			IFS=$'\n' arr=($(sort<<<"${arr[*]}"))
+			IFS=$',' FC=(${FC[@]} "${arr[*]}")
+
 			FE=(${FE[@]} $n)
 		done < "$cur"
 		n=1

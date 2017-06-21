@@ -1,0 +1,19 @@
+#! /bin/bash
+
+function clean_home_fast
+{
+	for f in "${FN[@]}"; do
+		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
+			# Do not delete symlinks that do not point to repo
+			if [ -h "$HOME/$f" ] && \
+				[[ ! $(readlink -f "$HOME/$f") =~ ^$REPO/$DG_DFDIR ]]; then
+				continue
+			fi
+
+			verecho "Removing \"$f\""
+			rm "$HOME/$f"
+		fi
+	done
+}
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"
