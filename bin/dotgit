@@ -20,6 +20,8 @@ source "$DG_H/help"
 source "$DG_H/repo"
 # shellcheck source=dotgit_headers/update
 source "$DG_H/update"
+# shellcheck source=dotgit_headers/restore
+source "$DG_H/restore"
 
 declare -a CTG # Active categories
 
@@ -50,7 +52,7 @@ case "$1" in
 	"help")phelp;;
 	"init")init;;
 	"update")update "sym";;
-	# "restore")restore CTG[@];;
+	"restore")restore "sym";;
 	# "generate")generate CTG[@];;
 	# "hard-restore")hardrestore CTG[@];;
 	# "encrypt")encrypt;;

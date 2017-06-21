@@ -23,6 +23,17 @@ function levecho
 	echo -n "$tmp $*"
 }
 
+function prompt
+{
+	read -rp "$* [Y/n]: " ans
+
+	[[ $ans ==  "Y" ]] && return 0
+	[[ $ans ==  "y" ]] && return 0
+	[[ ! $ans  ]] && return 0
+
+	return 1
+}
+
 function init
 {
 	if ! cd "$REPO"; then

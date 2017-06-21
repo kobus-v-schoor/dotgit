@@ -1,0 +1,67 @@
+#! /bin/bash
+
+function restore
+{
+	verecho "\nEntering restore"
+	if ! cd "$REPO/$DG_DFDIR"; then
+		echo "Unable to enter dotfiles directory"
+		exit 1
+	fi
+
+	local f
+	local -a c
+	local e
+	IFS=$'\n'
+	for index in $(seq 1 ${#FN[@]}); do
+		index=$((index - 1))
+
+		f=${FN[$index]}
+		IFS=$','
+		c=(${FC[$index]})
+		e=${FE[$index]}
+
+		verecho "$(levecho 1 "Restoring \"$f\" - ${c[*]} - $e")"
+
+		local found=0
+		for i in "${CTG[@]}"; do
+			for k in "${c[@]}"; do
+				if [[ $k == "$i" ]]; then
+					found=1;
+					break;
+				fi
+			done
+			[[ $found -eq 1 ]] && break
+		done
+		unset i
+		unset k
+
+		if [[ $found -ne 1 ]]; then
+			verecho "$(levecho 2 "Not in specified categories. Skipping...")"
+			continue
+		fi
+
+		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
+			if [ -h "$HOME/$f" ]; then
+				# If link already points to repo, do nothing
+				[[ $(readlink -f "$HOME/$f") =~ ^$REPO/$DG_DFDIR* ]] && continue
+			fi
+			prompt "File \"$f\" exists in home folder, replace?" || continue
+
+			verecho "$(levecho 2 "Removing from home folder")"
+			rm "$HOME/$f"
+		fi
+
+		mkdir -p "$HOME/$(dirname "$f")"
+		local cmd=
+		if [[ $1 == "sym" ]]; then
+			verecho "$(levecho 3 "Creating symlink in home folder")"
+			cmd="ln -s"
+		else
+			verecho "$(levecho 3 "Creating copy in home folder")"
+			cmd="cp"
+		fi
+		eval $cmd "$REPO/$DG_DFDIR/${c[0]}/$f" "$HOME/$f"
+	done
+}
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"
