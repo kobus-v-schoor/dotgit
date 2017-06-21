@@ -43,6 +43,7 @@ function init
 
 	touch "$FILELIST"
 	touch "$CRYPTLIST"
+	echo "$DG_DMZ" >> .gitignore
 
 	if [ ! -d ".git" ]; then
 		git init
@@ -79,6 +80,11 @@ function safety_checks
 
 	if ! mkdir -p "$REPO/$DG_DFDIR"; then
 		"Unable to create dotfiles dir"
+		exit 1
+	fi
+
+	if ! mkdir -p "$REPO/$DG_DMZ"; then
+		"Unable to create dmz dir"
 		exit 1
 	fi
 }

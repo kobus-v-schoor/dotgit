@@ -6,7 +6,7 @@ function clean_home_fast
 		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
 			# Do not delete symlinks that do not point to repo
 			if [ -h "$HOME/$f" ] && \
-				[[ ! $(readlink -f "$HOME/$f") =~ ^$REPO/$DG_DFDIR ]]; then
+				[[ ! $(readlink -f "$HOME/$f") =~ ^$REPO ]]; then
 				continue
 			fi
 
@@ -19,15 +19,27 @@ function clean_home_fast
 function clean_repo
 {
 	verecho "\nEntering repo cleanup"
-	if ! cd "$REPO/$DG_DFDIR"; then
-		echo "Unable to enter dotfiles directory"
+
+	verecho "Cleaning dotfiles folder"
+	clean_repo_folder "$DG_DFDIR"
+	verecho "Cleaning dmz folder"
+	clean_repo_folder "$DG_DMZ"
+}
+
+function clean_repo_folder
+{
+	if ! cd "$REPO/$1"; then
+		echo "Unable to enter $1 directory"
 		exit 1
 	fi
 
 	IFS=$'\n'
 	while read -r fl; do
+		[ ! "$fl" ] && break
+
 		local c=${fl%/*}
 		local f=${fl#*/}
+		f=${f%\.hash}
 
 		local found=0
 
@@ -58,7 +70,7 @@ function clean_repo
 	done <<< "$(find . -not -type d | cut -c 3-)"
 	unset fl
 
-	verecho "Removing empty directories"
+	verecho "$(levecho 1 "Removing empty directories")"
 	find . -type d -empty -delete
 }
 

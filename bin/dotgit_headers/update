@@ -4,11 +4,6 @@ function update
 {
 	# shellcheck disable=SC2155
 	verecho "\nEntering update"
-	if ! cd "$REPO/$DG_DFDIR"; then
-		echo "Unable to enter dotfiles directory"
-		exit 1
-	fi
-	verecho "Entered dotfiles directory"
 
 	local f
 	local -a c
@@ -21,6 +16,14 @@ function update
 		IFS=$','
 		c=(${FC[$index]})
 		e=${FE[$index]}
+
+		local DFDIR
+
+		if [[ $e -eq 1 ]]; then
+			DFDIR=$DG_DMZ
+		else
+			DFDIR=$DG_DFDIR
+		fi
 
 		verecho "$(levecho 1 "Updating \"$f\" - ${c[*]} - $e")"
 
@@ -53,8 +56,8 @@ function update
 
 			for i in "${c[@]}"; do
 				verecho "$(levecho 2 "Copying to category $i")"
-				mkdir -p "$REPO/$DG_DFDIR/$i"
-				cp --parents "$f" "$REPO/$DG_DFDIR/$i"
+				mkdir -p "$REPO/$DFDIR/$i"
+				cp -p --parents "$f" "$REPO/$DFDIR/$i"
 			done
 			unset i
 
@@ -65,6 +68,9 @@ function update
 		local -i fsym=0
 		local fcat=
 		for i in "${c[@]}"; do
+			# shellcheck disable=SC2164
+			cd "$REPO/$DFDIR"
+
 			if [ -a  "$i/$f" ]; then
 				found=1
 				fcat=$i
@@ -89,13 +95,13 @@ function update
 				continue
 			fi
 
-			mkdir -p "$REPO/$DG_DFDIR/${c[0]}"
-			cp --parents "$f" "$REPO/$DG_DFDIR/${c[0]}"
+			mkdir -p "$REPO/$DFDIR/${c[0]}"
+			cp -p --parents "$f" "$REPO/$DFDIR/${c[0]}"
 			verecho "$(levecho 3 "Root file added to repo")"
 		elif [[ $fsym -eq 1 ]]; then
 			verecho "$(levecho 2 "Finding previous root file")"
 			# shellcheck disable=SC2155
-			local root=$(readlink -f "$REPO/$DG_DFDIR/$fcat/$f")
+			local root=$(readlink -f "$REPO/$DFDIR/$fcat/$f")
 
 			if [ ! -f "$root" ]; then
 				verecho "$(levecho 3 "Cannot find root file," \
@@ -109,12 +115,12 @@ function update
 
 			verecho "$(levecho 2 "Creating new root - ${c[0]}")"
 
-			mkdir -p "$(dirname "$REPO/$DG_DFDIR/${c[0]}/$f")"
-			rm "$REPO/$DG_DFDIR/${c[0]}/$f" > /dev/null 2>&1
-			cp "$root" "$REPO/$DG_DFDIR/${c[0]}/$f"
+			mkdir -p "$(dirname "$REPO/$DFDIR/${c[0]}/$f")"
+			rm "$REPO/$DFDIR/${c[0]}/$f" > /dev/null 2>&1
+			cp -p "$root" "$REPO/$DFDIR/${c[0]}/$f"
 
 			for i in "${c[@]:1}"; do
-				rm "$REPO/$DG_DFDIR/$i/$f" > /dev/null 2>&1
+				rm "$REPO/$DFDIR/$i/$f" > /dev/null 2>&1
 			done
 			unset i
 
@@ -122,20 +128,20 @@ function update
 		fi
 
 		for i in "${c[@]:1}"; do
-			mkdir -p "$(dirname "$REPO/$DG_DFDIR/$i/$f")"
+			mkdir -p "$(dirname "$REPO/$DFDIR/$i/$f")"
 			# Link other categories to "root" file (first in cat arr)
-			if [ ! -f "$REPO/$DG_DFDIR/$i/$f" ]; then
-				ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$REPO/$DG_DFDIR/$i/$f"
+			if [ ! -f "$REPO/$DFDIR/$i/$f" ]; then
+				ln -rs "$REPO/$DFDIR/${c[0]}/$f" "$REPO/$DFDIR/$i/$f"
 				verecho "$(levecho 3 "Co-category \"$i\" linked to root")"
 			fi
 		done
 		unset i
 
-		verecho "$(levecho 2 "Removing from home and creating link to repo")"
+		verecho "$(levecho 2 "Creating/updating link to repo")"
 		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
 			rm "$HOME/$f"
 		fi
-		ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$HOME/$f"
+		ln -rs "$REPO/$DFDIR/${c[0]}/$f" "$HOME/$f"
 	done
 
 	unset index

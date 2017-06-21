@@ -1,0 +1,90 @@
+#! /bin/bash
+
+declare DG_PASS
+declare DG_PASS_FILE="passwd"
+declare -r DG_HASH="sha1sum"
+
+function get_password
+{
+	local mod
+	if [ -f "$REPO/$DG_PASS_FILE" ]; then
+		mod="your"
+	else
+		mod="a new"
+	fi
+	echo -n "Please enter $mod password (nothing will be shown): "
+
+	read -sr DG_PASS
+	echo
+
+	IFS=$' '
+	tmp=$DG_PASS
+
+	local -i i=0
+	while [[ $i -le 500 ]]; do
+		tmp=($($DG_HASH <<< "${tmp[0]}"))
+		i=$((i + 1))
+	done
+
+	if [ -f "$REPO/$DG_PASS_FILE" ]; then
+		[[ ${tmp[0]} == "$(cat "$REPO/$DG_PASS_FILE")" ]] && return
+		errecho "Incorrect password, exiting..."
+		exit 1
+	else
+		echo -n "${tmp[0]}" > "$REPO/$DG_PASS_FILE"
+	fi
+}
+
+function encrypt
+{
+	local f
+	local -a c
+
+	# shellcheck disable=SC2164
+	cd "$REPO/$DG_DMZ"
+
+	IFS=$'\n'
+	for index in $(seq 1 ${#FN[@]}); do
+		index=$((index - 1))
+
+		[[ ${FE[$index]} -ne 1 ]] && continue
+
+		f=${FN[$index]}
+		IFS=$',' c=(${FC[$index]})
+
+		# shellcheck disable=SC2155
+		local dmz_hash=$($DG_HASH "${c[0]}/$f")
+		dmz_hash=${dmz_hash% *}
+
+		if [ -f "$REPO/$DG_DFDIR/${c[0]}/$f.hash" ]; then
+			# shellcheck disable=SC2155
+			local cdf_hash=$(cat "$REPO/$DG_DFDIR/${c[0]}/$f.hash")
+			[[ $dmz_hash == "$cdf_hash" ]] && continue
+			rm "$REPO/$DG_DFDIR/${c[0]}/$f"
+		fi
+
+		[ ! "$DG_PASS" ] && get_password
+		gpg --batch -c --passphrase "$DG_PASS" \
+			-o "$REPO/$DG_DFDIR/${c[0]}/$f" "${c[0]}/$f"
+		echo -n "$dmz_hash" > "$REPO/$DG_DFDIR/${c[0]}/$f.hash"
+
+		for cat in "${c[@]:1}"; do
+			local cdf="$REPO/$DG_DFDIR/$cat/$f"
+			if [ -a "$cdf" ] || [ -h "$cdf" ]; then
+				rm "$cdf"
+				[ -f "$cdf.hash" ] && rm "$cdf.hash"
+			fi
+
+			cp --parents "$cat/$f" "$DG_DFDIR"
+		done
+		unset cat
+	done
+	unset index
+}
+
+function decrypt
+{
+	true
+}
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"

@@ -3,10 +3,6 @@
 function restore
 {
 	verecho "\nEntering restore"
-	if ! cd "$REPO/$DG_DFDIR"; then
-		echo "Unable to enter dotfiles directory"
-		exit 1
-	fi
 
 	local f
 	local -a c
@@ -16,8 +12,7 @@ function restore
 		index=$((index - 1))
 
 		f=${FN[$index]}
-		IFS=$','
-		c=(${FC[$index]})
+		IFS=$',' c=(${FC[$index]})
 		e=${FE[$index]}
 
 		verecho "$(levecho 1 "Restoring \"$f\" - ${c[*]} - $e")"
@@ -58,9 +53,9 @@ function restore
 			cmd="ln -s"
 		else
 			verecho "$(levecho 3 "Creating copy in home folder")"
-			cmd="cp"
+			cmd="cp -p"
 		fi
-		eval $cmd "$REPO/$DG_DFDIR/${c[0]}/$f" "$HOME/$f"
+		eval "$cmd $REPO/$DG_DFDIR/${c[0]}/$f $HOME/$f"
 	done
 }
 
