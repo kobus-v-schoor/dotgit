@@ -132,11 +132,14 @@ function update
 		unset i
 
 		verecho "$(levecho 2 "Removing from home and creating link to repo")"
-		rm "$HOME/$f"
+		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
+			rm "$HOME/$f"
+		fi
 		ln -rs "$REPO/$DG_DFDIR/${c[0]}/$f" "$HOME/$f"
 	done
 
 	unset index
+	clean_repo
 }
 
 [[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"

@@ -16,4 +16,50 @@ function clean_home_fast
 	done
 }
 
+function clean_repo
+{
+	verecho "\nEntering repo cleanup"
+	if ! cd "$REPO/$DG_DFDIR"; then
+		echo "Unable to enter dotfiles directory"
+		exit 1
+	fi
+
+	IFS=$'\n'
+	while read -r fl; do
+		local c=${fl%/*}
+		local f=${fl#*/}
+
+		local found=0
+
+		local index=0
+		for fns in "${FN[@]}"; do
+			if [[ $fns == "$f" ]]; then
+				IFS=$','
+				for cts in ${FC[$index]}; do
+					if [[ $cts == "$c" ]]; then
+						found=1;
+						break;
+					fi
+				done
+				unset cts
+
+				[[ $found -eq 1 ]] && break
+			fi
+
+			index=$((index + 1))
+		done
+		unset fns
+
+		if [[ $found -ne 1 ]]; then
+			verecho "$(levecho 1 "Removing $fl")"
+			rm "$fl"
+		fi
+
+	done <<< "$(find . -not -type d | cut -c 3-)"
+	unset fl
+
+	verecho "Removing empty directories"
+	find . -type d -empty -delete
+}
+
 [[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"
