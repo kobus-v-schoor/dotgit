@@ -27,6 +27,8 @@ source "$DG_H/restore"
 source "$DG_H/clean"
 # shellcheck source=dotgit_headers/security
 source "$DG_H/security"
+# shellcheck source=dotgit_headers/diff
+source "$DG_H/diff"
 
 declare -a CTG # Active categories
 
@@ -61,9 +63,9 @@ case "$1" in
 	"clean")clean_home_fast;;
 	"encrypt")crypt "encrypt";;
 	"decrypt")crypt "decrypt";;
+	"diff")print_diff;;
 	# "generate")generate CTG[@];;
 	# "hard-restore")hardrestore CTG[@];;
 	# "passwd")passwd;;
-	# "diff")pdiff;;
 	*)echo -e "$1 is not a valid argument."; exit 1;;
 esac;

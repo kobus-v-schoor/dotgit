@@ -1,0 +1,42 @@
+#! /bin/bash
+
+declare -a DG_DIFF_T
+declare -a DG_DIFF_F
+
+function init_diff
+{
+	git add --all
+	IFS=$'\n'
+	while read -r line; do
+		IFS=$' '
+		local -a l=($line)
+		[[ ! ${l[1]} =~ ^$DG_DFDIR* ]] && continue
+		[[ ${l[1]} =~ .*\.hash ]] && continue
+
+		case "${l[0]}" in
+			"A")DG_DIFF_T=(${DG_DIFF_T[@]} "added");;
+			"M")DG_DIFF_T=(${DG_DIFF_T[@]} "modified");;
+			"D")DG_DIFF_T=(${DG_DIFF_T[@]} "deleted");;
+			*)errecho "Unknown git change \"${l[0]}\" - ${l[1]}"; continue;;
+		esac;
+
+		DG_DIFF_F=(${DG_DIFF_F[@]} "${l[1]#$DG_DFDIR\/}")
+	done <<< "$(git status --porcelain)"
+	unset line
+
+	git reset -q
+}
+
+function print_diff
+{
+	init_diff
+
+	IFS=$'\n'
+	for index in $(seq 1 ${#DG_DIFF_T[@]}); do
+		index=$((index - 1))
+		echo "${DG_DIFF_T[$index]^} ${DG_DIFF_F[$index]}"
+	done
+	unset index
+}
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"
