@@ -37,6 +37,43 @@ function print_diff
 		echo "${DG_DIFF_T[$index]^} ${DG_DIFF_F[$index]}"
 	done
 	unset index
+
+	local f
+	local -a c
+
+	local str
+	IFS=$'\n'
+	for index in $(seq 1 ${#FN[@]}); do
+		index=$((index - 1))
+
+		[[ ${FE[$index]} -ne 1 ]] && continue
+
+		f=${FN[$index]}
+		IFS=$',' c=(${FC[$index]})
+
+		for cat in "${c[@]}"; do
+			[ ! -f "$REPO/$DG_DMZ/$cat/$f" ] && continue
+
+			if [ ! -f "$REPO/$DG_DFDIR/$cat/$f" ]; then
+				str="$str\nAdded $cat/$f"
+				continue
+			fi
+
+			[ -h "$REPO/$DG_DFDIR/$cat/$f" ] && continue
+
+			local hashed
+			local hashfl
+			hashed=$($DG_HASH "$REPO/$DG_DMZ/$cat/$f")
+			hashed=${hashed% *}
+			hashfl=$(cat "$REPO/$DG_DFDIR/$cat/$f.hash")
+
+			[[ $hashed != "$hashfl" ]] && str="$str\nModified $cat/$f"
+		done
+		unset cat
+	done
+
+	[ "$str" ] && echo -e "\nUnencrypted changes:\n$str"
+	unset index
 }
 
 [[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"
