@@ -5,7 +5,7 @@ function clean_home_fast
 	for f in "${FN[@]}"; do
 		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
 			# Do not delete symlinks that do not point to repo
-			if [ -h "$HOME/$f" ] && \
+			if [ -a "$HOME/$f" ] && [ -h "$HOME/$f" ] && \
 				[[ ! $(readlink -f "$HOME/$f") =~ ^$REPO ]]; then
 				continue
 			fi

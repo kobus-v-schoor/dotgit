@@ -15,6 +15,14 @@ function restore
 		IFS=$',' c=(${FC[$index]})
 		e=${FE[$index]}
 
+		local DFDIR
+
+		if [[ $e -eq 1 ]]; then
+			DFDIR=$DG_DMZ
+		else
+			DFDIR=$DG_DFDIR
+		fi
+
 		verecho "$(levecho 1 "Restoring \"$f\" - ${c[*]} - $e")"
 
 		local found=0
@@ -38,7 +46,7 @@ function restore
 		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
 			if [ -h "$HOME/$f" ]; then
 				# If link already points to repo, do nothing
-				[[ $(readlink -f "$HOME/$f") =~ ^$REPO/$DG_DFDIR* ]] && continue
+				[[ $(readlink -f "$HOME/$f") =~ ^$REPO/$DFDIR* ]] && continue
 			fi
 			prompt "File \"$f\" exists in home folder, replace?" || continue
 
@@ -55,7 +63,7 @@ function restore
 			verecho "$(levecho 3 "Creating copy in home folder")"
 			cmd="cp -p"
 		fi
-		eval "$cmd $REPO/$DG_DFDIR/${c[0]}/$f $HOME/$f"
+		eval "$cmd $REPO/$DFDIR/${c[0]}/$f $HOME/$f"
 	done
 }
 

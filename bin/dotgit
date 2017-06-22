@@ -59,10 +59,10 @@ case "$1" in
 	"update")update "sym";;
 	"restore")restore "sym";;
 	"clean")clean_home_fast;;
-	"encrypt")encrypt;;
+	"encrypt")crypt "encrypt";;
+	"decrypt")crypt "decrypt";;
 	# "generate")generate CTG[@];;
 	# "hard-restore")hardrestore CTG[@];;
-	# "decrypt")decrypt;;
 	# "passwd")passwd;;
 	# "diff")pdiff;;
 	*)echo -e "$1 is not a valid argument."; exit 1;;

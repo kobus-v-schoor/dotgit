@@ -18,7 +18,7 @@ function get_password
 	echo
 
 	IFS=$' '
-	tmp=$DG_PASS
+	local tmp=$DG_PASS
 
 	local -i i=0
 	while [[ $i -le 500 ]]; do
@@ -35,13 +35,21 @@ function get_password
 	fi
 }
 
-function encrypt
+function crypt
 {
+	local FR_D
+	local TO_D
+
+	if [[ $1 == "encrypt" ]]; then
+		FR_D="$REPO/$DG_DMZ"
+		TO_D="$REPO/$DG_DFDIR"
+	else
+		FR_D="$REPO/$DG_DFDIR"
+		TO_D="$REPO/$DG_DMZ"
+	fi
+
 	local f
 	local -a c
-
-	# shellcheck disable=SC2164
-	cd "$REPO/$DG_DMZ"
 
 	IFS=$'\n'
 	for index in $(seq 1 ${#FN[@]}); do
@@ -52,39 +60,75 @@ function encrypt
 		f=${FN[$index]}
 		IFS=$',' c=(${FC[$index]})
 
-		# shellcheck disable=SC2155
-		local dmz_hash=$($DG_HASH "${c[0]}/$f")
-		dmz_hash=${dmz_hash% *}
+		verecho "$(levecho 1 "${1^}ing $f")"
 
-		if [ -f "$REPO/$DG_DFDIR/${c[0]}/$f.hash" ]; then
+		local df_fl="$REPO/$DG_DFDIR/${c[0]}/$f"
+		local dm_fl="$REPO/$DG_DMZ/${c[0]}/$f"
+
+		local fr_fl="$FR_D/${c[0]}/$f"
+		local to_fl="$TO_D/${c[0]}/$f"
+
+		local hashed
+		local hashfl
+
+		if [ -f "$dm_fl" ]; then
+			verecho "$(levecho 2 "Found file in dmz")"
+			hashed=$($DG_HASH "$dm_fl")
+			hashed=${hashed% *}
+		fi
+
+		if [ -f "$df_fl.hash" ]; then
+			verecho "$(levecho 2 "Found file in dotfiles")"
 			# shellcheck disable=SC2155
-			local cdf_hash=$(cat "$REPO/$DG_DFDIR/${c[0]}/$f.hash")
-			[[ $dmz_hash == "$cdf_hash" ]] && continue
-			rm "$REPO/$DG_DFDIR/${c[0]}/$f"
+			local hashfl=$(cat "$df_fl.hash")
+		fi
+
+		if [ ! "$hashed" ] && [[ $1 == "encrypt" ]]; then
+			verecho "$(levecho 2 "File not found in dmz. Skipping")"
+			continue
+		fi
+
+		if [ ! "$hashfl" ] && [[ $1 == "decrypt" ]]; then
+			verecho "$(levecho 2 "File not found in dotfiles. Skipping")"
+			continue
+		fi
+
+		if [[ $hashed == "$hashfl" ]]; then
+			verecho "$(levecho 2 "File hashes match. Skipping")"
+			continue
 		fi
 
 		[ ! "$DG_PASS" ] && get_password
-		gpg --batch -c --passphrase "$DG_PASS" \
-			-o "$REPO/$DG_DFDIR/${c[0]}/$f" "${c[0]}/$f"
-		echo -n "$dmz_hash" > "$REPO/$DG_DFDIR/${c[0]}/$f.hash"
+
+		local gpg_cmd
+
+		[[ $1 == "encrypt" ]] && gpg_cmd="-c"
+		[[ $1 == "decrypt" ]] && gpg_cmd="-d"
+
+		if [ -a "$to_fl" ] || [ -h "$to_fl" ]; then
+			rm "$to_fl"
+			[ -f "$to_fl.hash" ] && rm "$to_fl.hash"
+		fi
+
+		mkdir -p "$(dirname "$to_fl")"
+		gpg -q --batch --passphrase "$DG_PASS" $gpg_cmd -o "$to_fl" "$fr_fl"
+
+		[[ $1 == "encrypt" ]] && echo -n "$hashed" > "$to_fl.hash"
 
 		for cat in "${c[@]:1}"; do
-			local cdf="$REPO/$DG_DFDIR/$cat/$f"
-			if [ -a "$cdf" ] || [ -h "$cdf" ]; then
-				rm "$cdf"
-				[ -f "$cdf.hash" ] && rm "$cdf.hash"
+			local fl="$TO_D/$cat/$f"
+			if [ -a "$fl" ] || [ -h "$fl" ]; then
+				rm "$fl"
+				[ -f "$fl.hash" ] && rm "$fl.hash"
 			fi
-
-			cp --parents "$cat/$f" "$DG_DFDIR"
+			mkdir -p "$(dirname "$fl")"
+			ln -rs "$to_fl" "$fl"
 		done
 		unset cat
 	done
 	unset index
-}
 
-function decrypt
-{
-	true
+	clean_repo
 }
 
 [[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"
