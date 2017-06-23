@@ -110,17 +110,17 @@ function init_flists
 			IFS=$'\n' arr=($(sort<<<"${arr[*]}"))
 
 			if [ ! -d "${l[0]}" ]; then
-				FN=(${FN[@]} "${l[0]}")
-				IFS=$',' FC=(${FC[@]} "${arr[*]}")
-				FE=(${FE[@]} $n)
+				FN+=("${l[0]}")
+				IFS=$',' FC+=("${arr[*]}")
+				FE+=($n)
 				verecho "$(levecho 1 "Added ${l[0]} - ${arr[*]} - $n")"
 			else
 				verecho "$(levecho 1 \
 					"Using directory mode for ${l[0]} - ${arr[*]} - $n")"
 				while read -r fls; do
-					FN=(${FN[@]} "$fls")
-					IFS=$',' FC=(${FC[@]} "${arr[*]}")
-					FE=(${FE[@]} $n)
+					FN+=("$fls")
+					IFS=$',' FC+=("${arr[*]}")
+					FE+=($n)
 					verecho "$(levecho 2 "Added $fls")"
 				done <<< "$(find "${l[0]}" -not -type d)"
 				unset fls

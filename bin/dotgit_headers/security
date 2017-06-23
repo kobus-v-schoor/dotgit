@@ -135,6 +135,9 @@ function crypt
 			ln -rs "$to_fl" "$fl"
 		done
 		unset cat
+
+		unset hashed
+		unset hashfl
 	done
 	unset index
 
