@@ -63,9 +63,9 @@ case "$1" in
 	"clean")clean_home_fast;;
 	"encrypt")crypt "encrypt";;
 	"decrypt")crypt "decrypt";;
+	"passwd")change_password;;
 	"diff")print_diff;;
 	# "generate")generate CTG[@];;
 	# "hard-restore")hardrestore CTG[@];;
-	# "passwd")passwd;;
 	*)echo -e "$1 is not a valid argument."; exit 1;;
 esac;

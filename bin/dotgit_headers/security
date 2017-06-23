@@ -35,6 +35,15 @@ function get_password
 	fi
 }
 
+function change_password
+{
+	get_password
+	crypt "decrypt"
+	rm "$REPO/$DG_PASS_FILE"
+	get_password
+	crypt "encrypt" "force"
+}
+
 function crypt
 {
 	verecho "\nInitiating $1ion"
@@ -94,7 +103,7 @@ function crypt
 			continue
 		fi
 
-		if [[ $hashed == "$hashfl" ]]; then
+		if [[ $hashed == "$hashfl" ]] && [[ $2 != "force" ]]; then
 			verecho "$(levecho 2 "File hashes match. Skipping")"
 			continue
 		fi
