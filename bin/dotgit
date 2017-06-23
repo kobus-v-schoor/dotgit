@@ -60,12 +60,13 @@ case "$1" in
 	"init")init;;
 	"update")update "sym";;
 	"restore")restore "sym";;
+	"hard-update")update "nosym";;
+	"hard-restore")update "nosym";;
 	"clean")clean_home_fast;;
 	"encrypt")crypt "encrypt";;
 	"decrypt")crypt "decrypt";;
 	"passwd")change_password;;
 	"diff")print_diff;;
-	# "generate")generate CTG[@];;
-	# "hard-restore")hardrestore CTG[@];;
+	"generate")generate_commit_msg;;
 	*)echo -e "$1 is not a valid argument."; exit 1;;
 esac;
