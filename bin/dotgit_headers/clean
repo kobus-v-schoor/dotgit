@@ -18,7 +18,7 @@ function clean_home_fast
 
 function clean_repo
 {
-	verecho "\nEntering repo cleanup"
+	verecho "\nInitiating repo cleanup"
 
 	verecho "Cleaning dotfiles folder"
 	clean_repo_folder "$DG_DFDIR"
@@ -37,7 +37,7 @@ function clean_repo_folder
 	while read -r fl; do
 		[ ! "$fl" ] && break
 
-		local c=${fl%/*}
+		local c=${fl%%/*}
 		local f=${fl#*/}
 		f=${f%\.hash}
 

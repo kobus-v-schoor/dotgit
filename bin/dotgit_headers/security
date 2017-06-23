@@ -37,6 +37,7 @@ function get_password
 
 function crypt
 {
+	verecho "\nInitiating $1ion"
 	local FR_D
 	local TO_D
 

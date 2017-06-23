@@ -91,10 +91,13 @@ function safety_checks
 
 function init_flists
 {
+	verecho "Initiating filelists"
+	# shellcheck disable=SC2164
+	cd "$HOME"
 	local n=0
 
 	IFS=$'\n'
-	for cur in $FILELIST $CRYPTLIST; do
+	for cur in "$REPO/$FILELIST" "$REPO/$CRYPTLIST"; do
 		while read -r line; do
 			[ ! "$line" ] && continue
 			[[ $line =~ ^# ]] && continue
@@ -102,14 +105,26 @@ function init_flists
 			local -a l
 			IFS=$':' l=($line)
 
-			FN=(${FN[@]} ${l[0]})
-
 			local -a arr
 			IFS=$',' arr=(${l[1]:-"common"})
 			IFS=$'\n' arr=($(sort<<<"${arr[*]}"))
-			IFS=$',' FC=(${FC[@]} "${arr[*]}")
 
-			FE=(${FE[@]} $n)
+			if [ ! -d "${l[0]}" ]; then
+				FN=(${FN[@]} "${l[0]}")
+				IFS=$',' FC=(${FC[@]} "${arr[*]}")
+				FE=(${FE[@]} $n)
+				verecho "$(levecho 1 "Added ${l[0]} - ${arr[*]} - $n")"
+			else
+				verecho "$(levecho 1 \
+					"Using directory mode for ${l[0]} - ${arr[*]} - $n")"
+				while read -r fls; do
+					FN=(${FN[@]} "$fls")
+					IFS=$',' FC=(${FC[@]} "${arr[*]}")
+					FE=(${FE[@]} $n)
+					verecho "$(levecho 2 "Added $fls")"
+				done <<< "$(find "${l[0]}" -not -type d)"
+				unset fls
+			fi
 		done < "$cur"
 		n=1
 	done
