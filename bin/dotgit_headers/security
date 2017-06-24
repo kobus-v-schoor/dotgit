@@ -122,6 +122,7 @@ function crypt
 
 		mkdir -p "$(dirname "$to_fl")"
 		gpg -q --batch --passphrase "$DG_PASS" $gpg_cmd -o "$to_fl" "$fr_fl"
+		chmod "$(stat -c %a "$fr_fl")" "$to_fl"
 
 		[[ $1 == "encrypt" ]] && echo -n "$hashed" > "$to_fl.hash"
 
