@@ -84,7 +84,7 @@ function crypt
 		if [ -f "$dm_fl" ]; then
 			verecho "$(levecho 2 "Found file in dmz")"
 			hashed=$($DG_HASH "$dm_fl")
-			hashed=${hashed% *}
+			hashed=${hashed%% *}
 		fi
 
 		if [ -f "$df_fl.hash" ]; then

@@ -68,7 +68,7 @@ function print_diff
 			local hashed
 			local hashfl
 			hashed=$($DG_HASH "$REPO/$DG_DMZ/$cat/$f")
-			hashed=${hashed% *}
+			hashed=${hashed%% *}
 			hashfl=$(cat "$REPO/$DG_DFDIR/$cat/$f.hash")
 
 			[[ $hashed != "$hashfl" ]] && str="$str\nModified $cat/$f"
