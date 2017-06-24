@@ -91,7 +91,7 @@ function safety_checks
 
 function init_flists
 {
-	verecho "Initiating filelists"
+	verecho "\nInitiating filelists"
 	# shellcheck disable=SC2164
 	cd "$HOME"
 	local n=0

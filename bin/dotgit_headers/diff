@@ -10,21 +10,24 @@ function init_diff
 	git add --all
 	IFS=$'\n'
 	while read -r line; do
-		IFS=$' '
-		local -a l=($line)
-		l[1]=${l[1]%\"}
-		l[1]=${l[1]#\"}
-		[[ ! ${l[1]} =~ ^$DG_DFDIR* ]] && continue
-		[[ ${l[1]} =~ .*\.hash ]] && continue
+		local a=${line%% *}
+		local f=${line#* }
 
-		case "${l[0]}" in
-			"A")DG_DIFF_T=(${DG_DIFF_T[@]} "added");;
-			"M")DG_DIFF_T=(${DG_DIFF_T[@]} "modified");;
-			"D")DG_DIFF_T=(${DG_DIFF_T[@]} "deleted");;
-			*)errecho "Unknown git change \"${l[0]}\" - ${l[1]}"; continue;;
+		f=${f:1}
+		f=${f%\"}
+		f=${f#\"}
+
+		[[ ! $f =~ ^$DG_DFDIR* ]] && continue
+		[[ $f =~ .*\.hash ]] && continue
+
+		case "$a" in
+			"A")DG_DIFF_T+=("added");;
+			"M")DG_DIFF_T+=("modified");;
+			"D")DG_DIFF_T+=("deleted");;
+			*)errecho "Unknown git change \"$a\" - $f"; continue;;
 		esac;
 
-		DG_DIFF_F=(${DG_DIFF_F[@]} "${l[1]#$DG_DFDIR\/}")
+		DG_DIFF_F+=("${f#$DG_DFDIR\/}")
 	done <<< "$(git status --porcelain)"
 	unset line
 

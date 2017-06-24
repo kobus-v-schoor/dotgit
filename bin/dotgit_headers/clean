@@ -2,17 +2,21 @@
 
 function clean_home_fast
 {
-	for f in "${FN[@]}"; do
-		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
-			# Do not delete symlinks that do not point to repo
-			if [ -a "$HOME/$f" ] && [ -h "$HOME/$f" ] && \
-				[[ ! $(readlink -f "$HOME/$f") =~ ^$REPO ]]; then
-				continue
-			fi
+	verecho "\nInitiating home cleanup"
+	# shellcheck disable=SC2164
+	cd "$HOME"
 
-			verecho "Removing \"$f\""
-			rm "$HOME/$f"
-		fi
+	local del
+	for f in "${FN[@]}"; do
+		del=0
+
+		[ -h "$f" ] && [[ $(readlink "$f") =~ ^$REPO ]] && del=1
+		[[ $1 == "nosym" ]] && [ -f "$f" ] && del=1
+
+		[[ $del -ne 1 ]] && continue
+
+		verecho "Removing \"$f\""
+		rm "$f"
 	done
 }
 

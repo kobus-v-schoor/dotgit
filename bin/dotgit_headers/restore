@@ -2,6 +2,10 @@
 
 function restore
 {
+	[[ $1 == "sym" ]] && clean_home_fast
+
+	crypt "decrypt"
+
 	verecho "\nEntering restore"
 
 	local f
@@ -43,11 +47,12 @@ function restore
 			continue
 		fi
 
-		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
-			if [ -h "$HOME/$f" ]; then
-				# If link already points to repo, do nothing
-				[[ $(readlink -f "$HOME/$f") =~ ^$REPO/$DFDIR* ]] && continue
-			fi
+		if [ ! -f "$REPO/$DFDIR/${c[0]}/$f" ]; then
+			verecho "$(levecho 2 "File not found in repo. Skipping...")"
+			continue
+		fi
+
+		if [ -f "$HOME/$f" ]; then
 			prompt "File \"$f\" exists in home folder, replace?" || continue
 
 			verecho "$(levecho 2 "Removing from home folder")"
@@ -63,7 +68,7 @@ function restore
 			verecho "$(levecho 3 "Creating copy in home folder")"
 			cmd="cp -p"
 		fi
-		eval "$cmd $REPO/$DFDIR/${c[0]}/$f $HOME/$f"
+		eval "$cmd \"$REPO/$DFDIR/${c[0]}/$f\" \"$HOME/$f\""
 	done
 }
 

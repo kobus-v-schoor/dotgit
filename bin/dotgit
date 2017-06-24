@@ -60,9 +60,10 @@ case "$1" in
 	"init")init;;
 	"update")update "sym";;
 	"restore")restore "sym";;
+	"clean")clean_home_fast "sym";;
 	"hard-update")update "nosym";;
 	"hard-restore")update "nosym";;
-	"clean")clean_home_fast;;
+	"hard-clean")clean_home_fast "nosym";;
 	"encrypt")crypt "encrypt";;
 	"decrypt")crypt "decrypt";;
 	"passwd")change_password;;
