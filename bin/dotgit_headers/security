@@ -3,6 +3,7 @@
 declare DG_PASS
 declare DG_PASS_FILE="passwd"
 declare -r DG_HASH="sha1sum"
+declare -i DG_HASH_COUNT=1500
 
 function get_password
 {
@@ -21,7 +22,7 @@ function get_password
 	local tmp=$DG_PASS
 
 	local -i i=0
-	while [[ $i -le 500 ]]; do
+	while [[ $i -lt $DG_HASH_COUNT ]]; do
 		tmp=($($DG_HASH <<< "${tmp[0]}"))
 		i=$((i + 1))
 	done
