@@ -7,16 +7,33 @@ declare -i DG_HASH_COUNT=1500
 
 function get_password
 {
-	local mod
-	if [ -f "$REPO/$DG_PASS_FILE" ]; then
-		mod="your"
-	else
-		mod="a new"
-	fi
-	echo -n "Please enter $mod password (nothing will be shown): "
+	# For compatibility with previous version of dotgit
+	[[ $DG_PREV_PASS ]] && DG_PASS=$DG_PREV_PASS
+	unset DG_PREV_PASS
+	# -------------------------------------------------
 
-	read -sr DG_PASS
-	echo
+	if [[ ! $DG_PASS ]]; then
+		local mod
+		if [ -f "$REPO/$DG_PASS_FILE" ]; then
+			mod="your"
+		else
+			mod="a new"
+		fi
+		echo -n "Please enter $mod password (nothing will be shown): "
+
+		read -sr DG_PASS
+		echo
+	fi
+
+	# For compatibility with previous version of dotgit
+	if [[ $DG_READ_MANGLE ]]; then
+		DG_PREV_PASS=$DG_PASS
+		IFS=$'\n'
+		# shellcheck disable=SC2162
+		read DG_PASS <<< "$DG_PASS"
+		return
+	fi
+	# -------------------------------------------------
 
 	IFS=$' '
 	local tmp=$DG_PASS

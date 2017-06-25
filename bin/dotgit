@@ -50,9 +50,36 @@ fi
 
 verecho "Active categories: ${CTG[*]}"
 
-if [[ "$1" != init ]]; then
+if [[ $1 != init ]] || [[ $1 != help ]]; then
 	safety_checks
 	init_flists
+
+	# Check if previous version of dotgit is used
+	if [ -f "$REPO/$DG_PASS_FILE" ] && \
+		[[ $(stat -c %s "$REPO/$DG_PASS_FILE") -eq 68 ]]; then
+		echo "Updating repo to be compatible with new version of dotgit"
+
+		# shellcheck disable=SC2034
+		DG_READ_MANGLE=1
+		get_password
+		crypt "decrypt"
+		rm "$REPO/$DG_PASS_FILE"
+		unset DG_READ_MANGLE
+		get_password
+		crypt "encrypt"
+	fi
+
+	if [ -f "$REPO/dir_filelist" ]; then
+		echo "Migrating dir_filelist"
+		cat "$REPO/dir_filelist" >> "$REPO/$FILELIST"
+		rm "$REPO/dir_filelist"
+	fi
+
+	if [ -f "$REPO/dir_cryptlist" ]; then
+		echo "Migrating dir_cryptlist"
+		cat "$REPO/dir_cryptlist" >> "$REPO/$CRYPTLIST"
+		rm "$REPO/dir_cryptlist"
+	fi
 fi
 
 case "$1" in
