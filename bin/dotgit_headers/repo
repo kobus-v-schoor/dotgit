@@ -96,6 +96,10 @@ function init_flists
 	cd "$HOME"
 	local n=0
 
+	FN=()
+	FC=()
+	FE=()
+
 	IFS=$'\n'
 	for cur in "$REPO/$FILELIST" "$REPO/$CRYPTLIST"; do
 		while read -r line; do
@@ -109,6 +113,19 @@ function init_flists
 			IFS=$',' arr=(${l[1]:-"common"})
 			IFS=$'\n' arr=($(sort<<<"${arr[*]}"))
 
+			# If file entry is folder inside repo and home folder has no such
+			# file, folder or the folder is empty - then use repo contents as
+			# filelist
+			if [ -d "$REPO/$DG_DFDIR/${arr[0]}/${l[0]}" ]; then
+				if [ ! -f "${l[0]}" ]; then
+					if [ ! -d "${l[0]}" ] || [[ ! $(ls -A "${l[0]}") ]]; then
+						verecho "$(levecho 1 "Using repo dir for ${l[0]}")"
+						PRE="$REPO/$DG_DFDIR/${arr[0]}/"
+						mkdir -p "${l[0]}"
+					fi
+				fi
+			fi
+
 			if [ ! -d "${l[0]}" ]; then
 				FN+=("${l[0]}")
 				IFS=$',' FC+=("${arr[*]}")
@@ -117,14 +134,19 @@ function init_flists
 			else
 				verecho "$(levecho 1 \
 					"Using directory mode for ${l[0]} - ${arr[*]} - $n")"
+
+				IFS=$'\n'
 				while read -r fls; do
+					[[ $PRE ]] && fls=${fls#$PRE}
 					FN+=("$fls")
 					IFS=$',' FC+=("${arr[*]}")
 					FE+=($n)
 					verecho "$(levecho 2 "Added $fls")"
-				done <<< "$(find "${l[0]}" -not -type d)"
+				done <<< "$(find "$PRE${l[0]}" -not -type d)"
 				unset fls
 			fi
+
+			unset PRE
 		done < "$cur"
 		n=1
 	done
