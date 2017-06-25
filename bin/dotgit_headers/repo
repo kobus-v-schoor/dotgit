@@ -8,7 +8,7 @@ function errecho
 
 function verecho
 {
-	[[ $DG_VERBOSE -eq 0 ]] && echo -e "$@"
+	[[ $DG_VERBOSE -eq 0 ]] && echo -e "$*"
 }
 
 function levecho

@@ -69,11 +69,47 @@ function update
 		found=0
 		local -i fsym=0
 		local fcat=
-		for i in "${c[@]}"; do
-			# shellcheck disable=SC2164
-			cd "$REPO/$DFDIR"
 
-			if [ -a  "$i/$f" ]; then
+		# shellcheck disable=SC2164
+		cd "$REPO/$DFDIR"
+
+		local d_rm=0
+		local f_rm=0
+		for i in "${c[@]}"; do
+			[ -d "$i/$f" ] && d_rm=1
+
+			local tmp
+			tmp=$(dirname "$i/$f")
+
+			mkdir -p "$tmp" > /dev/null 2>&1 || f_rm=1
+
+			if [[ $d_rm -eq 1 ]] || [[ $f_rm -eq 1 ]]; then
+				verecho "$(levecho 2 "Type mismatch, removing repo version")"
+				if [[ $d_rm -eq 1 ]]; then
+					tmp="$i/$f"
+				else
+					while [ ! -f "$tmp" ] && [ "$tmp" != "$REPO/$DFDIR" ]; do
+						tmp=$(dirname "$tmp")
+					done
+
+					if [[ $tmp == "$REPO/$DFDIR" ]]; then
+						IFS=$' ' errecho "Type mismatch repo error," \
+							"unable to find file causing problems. Aborting..."
+						exit 1
+					fi
+				fi
+
+				verecho "$(levecho 3 "Removing $tmp")"
+				rm -rf "$tmp"
+			fi
+
+			unset tmp
+		done
+		unset d_rm
+		unset f_rm
+
+		for i in "${c[@]}"; do
+			if [ -f "$i/$f" ]; then
 				found=1
 				fcat=$i
 				verecho "$(levecho 2 "Found in $i")"
@@ -89,6 +125,7 @@ function update
 
 		if [ $found -eq 0 ]; then
 			verecho "$(levecho 2 "Not found in repo, adding to repo")"
+
 			# shellcheck disable=SC2164
 			cd "$HOME"
 
