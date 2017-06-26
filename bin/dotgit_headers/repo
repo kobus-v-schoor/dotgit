@@ -43,7 +43,7 @@ function init
 
 	touch "$FILELIST"
 	touch "$CRYPTLIST"
-	echo "$DG_DMZ" >> .gitignore
+	grep -q "$DG_DMZ" .gitignore || echo "$DG_DMZ" >> .gitignore
 
 	if [ ! -d ".git" ]; then
 		git init
