@@ -95,16 +95,18 @@ function generate_commit_msg
 	done
 	unset index
 
-	if [[ ! $str ]]; then
+	if git diff --quiet @{u}.. && [[ ! $str ]]; then
 		errecho "No changes to repository"
-		exit 1
+		exit
 	fi
 
-	str=${str:2}
-	str=${str^}
+	if [[ $str ]]; then
+		str=${str:2}
+		str=${str^}
 
-	git add --all
-	git commit -m "$str"
+		git add --all
+		git commit -m "$str"
+	fi
 
 	if [[ $(git remote -v) ]]; then
 		if prompt "Remote detected. Do you want to push to remote?"; then
