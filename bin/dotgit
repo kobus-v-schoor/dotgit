@@ -1,0 +1,100 @@
+#! /bin/bash
+# shellcheck disable=SC2155
+
+# Dotgit is an easy-to-use and effective way to backup all your dotfiles and
+# manage them in a repository
+
+# Developer: Kobus van Schoor
+
+declare -r DG_START=0 # Marker for header files
+declare -r DG_H=$(dirname "$(readlink -f "$0")")/dotgit_headers # Headers DIR
+declare -r REPO="$PWD" # Original repo dir
+declare -r FILELIST="filelist"
+declare -r CRYPTLIST="cryptlist"
+declare -r DG_DFDIR="dotfiles"
+declare -r DG_DMZ="dmz"
+declare -r DG_VERBOSE=$([ "$1" == "verbose" ]; echo -n $?)
+
+# shellcheck source=dotgit_headers/help
+source "$DG_H/help"
+# shellcheck source=dotgit_headers/repo
+source "$DG_H/repo"
+# shellcheck source=dotgit_headers/update
+source "$DG_H/update"
+# shellcheck source=dotgit_headers/restore
+source "$DG_H/restore"
+# shellcheck source=dotgit_headers/clean
+source "$DG_H/clean"
+# shellcheck source=dotgit_headers/security
+source "$DG_H/security"
+# shellcheck source=dotgit_headers/diff
+source "$DG_H/diff"
+
+declare -a CTG # Active categories
+
+declare -a FN # File names
+declare -a FC # Normal categories
+declare -a FE # File encrypt flag
+
+[[ $DG_VERBOSE -eq 0 ]] && shift
+
+if [[ $# == 0 ]]; then
+	phelp
+	exit
+elif [[ $# == 1 ]]; then
+	CTG=(common $HOSTNAME)
+else
+	# shellcheck disable=SC2034
+	CTG=(${@:2})
+fi
+
+verecho "Active categories: ${CTG[*]}"
+
+if [[ $1 != init ]] || [[ $1 != help ]]; then
+	safety_checks
+	init_flists
+
+	# Check if previous version of dotgit is used
+	if [ -f "$REPO/$DG_PASS_FILE" ] && \
+		[[ $(stat -c %s "$REPO/$DG_PASS_FILE") -eq 68 ]]; then
+		echo "Updating repo to be compatible with new version of dotgit"
+
+		# shellcheck disable=SC2034
+		DG_READ_MANGLE=1
+		get_password
+		crypt "decrypt"
+		rm "$REPO/$DG_PASS_FILE"
+		unset DG_READ_MANGLE
+		get_password
+		crypt "encrypt"
+	fi
+
+	if [ -f "$REPO/dir_filelist" ]; then
+		echo "Migrating dir_filelist"
+		cat "$REPO/dir_filelist" >> "$REPO/$FILELIST"
+		rm "$REPO/dir_filelist"
+	fi
+
+	if [ -f "$REPO/dir_cryptlist" ]; then
+		echo "Migrating dir_cryptlist"
+		cat "$REPO/dir_cryptlist" >> "$REPO/$CRYPTLIST"
+		rm "$REPO/dir_cryptlist"
+	fi
+fi
+
+case "$1" in
+	"help")phelp;;
+	"init")init;;
+	"update")update "sym";;
+	"restore")restore "sym";;
+	"clean")clean_home_fast "sym";;
+	"hard-update")update "nosym";;
+	"hard-restore")update "nosym";;
+	"hard-clean")clean_home_fast "nosym";;
+	"encrypt")crypt "encrypt";;
+	"decrypt")crypt "decrypt";;
+	"passwd")change_password;;
+	"diff")print_diff;;
+	"generate")generate_commit_msg;;
+	*)echo -e "$1 is not a valid argument."; exit 1;;
+esac;

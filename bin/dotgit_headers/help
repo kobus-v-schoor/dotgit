@@ -1,0 +1,10 @@
+#! /bin/bash
+# Part of dotgit
+
+function phelp
+{
+	less "$DG_H/help.txt"
+}
+
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"

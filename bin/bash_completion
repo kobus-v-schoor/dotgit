@@ -1,0 +1,51 @@
+function _dotgit
+{
+	COMPREPLY=()
+
+	local -a opts=()
+
+	local use_opts=0
+
+	[[ $COMP_CWORD -eq 1 ]] && use_opts=1
+	[[ $COMP_CWORD -eq 2 ]] && [[ ${COMP_WORDS[1]} == verbose ]] && \
+		use_opts=1
+
+	if [[ $use_opts -eq 1 ]]; then
+		opts+=("help")
+		opts+=("init")
+		opts+=("update")
+		opts+=("restore")
+		opts+=("clean")
+		opts+=("hard-update")
+		opts+=("hard-restore")
+		opts+=("hard-clean")
+		opts+=("encrypt")
+		opts+=("decrypt")
+		opts+=("passwd")
+		opts+=("diff")
+		opts+=("generate")
+
+		[[ $COMP_CWORD -eq 1 ]] && opts+=("verbose")
+	else
+		local -a ls_dir=()
+		[ -d "dotfiles" ] && ls_dir+=("dotfiles")
+		[ -d "dmz" ] && ls_dir+=("dmz")
+
+		for i in "${ls_dir[@]}"; do
+			for f in $i/*; do
+				[ -d "$f" ] && opts+=("${f#$i/}")
+			done
+			unset f
+		done
+		unset i
+
+		opts+=("common")
+		opts+=("$HOSTNAME")
+
+		opts=($(IFS=$'\n'; sort -u <<< "${opts[*]}"))
+	fi
+
+	COMPREPLY=($(IFS=$' '; compgen -W "${opts[*]}" "${COMP_WORDS[COMP_CWORD]}"))
+}
+
+complete -F _dotgit dotgit

@@ -1,0 +1,143 @@
+SYNOPSIS:
+    Dotgit is an easy-to-use and versatile dotfile manager. It allows you to
+    effortlessly move, backup and synchronise your dotfiles between different
+    machines. The main ideas that dotgit revolves around are the following:
+
+    - Use a single git repository for ALL your dotfiles (arbitrary amount of
+      machines)
+    - Straightforward git repo that can be used even when you don't have access
+      to dotgit
+    - Keep different versions of the same file in the same repo (eg. different
+      .bashrc files for different setups) (categories)
+    - Easy-to-use commands and setup
+    - Do all the heavy-lifting git work (only if you want to)
+
+INITIAL SETUP:
+    Firstly create an online git repository (eg. on GitHub). Clone this
+    repository to your home folder ('git clone {repo_url} {repo_dest}', check
+    online for more details). Next, cd into the repository and run 'dotgit
+    init'. Next, setup your dogit repository by editing the filelist as
+    explained in the "filelist syntax" section
+
+FILELIST SYNTAX:
+    There are only two files inside your dotgit repository that you will be
+    editing. They have the names 'filelist' and 'cryptlist'. Both use the same
+    syntax and are identical in every way except for the fact that files
+    specified inside 'cryptlist' will be encrypted before they are added to the
+    repository.
+
+    The filelist uses '#' at the beginning of a line do denominate a comment.
+    Blank lines are ignored.
+
+    The filelists use the following syntax:
+
+    file_name:category1,category2
+
+    or simply:
+
+    file_name
+
+    "file_name" can contain spaces and can be any file or folder inside your
+    home directory. Categories are a very powerful tool that you can use to
+    group files together. If no category is specified it is implicitly added to
+    the "common" category. When you specify multiple categories for a single
+    file dotgit will link their files together and they will share the exact
+    same file. You can also use categories to separate different versions of the
+    same file. For example:
+
+    .vimrc:c1,c2
+    .vimrc:c3
+
+    In this example categories c1 and c2 will share the same .vimrc and c3 will
+    have its own version of .vimrc. Categories can be anything you want it to be
+    but its most straight-forward usage is the hostnames of the machines that
+    you will be using dotgit on.
+
+ENCRYPTION:
+    Dotgit has support AES encryption of your dotfiles through PGP. To enable
+    encryption of a file simply add the filename to the 'cryptlist' file.
+
+    To incorporate encryption dotgit makes use of a "dmz" folder, a "middle-man"
+    folder where all of your encrypted files will be decrypted and from there
+    linked to your home folder. This "dmz" folder is inside your repository but
+    never added to any of your commits. This also means that whenever you
+    make a change to an encrypted dotfile you will have to re-encrypt the file
+    (the changes you make will not be automatically added to your repo unlike
+    with normal files). To do this you will simply need to cd into your dotfiles
+    repository and run 'dotgit encrypt'. More details in the "options" section.
+
+DIRECTORY SUPPORT:
+    Dotgit does have support for directories but it is not as versatile and
+    forgiving as with normal files as it has a few caveats. Due to the fact that
+    dotgit cannot possibly know beforehand what files will reside in a folder it
+    needs to determine it at runtime. This means that you will need to take a
+    few things in consideration:
+
+    - When running 'dotgit update' all the files in the directory that you want
+      there needs to be present (whether they are symlinks to the repo or the
+      files themselves). If a file is removed from the folder and you update the
+      repository, the file will be removed from the repository as well.
+    - When running 'dotgit restore' the destination directory needs to be empty
+      or non-existant, otherwise restore will not use the files in the
+      repository and remove them.
+
+OPTIONS:
+    Usage: dotgit (verbose) [option] (optional categories)
+
+    You can prepend "verbose" to any of the options to enable verbose mode which
+    will output dotgit's actions along the way. If you find a problem with
+    dotgit please open an issue on github along with this "Verbose" output.
+
+    If you don't add any categories after your option, two categories, "common"
+    and your hostname will be implicitly added. When you add categories only the
+    files that are in those categories will be taken into consideration. For
+    instance, if you specify "c1" after "update" only files marked with the "c1"
+    category will be updated. Options with "(args)" after their name support
+    categories.
+
+    init           - Setup a new dotgit repository inside the current directory
+
+    update (args)  - Run this after you changed either of your filelists. This
+                     will update the repository structures to match your
+                     filelists. Do not use this if you only modified your
+                     dotfiles, it is unnecessary.
+
+    restore (args) - Run this to create links from your home folder to your
+                     repository. You need to run this whenever you want to setup
+                     a new machine or if you made changes to the filelists on
+                     antoher machine and you want the changes to be added to the
+                     current machine. Take note that dotgit will first remove
+                     old links to your dotfiles repository and then create the
+                     new links. You will thus need to specify all the categories
+                     that you want to restore in one run. When running restore
+                     dotgit will automatically try to decrypt your files
+
+    clean          - This will remove all links in your home folder that point
+                     to your dotfiles repository
+
+    encrypt        - This will encrypt all the files that you modified since
+                     your last encryption. Whenever you modify an encrypted
+                     dotfile and want to save the changes to your repository you
+                     will need to run this.
+
+    decrypt        - This will decrypt all files inside your repository and
+                     overwrite the version inside your "dmz" folder. You should
+                     run decrypt after pulling in new changes from a remote.
+
+    passwd         - Change your dotgit password.
+
+    diff           - This will print your current changes in your dotfiles
+                     repository as well as unencrypted changes. Please note that
+                     this will not show unencrypted files that were deleted.
+
+    generate       - This will generate a git commit message and push to a
+                     remote if it can find one
+
+    help           - Show this message
+
+    'update', 'restore' and the 'clean' option have a 'hard' mode, activated by
+    prepending 'hard-' to the option, eg. 'hard-update'. When in this mode
+    dotgit will copy the files to/from the repository rather than symlinking it.
+    In the case of 'clean' it will also remove files and not just symlinks. This
+    can be useful if you want to for example clone the repository onto a
+    machine, restore your dotfiles and then delete the repository again.

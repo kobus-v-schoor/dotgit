@@ -1,0 +1,75 @@
+#! /bin/bash
+
+function restore
+{
+	[[ $1 == "sym" ]] && clean_home_fast
+
+	crypt "decrypt"
+
+	verecho "\nEntering restore"
+
+	local f
+	local -a c
+	local e
+	IFS=$'\n'
+	for index in $(seq 1 ${#FN[@]}); do
+		index=$((index - 1))
+
+		f=${FN[$index]}
+		IFS=$',' c=(${FC[$index]})
+		e=${FE[$index]}
+
+		local DFDIR
+
+		if [[ $e -eq 1 ]]; then
+			DFDIR=$DG_DMZ
+		else
+			DFDIR=$DG_DFDIR
+		fi
+
+		verecho "$(levecho 1 "Restoring \"$f\" - ${c[*]} - $e")"
+
+		local found=0
+		for i in "${CTG[@]}"; do
+			for k in "${c[@]}"; do
+				if [[ $k == "$i" ]]; then
+					found=1;
+					break;
+				fi
+			done
+			[[ $found -eq 1 ]] && break
+		done
+		unset i
+		unset k
+
+		if [[ $found -ne 1 ]]; then
+			verecho "$(levecho 2 "Not in specified categories. Skipping...")"
+			continue
+		fi
+
+		if [ ! -f "$REPO/$DFDIR/${c[0]}/$f" ]; then
+			verecho "$(levecho 2 "File not found in repo. Skipping...")"
+			continue
+		fi
+
+		if [ -f "$HOME/$f" ]; then
+			prompt "File \"$f\" exists in home folder, replace?" || continue
+
+			verecho "$(levecho 2 "Removing from home folder")"
+			rm "$HOME/$f"
+		fi
+
+		mkdir -p "$HOME/$(dirname "$f")"
+		local cmd=
+		if [[ $1 == "sym" ]]; then
+			verecho "$(levecho 3 "Creating symlink in home folder")"
+			cmd="ln -s"
+		else
+			verecho "$(levecho 3 "Creating copy in home folder")"
+			cmd="cp -p"
+		fi
+		eval "$cmd \"$REPO/$DFDIR/${c[0]}/$f\" \"$HOME/$f\""
+	done
+}
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"

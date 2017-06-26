@@ -1,0 +1,116 @@
+#! /bin/bash
+
+declare -a DG_DIFF_T
+declare -a DG_DIFF_F
+
+function init_diff
+{
+	# shellcheck disable=SC2164
+	cd "$REPO"
+	git add --all
+	IFS=$'\n'
+	while read -r line; do
+		local a=${line%% *}
+		local f=${line#* }
+
+		f=${f:1}
+		f=${f%\"}
+		f=${f#\"}
+
+		[[ ! $f =~ ^$DG_DFDIR* ]] && continue
+		[[ $f =~ .*\.hash ]] && continue
+
+		case "$a" in
+			"A")DG_DIFF_T+=("added");;
+			"M")DG_DIFF_T+=("modified");;
+			"D")DG_DIFF_T+=("deleted");;
+			*)errecho "Unknown git change \"$a\" - $f"; continue;;
+		esac;
+
+		DG_DIFF_F+=("${f#$DG_DFDIR\/}")
+	done <<< "$(git status --porcelain)"
+	unset line
+
+	git reset -q
+}
+
+function print_diff
+{
+	init_diff
+
+	IFS=$'\n'
+	for index in $(seq 1 ${#DG_DIFF_T[@]}); do
+		index=$((index - 1))
+		echo "${DG_DIFF_T[$index]^} ${DG_DIFF_F[$index]}"
+	done
+	unset index
+
+	local f
+	local -a c
+
+	local str
+	IFS=$'\n'
+	for index in $(seq 1 ${#FN[@]}); do
+		index=$((index - 1))
+
+		[[ ${FE[$index]} -ne 1 ]] && continue
+
+		f=${FN[$index]}
+		IFS=$',' c=(${FC[$index]})
+
+		for cat in "${c[@]}"; do
+			[ ! -f "$REPO/$DG_DMZ/$cat/$f" ] && continue
+
+			if [ ! -f "$REPO/$DG_DFDIR/$cat/$f" ]; then
+				str="$str\nAdded $cat/$f"
+				continue
+			fi
+
+			[ -h "$REPO/$DG_DFDIR/$cat/$f" ] && continue
+
+			local hashed
+			local hashfl
+			hashed=$($DG_HASH "$REPO/$DG_DMZ/$cat/$f")
+			hashed=${hashed%% *}
+			hashfl=$(cat "$REPO/$DG_DFDIR/$cat/$f.hash")
+
+			[[ $hashed != "$hashfl" ]] && str="$str\nModified $cat/$f"
+		done
+		unset cat
+	done
+
+	[ "$str" ] && echo -e "\nUnencrypted changes:\n$str"
+	unset index
+}
+
+function generate_commit_msg
+{
+	init_diff
+
+	local str
+	IFS=$'\n'
+	for index in $(seq 1 ${#DG_DIFF_T[@]}); do
+		index=$((index - 1))
+		str="$str; ${DG_DIFF_T[$index]} ${DG_DIFF_F[$index]}"
+	done
+	unset index
+
+	if [[ ! $str ]]; then
+		errecho "No changes to repository"
+		exit 1
+	fi
+
+	str=${str:2}
+	str=${str^}
+
+	git add --all
+	git commit -m "$str"
+
+	if [[ $(git remote -v) ]]; then
+		if prompt "Remote detected. Do you want to push to remote?"; then
+			git push
+		fi
+	fi
+}
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"

@@ -1,0 +1,190 @@
+#! /bin/bash
+
+function update
+{
+	[[ $1 == "sym" ]] && clean_home_fast
+
+	# shellcheck disable=SC2155
+	verecho "\nEntering update"
+
+	local f
+	local -a c
+	local e
+	IFS=$'\n'
+	for index in $(seq 1 ${#FN[@]}); do
+		index=$((index - 1))
+
+		f=${FN[$index]}
+		IFS=$','
+		c=(${FC[$index]})
+		e=${FE[$index]}
+
+		local DFDIR
+
+		if [[ $e -eq 1 ]]; then
+			DFDIR=$DG_DMZ
+		else
+			DFDIR=$DG_DFDIR
+		fi
+
+		verecho "$(levecho 1 "Updating \"$f\" - ${c[*]} - $e")"
+
+		local found=0
+		for i in "${CTG[@]}"; do
+			for k in "${c[@]}"; do
+				if [[ $k == "$i" ]]; then
+					found=1;
+					break;
+				fi
+			done
+			[[ $found -eq 1 ]] && break
+		done
+		unset i
+		unset k
+
+		if [[ $found -ne 1 ]]; then
+			verecho "$(levecho 2 "Not in specified categories. Skipping...")"
+			continue
+		fi
+
+		if [[ ! "$1" == "sym" ]]; then
+			# shellcheck disable=SC2164
+			cd "$HOME"
+
+			if [ ! -f "$f" ]; then
+				verecho "$(levecho 2 "Cannot find file in home folder.")"
+				continue
+			fi
+
+			for i in "${c[@]}"; do
+				verecho "$(levecho 2 "Copying to category $i")"
+				mkdir -p "$REPO/$DFDIR/$i"
+				cp -p --parents "$f" "$REPO/$DFDIR/$i"
+			done
+			unset i
+
+			continue
+		fi
+
+		found=0
+		local -i fsym=0
+		local fcat=
+
+		# shellcheck disable=SC2164
+		cd "$REPO/$DFDIR"
+
+		local d_rm=0
+		local f_rm=0
+		for i in "${c[@]}"; do
+			[ -d "$i/$f" ] && d_rm=1
+
+			local tmp
+			tmp=$(dirname "$i/$f")
+
+			mkdir -p "$tmp" > /dev/null 2>&1 || f_rm=1
+
+			if [[ $d_rm -eq 1 ]] || [[ $f_rm -eq 1 ]]; then
+				verecho "$(levecho 2 "Type mismatch, removing repo version")"
+				if [[ $d_rm -eq 1 ]]; then
+					tmp="$i/$f"
+				else
+					while [ ! -f "$tmp" ] && [ "$tmp" != "$REPO/$DFDIR" ]; do
+						tmp=$(dirname "$tmp")
+					done
+
+					if [[ $tmp == "$REPO/$DFDIR" ]]; then
+						IFS=$' ' errecho "Type mismatch repo error," \
+							"unable to find file causing problems. Aborting..."
+						exit 1
+					fi
+				fi
+
+				verecho "$(levecho 3 "Removing $tmp")"
+				rm -rf "$tmp"
+			fi
+
+			unset tmp
+		done
+		unset d_rm
+		unset f_rm
+
+		for i in "${c[@]}"; do
+			if [ -f "$i/$f" ]; then
+				found=1
+				fcat=$i
+				verecho "$(levecho 2 "Found in $i")"
+
+				if [ -h "$i/$f" ] ||  [ "$i" != "${c[0]}" ]; then
+					verecho "$(levecho 3 "Invalid root file")"
+					fsym=1
+				fi
+				break
+			fi
+		done
+		unset i
+
+		if [ $found -eq 0 ]; then
+			verecho "$(levecho 2 "Not found in repo, adding to repo")"
+
+			# shellcheck disable=SC2164
+			cd "$HOME"
+
+			if [ ! -f "$f" ]; then
+				verecho "$(levecho 3 "Cannot find file in home folder.")"
+				continue
+			fi
+
+			mkdir -p "$REPO/$DFDIR/${c[0]}"
+			cp -p --parents "$f" "$REPO/$DFDIR/${c[0]}"
+			verecho "$(levecho 3 "Root file added to repo")"
+		elif [[ $fsym -eq 1 ]]; then
+			verecho "$(levecho 2 "Finding previous root file")"
+			# shellcheck disable=SC2155
+			local root=$(readlink -f "$REPO/$DFDIR/$fcat/$f")
+
+			if [ ! -f "$root" ]; then
+				verecho "$(levecho 3 "Cannot find root file," \
+					"trying to find file in home folder")"
+				if [ ! -f "$HOME/$f" ]; then
+					verecho "$(levecho "Cannot find file in home folder.")"
+					continue
+				fi
+				root="$HOME/$f"
+			fi
+
+			verecho "$(levecho 2 "Creating new root - ${c[0]}")"
+
+			mkdir -p "$(dirname "$REPO/$DFDIR/${c[0]}/$f")"
+			rm "$REPO/$DFDIR/${c[0]}/$f" > /dev/null 2>&1
+			cp -p "$root" "$REPO/$DFDIR/${c[0]}/$f"
+
+			for i in "${c[@]:1}"; do
+				rm "$REPO/$DFDIR/$i/$f" > /dev/null 2>&1
+			done
+			unset i
+
+			verecho "$(levecho 3 "Root file added to repo")"
+		fi
+
+		for i in "${c[@]:1}"; do
+			mkdir -p "$(dirname "$REPO/$DFDIR/$i/$f")"
+			# Link other categories to "root" file (first in cat arr)
+			if [ ! -f "$REPO/$DFDIR/$i/$f" ]; then
+				ln -rs "$REPO/$DFDIR/${c[0]}/$f" "$REPO/$DFDIR/$i/$f"
+				verecho "$(levecho 3 "Co-category \"$i\" linked to root")"
+			fi
+		done
+		unset i
+
+		verecho "$(levecho 2 "Creating/updating link to repo")"
+		if [ -a "$HOME/$f" ] || [ -h "$HOME/$f" ]; then
+			rm "$HOME/$f"
+		fi
+		ln -s "$REPO/$DFDIR/${c[0]}/$f" "$HOME/$f"
+	done
+
+	unset index
+	clean_repo
+}
+
+[[ ! $DG_START ]] && echo "Do not source this directly, it is used by dotgit"
