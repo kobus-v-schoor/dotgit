@@ -71,7 +71,7 @@ DIRECTORY SUPPORT:
     forgiving as with normal files as it has a few caveats. Due to the fact that
     dotgit cannot possibly know beforehand what files will reside in a folder it
     needs to determine it at runtime. This means that you will need to take a
-    few things in consider.
+    few things in consideration:
 
     - When running 'dotgit update' all the files in the directory that you want
       there needs to be present (whether they are symlinks to the repo or the
@@ -103,13 +103,14 @@ OPTIONS:
                      dotfiles, it is unnecessary.
 
     restore (args) - Run this to create links from your home folder to your
-                     repository. You only need to run this on a new machine or
-                     if you want to restore another category. Take note that
-                     dotgit will first remove old links to your dotfiles
-                     repository and then create the new links. You will thus
-                     need to specify all the categories that you want to restore
-                     in one run. When running restore dotgit will automatically
-                     try to decrypt your files
+                     repository. You need to run this whenever you want to setup
+                     a new machine or if you made changes to the filelists on
+                     antoher machine and you want the changes to be added to the
+                     current machine. Take note that dotgit will first remove
+                     old links to your dotfiles repository and then create the
+                     new links. You will thus need to specify all the categories
+                     that you want to restore in one run. When running restore
+                     dotgit will automatically try to decrypt your files
 
     clean          - This will remove all links in your home folder that point
                      to your dotfiles repository
@@ -133,3 +134,10 @@ OPTIONS:
                      remote if it can find one
 
     help           - Show this message
+
+    'update', 'restore' and the 'clean' option have a 'hard' mode, activated by
+    prepending 'hard-' to the option, eg. 'hard-update'. When in this mode
+    dotgit will copy the files to/from the repository rather than symlinking it.
+    In the case of 'clean' it will also remove files and not just symlinks. This
+    can be useful if you want to for example clone the repository onto a
+    machine, restore your dotfiles and then delete the repository again.
