@@ -84,10 +84,11 @@ Arch Linux- [AUR Package](https://aur.archlinux.org/packages/dotgit)
 A system-wide install is not necessary - you can simply run dotgit out of a
 local bin folder. If you don't have one set up you can run the following:
 ```
-mkdir ~/.bin
-curl -L https://github.com/Cube777/dotgit/raw/master/dotgit > ~/.bin/dotgit
-curl -L https://github.com/Cube777/dotgit/raw/master/bash_completion >> \
-	~/.bash_completion
+git clone https://github.com/Cube777/dotgit
+mkdir -p ~/.bin
+cp -r dotgit/bin/dotgit* ~/.bin
+cat dotgit/bin/bash_completion >> ~/.bash_completion
+rm -rf dotgit
 echo 'export PATH="$PATH:$HOME/.bin"' >> ~/.bashrc
 ```
 (Any help with packaging for a different distro will be appreciated)
