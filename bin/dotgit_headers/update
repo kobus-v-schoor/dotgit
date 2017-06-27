@@ -114,7 +114,7 @@ function update
 				fcat=$i
 				verecho "$(levecho 2 "Found in $i")"
 
-				if [ -h "$i/$f" ] ||  [ "$i" != "${c[0]}" ]; then
+				if [ -h "$i/$f" ] || [ "$i" != "${c[0]}" ]; then
 					verecho "$(levecho 3 "Invalid root file")"
 					fsym=1
 				fi

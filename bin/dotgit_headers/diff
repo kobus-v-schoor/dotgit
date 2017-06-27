@@ -24,6 +24,8 @@ function init_diff
 			"A")DG_DIFF_T+=("added");;
 			"M")DG_DIFF_T+=("modified");;
 			"D")DG_DIFF_T+=("deleted");;
+			"R")DG_DIFF_T+=("renamed");;
+			"T")DG_DIFF_T+=("typechange");;
 			*)errecho "Unknown git change \"$a\" - $f"; continue;;
 		esac;
 
