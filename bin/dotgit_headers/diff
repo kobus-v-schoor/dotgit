@@ -87,6 +87,7 @@ function print_diff
 
 function generate_commit_msg
 {
+	crypt "encrypt"
 	init_diff
 
 	local str
