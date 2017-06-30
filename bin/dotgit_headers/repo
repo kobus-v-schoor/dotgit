@@ -43,14 +43,19 @@ function init
 
 	touch "$FILELIST"
 	touch "$CRYPTLIST"
-	grep -q "$DG_DMZ" .gitignore || echo "$DG_DMZ" >> .gitignore
+	if [ ! -f .gitignore ] || ! grep -q "$DG_DMZ" .gitignore; then
+		echo "$DG_DMZ" >> .gitignore
+	fi
 
 	if [ ! -d ".git" ]; then
 		git init
 		git checkout -b master
 		git add --all
-		git commit -m "Initial dotgit commit"
 	fi
+
+	git diff --staged --quiet || git commit -m "Initial dotgit commit" || \
+		errecho "Failed to create initial commit, please re-init this" \
+		"repository after fixing the errors"
 }
 
 function safety_checks
@@ -62,7 +67,7 @@ function safety_checks
 	fi
 
 	if [ ! -d ".git" ]; then
-		errecho "This does not appear to be a git directory. Aborting..."
+		errecho "This does not appear to be a git repository. Aborting..."
 		exit 1
 	fi
 

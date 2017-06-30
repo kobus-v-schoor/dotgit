@@ -50,7 +50,7 @@ fi
 
 verecho "Active categories: ${CTG[*]}"
 
-if [[ $1 != init ]] || [[ $1 != help ]]; then
+if [[ $1 != "init" ]] &&  [[ $1 != "help" ]]; then
 	safety_checks
 	init_flists
 
