@@ -89,7 +89,7 @@ case "$1" in
 	"restore")restore "sym";;
 	"clean")clean_home_fast "sym";;
 	"hard-update")update "nosym";;
-	"hard-restore")update "nosym";;
+	"hard-restore")restore "nosym";;
 	"hard-clean")clean_home_fast "nosym";;
 	"encrypt")crypt "encrypt";;
 	"decrypt")crypt "decrypt";;
