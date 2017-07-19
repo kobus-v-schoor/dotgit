@@ -92,17 +92,20 @@ OPTIONS:
     and your hostname will be implicitly added. When you add categories only the
     files that are in those categories will be taken into consideration. For
     instance, if you specify "c1" after "update" only files marked with the "c1"
-    category will be updated. Options with "(args)" after their name support
-    categories.
+    category will be updated. Options with "(ctgs)" after their name support
+    categories as a space separated list.
 
     init           - Setup a new dotgit repository inside the current directory
 
-    update (args)  - Run this after you changed either of your filelists. This
+    update (ctgs)  - Run this after you changed either of your filelists. This
                      will update the repository structures to match your
                      filelists. Do not use this if you only modified your
-                     dotfiles, it is unnecessary.
+                     dotfiles, it is unnecessary. If you run dotgit in symlink
+                     mode take note that running update will delete the original
+                     file inside your home folder and replace it with a link to
+                     the repository.
 
-    restore (args) - Run this to create links from your home folder to your
+    restore (ctgs) - Run this to create links from your home folder to your
                      repository. You need to run this whenever you want to setup
                      a new machine or if you made changes to the filelists on
                      antoher machine and you want the changes to be added to the
@@ -118,11 +121,14 @@ OPTIONS:
     encrypt        - This will encrypt all the files that you modified since
                      your last encryption. Whenever you modify an encrypted
                      dotfile and want to save the changes to your repository you
-                     will need to run this.
+                     will need to run this. This will encrypt all files marked
+                     for encryption inside the repository.
 
     decrypt        - This will decrypt all files inside your repository and
                      overwrite the version inside your "dmz" folder. You should
                      run decrypt after pulling in new changes from a remote.
+                     This will decrypt all files marked for encryption inside
+                     the repository.
 
     passwd         - Change your dotgit password.
 
