@@ -41,24 +41,27 @@ declare -a FE # File encrypt flag
 
 init_cgroups
 
+declare -a tctg
 if [[ $# == 0 ]]; then
 	phelp
 	exit
 elif [[ $# == 1 ]]; then
-	CTG=(common $HOSTNAME)
+	tctg=(common $HOSTNAME)
 else
-	IFS=$' '
-	for g in "${@:2}"; do
-		if [ "${CTGG[$g]}" ]; then
-			verecho "Expanding categories with group $g=[${CTGG[$g]}]"
-			IFS=$','
-			CTG+=(${CTGG[$g]})
-		else
-			# shellcheck disable=SC2034
-			CTG+=($g)
-		fi
-	done
+	tctg=(${@:2})
 fi
+
+IFS=$' '
+for g in "${tctg[@]}"; do
+	if [ "${CTGG[$g]}" ]; then
+		verecho "Expanding categories with group $g=[${CTGG[$g]}]"
+		IFS=$','
+		CTG+=(${CTGG[$g]})
+	else
+		# shellcheck disable=SC2034
+		CTG+=($g)
+	fi
+done
 
 IFS=$'\n' CTG=($(sort -u <<<"${CTG[*]}"))
 IFS=$','
