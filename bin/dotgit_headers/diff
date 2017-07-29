@@ -98,7 +98,7 @@ function generate_commit_msg
 	done
 	unset index
 
-	if git diff --quiet @{u}.. && [[ ! $str ]]; then
+	if git diff --quiet '@{u}..' && [[ ! $str ]]; then
 		errecho "No changes to repository"
 		exit
 	fi

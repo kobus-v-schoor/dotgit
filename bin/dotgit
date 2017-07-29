@@ -31,6 +31,7 @@ source "$DG_H/security"
 source "$DG_H/diff"
 
 declare -a CTG # Active categories
+declare -A CTGG # Category groups
 
 declare -a FN # File names
 declare -a FC # Normal categories
@@ -38,16 +39,29 @@ declare -a FE # File encrypt flag
 
 [[ $DG_VERBOSE -eq 0 ]] && shift
 
+init_cgroups
+
 if [[ $# == 0 ]]; then
 	phelp
 	exit
 elif [[ $# == 1 ]]; then
 	CTG=(common $HOSTNAME)
 else
-	# shellcheck disable=SC2034
-	CTG=(${@:2})
+	IFS=$' '
+	for g in "${@:2}"; do
+		if [ "${CTGG[$g]}" ]; then
+			verecho "Expanding categories with group $g=[${CTGG[$g]}]"
+			IFS=$','
+			CTG+=(${CTGG[$g]})
+		else
+			# shellcheck disable=SC2034
+			CTG+=($g)
+		fi
+	done
 fi
 
+IFS=$'\n' CTG=($(sort -u <<<"${CTG[*]}"))
+IFS=$','
 verecho "Active categories: ${CTG[*]}"
 
 if [[ $1 != "init" ]] &&  [[ $1 != "help" ]]; then

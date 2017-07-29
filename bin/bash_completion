@@ -39,10 +39,20 @@ function _dotgit
 		done
 		unset i
 
+		local -a fl=()
+		[ -f "filelist" ] && fl+=("filelist")
+		[ -f "cryptlist" ] && fl+=("cryptlist")
+
+		for i in "${fl[@]}"; do
+			while read -r line; do
+				! [[ $line =~ \= ]] && continue;
+				opts+=(${line%%\=*})
+			done < "$i"
+		done
 		opts+=("common")
 		opts+=("$HOSTNAME")
 
-		opts=($(IFS=$'\n'; sort -u <<< "${opts[*]}"))
+		opts=($(IFS=$'\n'; sort -u <<<"${opts[*]}"))
 	fi
 
 	COMPREPLY=($(IFS=$' '; compgen -W "${opts[*]}" "${COMP_WORDS[COMP_CWORD]}"))
