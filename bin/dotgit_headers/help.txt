@@ -35,7 +35,7 @@ FILELIST SYNTAX:
 
     or simply:
 
-    file_name
+    file_name (identical to file_name:common)
 
     "file_name" can contain spaces and can be any file or folder inside your
     home directory. Categories are a very powerful tool that you can use to
@@ -52,6 +52,20 @@ FILELIST SYNTAX:
     have its own version of .vimrc. Categories can be anything you want it to be
     but its most straight-forward usage is the hostnames of the machines that
     you will be using dotgit on.
+
+    You can also group categories to create a "alias" of sorts that will allow
+    you to easily specify numerous categories by only using one word. The syntax
+    is as follows and works in both the filelist and cryptlist (no difference
+    between the two, both are global)
+
+    group=category1,category2
+
+    This way can run 'dotgit update group' instead of 'dotgit update category1
+    category2'. Groups also work with the implicitly added hostname. This means
+    that if you have a group with the same name as your hostname and you run
+    'dotgit update' (with no categories) dotgit will automatically add all the
+    categories listed in the hostname group and the "common" category as normal
+    (you can even have a group named "common" if you want).
 
 ENCRYPTION:
     Dotgit has support AES encryption of your dotfiles through PGP. To enable
