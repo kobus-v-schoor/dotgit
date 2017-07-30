@@ -23,7 +23,7 @@ between multiple computers and devices.
   is just a normal git repository, no frills
 * Equally good support for both symlinks and copies
 * No dependencies, just a bash script
-* Intuitive filelist - easily create a complex repository storing all you're
+* Intuitive filelist - easily create a complex repository storing all your
   different configurations
 * Easily work with only a group of files in your repository (categories)
 * Straightforward file-hierarchy
