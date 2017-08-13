@@ -9,6 +9,10 @@ function init_diff
 	cd "$REPO"
 	git add --all
 	IFS=$'\n'
+
+	local fl_ch=0
+	local cr_ch=0
+
 	while read -r line; do
 		local a=${line%% *}
 		local f=${line#* }
@@ -17,6 +21,8 @@ function init_diff
 		f=${f%\"}
 		f=${f#\"}
 
+		[[ $f == "$FILELIST" ]] && fl_ch=1 && continue
+		[[ $f == "$CRYPTLIST" ]] && cr_ch=1 && continue
 		[[ ! $f =~ ^$DG_DFDIR* ]] && continue
 		[[ $f =~ .*\.hash ]] && continue
 
@@ -32,6 +38,11 @@ function init_diff
 		DG_DIFF_F+=("${f#$DG_DFDIR\/}")
 	done <<< "$(git status --porcelain)"
 	unset line
+
+	if [[ ${#DG_DIFF_F[@]} -eq 0 ]]; then
+		[[ $fl_ch -ne 0 ]] && DG_DIFF_F+=("filelist") && DG_DIFF_T+=("modified")
+		[[ $cr_ch -ne 0 ]] && DG_DIFF_F+=("cryptlist") && DG_DIFF_T+=("modified")
+	fi
 
 	git reset -q
 }

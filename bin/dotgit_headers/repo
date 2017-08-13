@@ -118,7 +118,7 @@ function init_flists
 
 			local -a arr
 			IFS=$',' arr=(${l[1]:-"common"})
-			IFS=$'\n' arr=($(sort<<<"${arr[*]}"))
+			IFS=$'\n' arr=($(sort -u<<<"${arr[*]}"))
 
 			# If file entry is folder inside repo and home folder has no such
 			# file, folder or the folder is empty - then use repo contents as
@@ -139,11 +139,13 @@ function init_flists
 				FE+=($n)
 				verecho "$(levecho 1 "Added ${l[0]} - ${arr[*]} - $n")"
 			else
+				IFS=$','
 				verecho "$(levecho 1 \
 					"Using directory mode for ${l[0]} - ${arr[*]} - $n")"
 
 				IFS=$'\n'
 				while read -r fls; do
+					[[ ! $fls ]] && continue
 					[[ $PRE ]] && fls=${fls#$PRE}
 					FN+=("$fls")
 					IFS=$',' FC+=("${arr[*]}")

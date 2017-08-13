@@ -39,13 +39,13 @@ declare -a FE # File encrypt flag
 
 [[ $DG_VERBOSE -eq 0 ]] && shift
 
-init_cgroups
+[[ $# -ne 0 ]] && [[ $1 != "init" ]] && [[ $1 != "help" ]] && init_cgroups
 
 declare -a tctg
-if [[ $# == 0 ]]; then
+if [[ $# -eq 0 ]]; then
 	phelp
 	exit
-elif [[ $# == 1 ]]; then
+elif [[ $# -eq 1 ]]; then
 	tctg=(common $HOSTNAME)
 else
 	tctg=(${@:2})
