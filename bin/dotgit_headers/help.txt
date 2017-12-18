@@ -53,6 +53,18 @@ FILELIST SYNTAX:
     but its most straight-forward usage is the hostnames of the machines that
     you will be using dotgit on.
 
+    After creating multiple categories it might become tedious to specify them
+    all on the command-line, this is where category groups come in. You can
+    specify a group with the following syntax:
+
+    group1=category1,category2
+
+    Then, instead of running 'dotgit update category1 category2' every time you
+    can just run 'dotgit update group1'. Implicitly added categories (common and
+    your hostname) can also be expanded, meaning that if you have a group name
+    that matches your hostname it will be expanded for you and you can just run
+    'dotgit update'
+
 ENCRYPTION:
     Dotgit has support AES encryption of your dotfiles through PGP. To enable
     encryption of a file simply add the filename to the 'cryptlist' file.
