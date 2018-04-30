@@ -75,8 +75,8 @@ Lastly the `.foo` will only be used when you explicitly use the category
 repository.
 
 If you'd like to see a dotgit repository in action you can look at my
-[dotfiles](https://github.com/Cube777/dotfiles) where I keep the dotfiles of 4
-hosts(3 PCs and a Raspberry Pi) I regularly use.
+[dotfiles](https://github.com/Cube777/dotfiles) where I keep the dotfiles of 3
+PC's that I regularly use.
 
 ## Installation
 Arch Linux- [AUR Package](https://aur.archlinux.org/packages/dotgit)
@@ -84,7 +84,7 @@ Arch Linux- [AUR Package](https://aur.archlinux.org/packages/dotgit)
 A system-wide install is not necessary - you can simply run dotgit out of a
 local bin folder. If you don't have one set up you can run the following:
 ```
-git clone https://github.com/Cube777/dotgit
+git clone https://github.com/kobus-v-schoor/dotgit
 mkdir -p ~/.bin
 cp -r dotgit/bin/dotgit* ~/.bin
 cat dotgit/bin/bash_completion >> ~/.bash_completion
