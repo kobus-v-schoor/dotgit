@@ -75,8 +75,8 @@ Lastly the `.foo` will only be used when you explicitly use the category
 repository.
 
 If you'd like to see a dotgit repository in action you can look at my
-[dotfiles](https://github.com/Cube777/dotfiles) where I keep the dotfiles of 3
-PC's that I regularly use.
+[dotfiles](https://github.com/kobus-v-schoor/dotfiles) where I keep the dotfiles
+of 3 PC's that I regularly use.
 
 ## Installation
 Arch Linux- [AUR Package](https://aur.archlinux.org/packages/dotgit)
