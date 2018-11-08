@@ -91,6 +91,12 @@ cat dotgit/bin/bash_completion >> ~/.bash_completion
 rm -rf dotgit
 echo 'export PATH="$PATH:$HOME/.bin"' >> ~/.bashrc
 ```
+
+To install fish shell completion:
+```
+cp dotgit/bin/fish_completion.fish ~/.config/fish/completions/dotgit.fish
+```
+
 (Any help with packaging for a different distro will be appreciated)
 
 ## Instructions
