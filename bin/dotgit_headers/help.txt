@@ -120,7 +120,7 @@ OPTIONS:
     restore (ctgs) - Run this to create links from your home folder to your
                      repository. You need to run this whenever you want to setup
                      a new machine or if you made changes to the filelists on
-                     antoher machine and you want the changes to be added to the
+                     another machine and you want the changes to be added to the
                      current machine. Take note that dotgit will first remove
                      old links to your dotfiles repository and then create the
                      new links. You will thus need to specify all the categories
