@@ -52,8 +52,13 @@ function restore
 			continue
 		fi
 
+		if diff --no-dereference "$REPO/$DFDIR/${c[0]}/$f" "$HOME/$f" > /dev/null; then
+			verecho "$(levecho 2 "No difference. Skipping...")"
+			continue
+		fi
+
 		if [ -f "$HOME/$f" ]; then
-			prompt "File \"$f\" exists in home folder, replace?" || continue
+			prompt "Replace \"$f\" in home folder?" || continue
 
 			verecho "$(levecho 2 "Removing from home folder")"
 			rm "$HOME/$f"
