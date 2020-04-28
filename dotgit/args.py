@@ -8,6 +8,7 @@ class Arguments:
 
         # add parser options
         parser.add_argument('--verbose', '-v', action='count', default=0)
+        parser.add_argument('--dry-run', action='store_true')
 
         # parse args
         args = parser.parse_args(args)
@@ -18,3 +19,5 @@ class Arguments:
             self.verbose_level = [logging.INFO, logging.DEBUG][args.verbose-1]
         else:
             self.verbose_level = logging.WARNING
+
+        self.dry_run = args.dry_run
