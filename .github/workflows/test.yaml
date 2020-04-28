@@ -1,11 +1,12 @@
 name: Test
 on: push
+defaults:
+    working-directory: 'tests'
 jobs:
-    test_linux:
-        runs-on: ubuntu-latest
+    strategy:
+        matrix:
+            os: [ubuntu-16.04, ubuntu-18.04, macos-latest]
+    run_tests:
+        runs-on: '${{ matrix.os }}'
         steps:
-            - run: 'tests/test.py'
-    test_macos:
-        runs-on: macos-latest
-        steps:
-            - run: 'tests/test.py'
+            - run: './test.py'
