@@ -1,0 +1,11 @@
+name: Test
+on: push
+jobs:
+    test_linux:
+        runs-on: ubuntu-latest
+        steps:
+            - run: 'tests/test.py'
+    test_macos:
+        runs-on: macos-latest
+        steps:
+            - run: 'tests/test.py'
