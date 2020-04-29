@@ -8,10 +8,18 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
+        python-version: [3.5, 3.6, 3.7, 3.8]
 
     steps:
       - uses: actions/checkout@v2
 
+      - name: setup python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: install pytest
+        run: pip install pytest pytest-cov
+
       - name: run tests
-        run: ./test.py -v
-        working-directory: tests
+        run: pytest
