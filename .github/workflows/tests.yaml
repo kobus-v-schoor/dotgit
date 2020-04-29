@@ -3,7 +3,7 @@ on: push
 
 jobs:
   tests:
-    runs-on: '${{ matrix.os}}'
+    runs-on: '${{ matrix.os }}'
 
     strategy:
       matrix:
