@@ -1,0 +1,28 @@
+name: publish
+
+on: push
+  # release:
+  #   types: [created]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install setuptools wheel twine
+
+      - name: Build package
+        run: python setup.py sdist bdist_wheel
+
+      - name: Upload package
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: twin upload dist/*
