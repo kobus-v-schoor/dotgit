@@ -1,4 +1,4 @@
-name: test
+name: tests
 on: push
 
 jobs:
@@ -13,13 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: setup python ${{ matrix.python-version }}
+      - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: install pytest
+      - name: Install pytest
         run: pip install pytest pytest-cov
 
-      - name: run tests
+      - name: Run tests
         run: pytest
