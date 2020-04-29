@@ -2,7 +2,7 @@
 
 import logging
 
-from args import Arguments
+from dotgit.args import Arguments
 
 if __name__ == '__main__':
     args = Arguments()

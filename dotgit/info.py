@@ -1,4 +1,4 @@
-__version__ = '2.0.0a0'
+__version__ = '2.0.0a1'
 __author__ = 'Kobus van Schoor'
 __author_email__ = 'v.schoor.kobus@gmail.com'
 __url__ = 'https://github.com/kobus-v-schoor/dotgit'
