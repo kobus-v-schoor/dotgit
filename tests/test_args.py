@@ -1,11 +1,14 @@
 import logging
 import socket
 
-from dotgit.args import Arguments, VALID_ACTIONS
+from dotgit.args import Arguments
+from dotgit.enums import Actions
 
 class TestArguments:
+    valid_actions = [a.value for a in Actions]
+
     def test_verbose(self):
-        act = VALID_ACTIONS[0]
+        act = self.valid_actions[0]
 
         # test default
         assert Arguments([act]).verbose_level == logging.WARNING
@@ -23,24 +26,24 @@ class TestArguments:
         assert Arguments(['-vvv', act]).verbose_level == logging.DEBUG
 
     def test_dry_run(self):
-        act = VALID_ACTIONS[0]
+        act = self.valid_actions[0]
 
         assert not Arguments([act]).dry_run
         assert Arguments(['--dry-run', act]).dry_run
 
     def test_hard_mode(self):
-        act = VALID_ACTIONS[0]
+        act = self.valid_actions[0]
 
         assert not Arguments([act]).hard_mode
         assert Arguments(['--hard', act]).hard_mode
 
     def test_actions(self):
         # test valid actions
-        for act in VALID_ACTIONS:
-            assert Arguments([act]).action == act
+        for act in self.valid_actions:
+            assert Arguments([act]).action == Actions(act)
 
     def test_categories(self):
-        act = VALID_ACTIONS[0]
+        act = self.valid_actions[0]
 
         assert Arguments([act]).categories == ['common', socket.gethostname()]
         assert Arguments([act, 'foo']).categories == ['foo']

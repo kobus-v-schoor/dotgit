@@ -2,7 +2,7 @@ import logging
 import argparse
 import socket
 
-VALID_ACTIONS = ['init', 'update', 'restore', 'clean', 'diff', 'help']
+from dotgit.enums import Actions
 
 HELP = {
         'verbose': 'print more info to the console',
@@ -31,7 +31,7 @@ class Arguments:
         parser.add_argument('--hard', action='store_true',
                 help=HELP['hard-mode'])
 
-        parser.add_argument('action', choices=VALID_ACTIONS,
+        parser.add_argument('action', choices=[a.value for a in Actions],
                 help=HELP['action'])
         parser.add_argument('category', nargs='*', default=['common',
             socket.gethostname()], help=HELP['category'])
@@ -48,7 +48,7 @@ class Arguments:
 
         self.dry_run = args.dry_run
         self.hard_mode = args.hard
-        self.action = args.action
+        self.action = Actions(args.action)
         self.categories = args.category
 
     def __str__(self):
