@@ -1,9 +1,8 @@
 name: publish
 
-on: push
-# on:
-#   release:
-#     types: [created]
+on:
+  release:
+    types: [created]
 
 jobs:
   publish:
