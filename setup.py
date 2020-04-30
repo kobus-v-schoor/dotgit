@@ -15,7 +15,9 @@ setuptools.setup(
         url = info.__url__,
         license = info.__license__,
         packages = ['dotgit'],
-        scripts = ['bin/dotgit'],
+        entry_points = {
+            'console_scripts': ['dotgit=dotgit.__main__:main']
+            },
         classifiers = [
             'Development Status :: 2 - Pre-Alpha',
             'Programming Language :: Python :: 3',

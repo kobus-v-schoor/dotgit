@@ -6,6 +6,3 @@ package:
 
 clean:
 	rm -rf build dist dotgit.egg-info
-
-run:
-	PYTHONPATH=. python3 bin/dotgit -h
