@@ -1,5 +1,5 @@
 test:
-	pytest-3
+	pytest-3 -v
 
 package:
 	python3 setup.py sdist bdist_wheel
