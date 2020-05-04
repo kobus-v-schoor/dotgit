@@ -1,4 +1,5 @@
 import os
+import pytest
 
 from dotgit.flists import Filelist
 
@@ -45,3 +46,22 @@ class TestFilelist:
         flist = Filelist(fname)
         assert flist.groups == {'group': ['cat1', 'cat2']}
         assert flist.files == {'cfile':[['common']], 'nfile':[['cat1', 'cat2']]}
+
+    def test_activate_groups(self, tmp_path):
+        fname = self.write_flist(tmp_path, 'group=cat1,cat2\nfile:cat1')
+
+        flist = Filelist(fname)
+        assert flist.activate(['group']) == {'file': ['cat1']}
+
+    def test_activate_normal(self, tmp_path):
+        fname = self.write_flist(tmp_path, 'file:cat1,cat2\nfile2:cat3\n')
+
+        flist = Filelist(fname)
+        assert flist.activate(['cat2']) == {'file': ['cat1', 'cat2']}
+
+    def test_activate_duplicate(self, tmp_path):
+        fname = self.write_flist(tmp_path, 'file:cat1,cat2\nfile:cat2\n')
+
+        flist = Filelist(fname)
+        with pytest.raises(RuntimeError):
+            flist.activate(['cat2'])

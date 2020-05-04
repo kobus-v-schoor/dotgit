@@ -1,7 +1,11 @@
+import logging
+
 class Filelist:
     def __init__(self, fname):
         self.groups = {}
         self.files = {}
+
+        logging.debug(f'parsing filelist in {fname}')
 
         with open(fname, 'r') as f:
             for line in f.readlines():
@@ -26,3 +30,22 @@ class Filelist:
                     if not path in self.files:
                         self.files[path] = []
                     self.files[path].append(categories)
+
+    def activate(self, categories):
+        # expand groups
+        categories = [self.groups.get(c, [c]) for c in categories]
+        # flatten category list
+        categories = [c for cat in categories for c in cat]
+
+        files = {}
+        for path in self.files:
+            for cat_list in self.files[path]:
+                if set(categories) & set(cat_list):
+                    if path in files:
+                        logging.error('multiple category lists active for '
+                                f'{path}: {files[path]} and {cat_list}')
+                        raise RuntimeError
+                    else:
+                        files[path] = cat_list
+
+        return files
