@@ -140,8 +140,11 @@ class TestFileOps:
         assert os.path.isfile(tmp_path / 'renamed')
 
         assert os.path.islink(tmp_path / 'link1')
+        assert os.readlink(tmp_path / 'link1') == os.path.join('dir1', 'file1')
         assert os.path.isdir(tmp_path / 'link_dir')
         assert os.path.islink(tmp_path / 'link_dir' / 'link1')
+        assert (os.readlink(tmp_path / 'link_dir' / 'link1') ==
+                os.path.join('..', 'dir1', 'file1'))
 
         assert os.path.isdir(tmp_path / 'new_dir')
 
