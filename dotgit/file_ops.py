@@ -1,6 +1,7 @@
 import os
 import logging
 import enum
+import shutil
 
 class Op(enum.Enum):
     LINK = enum.auto()
@@ -50,15 +51,45 @@ class FileOps:
         logging.debug(f'adding rm op for {path}')
         self.ops.append((Op.REMOVE, path))
 
-    def apply(self):
-        pass
+    def apply(self, dry_run=False):
+        for op in self.ops:
+            op, path = op
+
+            if type(path) is tuple:
+                src, dest = path
+                src, dest = self.check_path(src), self.check_path(dest)
+                logging.info(self.str_op(op, (src, dest)))
+            else:
+                path = self.check_path(path)
+                logging.info(self.str_op(op, path))
+
+            if dry_run:
+                continue
+
+            if op == Op.LINK:
+                src = os.path.relpath(src, os.path.join(self.wd,
+                    os.path.dirname(dest)))
+                os.symlink(src, dest)
+            elif op == Op.COPY:
+                shutil.copyfile(src, dest)
+            elif op == Op.MOVE:
+                os.rename(src, dest)
+            elif op == Op.REMOVE:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+            elif op == Op.MKDIR:
+                os.makedirs(path)
+
+        self.clear()
+
+    @staticmethod
+    def str_op(op, path):
+        if type(path) is tuple:
+            return f'{op.name} "{path[0]}" -> "{path[1]}"'
+        else:
+            return f'{op.name} "{path}"'
 
     def __str__(self):
-        fin = []
-        for opt in self.ops:
-            op, path = opt
-            if type(path) is tuple:
-                fin.append(f'{op.name} "{path[0]}" -> "{path[1]}"')
-            else:
-                fin.append(f'{op.name} "{path}"')
-        return '\n'.join(fin)
+        return '\n'.join(self.str_op(*op) for op in self.ops)

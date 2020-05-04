@@ -93,3 +93,58 @@ class TestFileOps:
         fop.copy('foo', 'bar')
         fop.remove('file')
         assert str(fop) == 'COPY "foo" -> "bar"\nREMOVE "file"'
+
+    def test_apply(self, tmp_path):
+        ## test the creating of the following structure (x marks existing files)
+        # dir1 (x)
+        #  -> file1 (x)
+        # delete_file (x) (will be deleted)
+        # delete_folder (x) (will be deleted)
+        #  -> file (x) (will be deleted)
+        # rename (x) (will be renamed to "renamed")
+        #
+        # link1 -> dir1/file1
+        # link_dir/link2 -> ../dir1/file1
+        # new_dir
+        # copy_dir
+        # -> copy_dir/file (from dir1/file1)
+
+        os.makedirs(tmp_path / 'dir1')
+        open(tmp_path / 'dir1' / 'file1', 'w').close()
+        open(tmp_path / 'delete_file', 'w').close()
+        os.makedirs(tmp_path / 'delete_folder')
+        open(tmp_path / 'delete_folder' / 'file', 'w').close()
+        open(tmp_path / 'rename', 'w').close()
+
+        fop = FileOps(tmp_path)
+
+        fop.remove('delete_file')
+        fop.remove('delete_folder')
+
+        fop.move('rename', 'renamed')
+
+        fop.link(tmp_path / 'dir1' / 'file1', 'link1')
+        fop.link(tmp_path / 'dir1' / 'file1', os.path.join('link_dir', 'link1'))
+
+        fop.mkdir('new_dir')
+
+        fop.copy(os.path.join('dir1','file1'), os.path.join('copy_dir', 'file'))
+
+        fop.apply()
+
+        assert not os.path.isfile(tmp_path / 'delete_file')
+        assert not os.path.isfile(tmp_path / 'delete_folder' / 'file')
+        assert not os.path.isdir(tmp_path / 'delete_folder')
+
+        assert not os.path.isfile(tmp_path / 'rename')
+        assert os.path.isfile(tmp_path / 'renamed')
+
+        assert os.path.islink(tmp_path / 'link1')
+        assert os.path.isdir(tmp_path / 'link_dir')
+        assert os.path.islink(tmp_path / 'link_dir' / 'link1')
+
+        assert os.path.isdir(tmp_path / 'new_dir')
+
+        assert os.path.isdir(tmp_path / 'copy_dir')
+        assert os.path.isfile(tmp_path / 'copy_dir' / 'file')
+        assert not os.path.islink(tmp_path / 'copy_dir' / 'file')
