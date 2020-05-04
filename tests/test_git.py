@@ -134,3 +134,13 @@ class TestGit:
         os.rename(os.path.join(repo, 'rename'), os.path.join(repo, 'renamed'))
         git.add()
         assert git.status() == [(FileState.RENAMED, 'rename -> renamed')]
+
+    def test_has_changes(self, tmp_path):
+        git, repo = self.setup_git(tmp_path)
+        assert not git.has_changes()
+        self.touch(repo, 'foo')
+        assert git.has_changes()
+        git.add('foo')
+        assert git.has_changes()
+        git.commit()
+        assert not git.has_changes()

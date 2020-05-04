@@ -58,6 +58,9 @@ class Git:
             status.append((FileState(stage if staged else work), path))
         return sorted(status, key=lambda s: s[1])
 
+    def has_changes(self):
+        return bool(self.run('git status -s --porcelain').strip())
+
     def gen_commit_message(self):
         mods = []
         for stat in self.status():
