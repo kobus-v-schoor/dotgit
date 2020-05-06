@@ -25,8 +25,6 @@ class FileOps:
         dirname =  os.path.dirname(path)
         if not os.path.isdir(self.check_path(dirname)):
             self.mkdir(dirname)
-            return True
-        return False
 
     def mkdir(self, path):
         logging.debug(f'adding mkdir op for {path}')
@@ -84,12 +82,20 @@ class FileOps:
 
         self.clear()
 
-    @staticmethod
-    def str_op(op, path):
+    def str_op(self, op, path):
+        def strip_wd(p):
+            p = str(p)
+            wd = str(self.wd)
+            return p[len(wd)+1:] if p.startswith(wd) else p
+
         if type(path) is tuple:
+            path = [strip_wd(p) for p in path]
             return f'{op.name} "{path[0]}" -> "{path[1]}"'
         else:
-            return f'{op.name} "{path}"'
+            return f'{op.name} "{strip_wd(path)}"'
 
     def __str__(self):
         return '\n'.join(self.str_op(*op) for op in self.ops)
+
+    def __repr__(self):
+        return str(self.ops)

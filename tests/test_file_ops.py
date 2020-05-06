@@ -11,12 +11,12 @@ class TestFileOps:
         fop = FileOps(tmp_path)
 
         # check relative path directly in wd
-        assert not fop.check_dest_dir('file')
+        fop.check_dest_dir('file')
         assert fop.ops == []
         fop.clear()
 
         # check relative path with non-existent dir
-        assert fop.check_dest_dir(os.path.join('dir', 'file'))
+        fop.check_dest_dir(os.path.join('dir', 'file'))
         assert fop.ops == [(Op.MKDIR, 'dir')]
         fop.clear()
 
@@ -24,19 +24,19 @@ class TestFileOps:
 
         # check relative path with existent dir
         os.makedirs(dirname)
-        assert not fop.check_dest_dir(os.path.join('dir', 'file'))
+        fop.check_dest_dir(os.path.join('dir', 'file'))
         assert fop.ops == []
         fop.clear()
         os.rmdir(dirname)
 
         # check abs path with non-existent dir
-        assert fop.check_dest_dir(os.path.join(dirname, 'file'))
+        fop.check_dest_dir(os.path.join(dirname, 'file'))
         assert fop.ops == [(Op.MKDIR, dirname)]
         fop.clear()
 
         # check absolute path with existent dir
         os.makedirs(dirname)
-        assert not fop.check_dest_dir(os.path.join(dirname, 'file'))
+        fop.check_dest_dir(os.path.join(dirname, 'file'))
         assert fop.ops == []
 
     def test_mkdir(self, tmp_path):
