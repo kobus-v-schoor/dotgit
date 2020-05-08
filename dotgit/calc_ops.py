@@ -62,11 +62,13 @@ class CalcOps:
                 fops.move(source, master)
 
             for slave in slaves:
-                if os.path.exists(slave) and slave != source:
-                    if os.path.realpath(slave) != master:
-                        fops.remove(slave)
-                    else:
-                        continue
+                if slave != source:
+                    if os.path.isfile(slave) or os.path.islink(slave):
+                        if os.path.realpath(slave) != master:
+                            fops.remove(slave)
+                        else:
+                            # already linked to master so just ignore
+                            continue
                 fops.link(master, slave)
 
         return fops
