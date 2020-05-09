@@ -1,6 +1,6 @@
 from os.path import expanduser
 
-__version__ = '2.0.0a5'
+__version__ = '2.0.0a6'
 __author__ = 'Kobus van Schoor'
 __author_email__ = 'v.schoor.kobus@gmail.com'
 __url__ = 'https://github.com/kobus-v-schoor/dotgit'

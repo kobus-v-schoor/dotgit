@@ -18,6 +18,7 @@ setuptools.setup(
         entry_points = {
             'console_scripts': ['dotgit=dotgit.__main__:main']
             },
+        data_files = [('', ['LICENSE'])],
         classifiers = [
             'Development Status :: 2 - Pre-Alpha',
             'Programming Language :: Python :: 3',
