@@ -41,7 +41,7 @@ jobs:
 
       - run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm git openssh
+          pacman -S --noconfirm git openssh base-devel
 
       - run: |
           mkdir -p /root/.ssh
