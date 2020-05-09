@@ -206,3 +206,86 @@ class TestCalcOps:
         assert not (home / 'file').is_symlink()
         assert (repo / 'cat1' / 'file').is_file()
         assert not (repo / 'cat1' / 'file').is_symlink()
+
+    def test_clean_nohome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+
+        calc = CalcOps(repo, home)
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
+
+        assert not (home / 'file').is_file()
+        assert (repo / 'cat1' / 'file').is_file()
+
+    def test_clean_linkedhome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        os.symlink(repo / 'cat1' / 'file', home / 'file')
+
+        calc = CalcOps(str(repo), str(home))
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
+
+        assert not (home / 'file').is_file()
+        assert (repo / 'cat1' / 'file').is_file()
+
+    def test_clean_linkedotherhome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        os.symlink(Path('cat1') / 'file', home / 'file')
+
+        calc = CalcOps(str(repo), str(home))
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
+
+        assert (home / 'file').is_symlink()
+        assert (repo / 'cat1' / 'file').is_file()
+
+    def test_clean_filehome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        open(home / 'file', 'w').close()
+
+        calc = CalcOps(str(repo), str(home))
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
+
+        assert (home / 'file').is_file()
+        assert not (home / 'file').is_symlink()
+        assert (repo / 'cat1' / 'file').is_file()
+
+    def test_clean_hard_nohome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+
+        calc = CalcOps(repo, home)
+        calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
+
+        assert not (home / 'file').is_file()
+        assert (repo / 'cat1' / 'file').is_file()
+
+    def test_clean_hard_linkedhome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        os.symlink(repo / 'cat1' / 'file', home / 'file')
+
+        calc = CalcOps(str(repo), str(home))
+        calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
+
+        assert not (home / 'file').is_file()
+        assert (repo / 'cat1' / 'file').is_file()
+
+    def test_clean_hard_filehome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        open(home / 'file', 'w').close()
+
+        calc = CalcOps(str(repo), str(home))
+        calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
+
+        assert not (home / 'file').is_file()
+        assert (repo / 'cat1' / 'file').is_file()

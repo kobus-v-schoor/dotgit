@@ -105,3 +105,19 @@ class CalcOps:
                 fops.link(source, dest)
 
         return fops
+
+    def clean(self, files, hard=False):
+        fops = FileOps(self.repo)
+
+        for path in files:
+            path = os.path.join(self.restore_path, path)
+
+            if hard:
+                if os.path.isfile(path):
+                    fops.remove(path)
+            else:
+                if (os.path.islink(path) and
+                        os.path.realpath(path).startswith(self.repo)):
+                    fops.remove(path)
+
+        return fops
