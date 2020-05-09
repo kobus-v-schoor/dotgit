@@ -46,6 +46,7 @@ jobs:
       - run: |
           mkdir -p /root/.ssh
           echo "$AUR_SSH_KEY" > /root/.ssh/id_rsa
+          chmod 600 /root/.ssh/id_rsa
           echo "$AUR_FINGERPRINT" > /root/.ssh/known_hosts
         shell: bash
         env:
