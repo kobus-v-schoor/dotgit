@@ -5,58 +5,63 @@ on: push
 # types: [created]
 
 jobs:
-  pypi:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+  # pypi:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: '3.x'
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: '3.x'
 
-      - name: Install dependencies
-        run: |
-            python -m pip install --upgrade pip
-            pip install setuptools wheel twine
+  #     - name: Install dependencies
+  #       run: |
+  #           python -m pip install --upgrade pip
+  #           pip install setuptools wheel twine
 
-      - name: Build package
-        run: python setup.py sdist bdist_wheel
+  #     - name: Build package
+  #       run: python setup.py sdist bdist_wheel
 
-      - name: Upload package
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: twine upload dist/*
+  #     - name: Upload package
+  #       env:
+  #         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+  #         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+  #       run: twine upload dist/*
 
   arch:
-    needs: pypi
+    # needs: pypi
     runs-on: ubuntu-latest
     container: archlinux:latest
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          path: repo
 
       - run: |
           pacman -Syu --noconfirm
           pacman -S --noconfirm git openssh
 
-      - run: 'mkdir ~/.ssh; echo "$SSH_KEY" > ~/.ssh/id_rsa.pub'
+      - run: |
+          mkdir -p /root/.ssh
+          echo "$AUR_SSH_KEY" > /root/.ssh/id_rsa
+          echo "$AUR_FINGERPRINT" > /root/.ssh/known_hosts
         shell: bash
         env:
-          SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
-
-      - run: 'ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts'
-        shell: bash
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+          AUR_FINGERPRINT: ${{ secrets.AUR_FINGERPRINT }}
 
       - run: |
           git config --global user.name "Github Actions"
           git config --global user.email "github-actions@dotgit.com"
           git clone ssh://aur@aur.archlinux.org/dotgit-git.git
-          cp pkg/arch/PKGBUILD dotgit-git
-          cd dotgit-git
-          makepkg --printsrcinfo > .SRCINFO
+          cp repo/pkg/arch/PKGBUILD "$PKG_NAME"
+          cd "$PKG_NAME"
+          sudo -u nobody makepkg --printsrcinfo > .SRCINFO
           git add PKGBUILD .SRCINFO
           git commit -m "version bump"
           git push
         shell: bash
+        env:
+          PKG_NAME: dotgit-git
