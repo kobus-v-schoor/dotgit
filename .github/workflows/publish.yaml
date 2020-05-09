@@ -58,6 +58,7 @@ jobs:
           git config --global user.email "github-actions@dotgit.com"
           git clone ssh://aur@aur.archlinux.org/dotgit-git.git
           cp repo/pkg/arch/PKGBUILD "$PKG_NAME"
+          chown -R "nobody:nobody" "$PKG_NAME"
           cd "$PKG_NAME"
           sudo -u nobody makepkg --printsrcinfo > .SRCINFO
           git add PKGBUILD .SRCINFO
