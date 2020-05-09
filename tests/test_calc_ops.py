@@ -119,3 +119,77 @@ class TestCalcOps:
         assert (repo / 'cat3').is_dir()
         assert (repo / 'cat3' / 'file').is_symlink()
         assert (repo / 'cat3' / 'file').samefile(repo / 'cat1' / 'file')
+
+    def test_restore_nomaster_nohome(self, tmp_path, caplog):
+        home, repo = self.setup_home_repo(tmp_path)
+
+        calc = CalcOps(repo, home)
+        calc.restore({'file': ['cat1', 'cat2']}).apply()
+
+        assert 'unable to find "file" in repo, skipping' in caplog.text
+        assert not (home / 'file').is_file()
+
+    def test_restore_nomaster_home(self, tmp_path, caplog):
+        home, repo = self.setup_home_repo(tmp_path)
+        open(home / 'file', 'w').close()
+
+        calc = CalcOps(repo, home)
+        calc.restore({'file': ['cat1', 'cat2']}).apply()
+
+        assert 'unable to find "file" in repo, skipping' in caplog.text
+        assert (home / 'file').is_file()
+
+    def test_restore_master_nohome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+
+        calc = CalcOps(repo, home)
+        calc.restore({'file': ['cat1', 'cat2']}).apply()
+
+        assert (home / 'file').is_file()
+        assert (home / 'file').is_symlink()
+        assert (home / 'file').samefile(repo / 'cat1' / 'file')
+        assert not (repo / 'cat1' / 'file').is_symlink()
+
+    def test_restore_master_linkedhome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        os.symlink(repo / 'cat1' / 'file', home / 'file')
+
+        calc = CalcOps(repo, home)
+        fops = calc.restore({'file': ['cat1', 'cat2']})
+        assert fops.ops == []
+
+    def test_restore_master_home_replace(self, tmp_path, monkeypatch):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        open(home / 'file', 'w').close()
+
+        monkeypatch.setattr('builtins.input', lambda p: 'y')
+
+        calc = CalcOps(repo, home)
+        calc.restore({'file': ['cat1', 'cat2']}).apply()
+
+        assert (home / 'file').is_file()
+        assert (home / 'file').is_symlink()
+        assert (home / 'file').samefile(repo / 'cat1' / 'file')
+        assert not (repo / 'cat1' / 'file').is_symlink()
+
+    def test_restore_master_home_noreplace(self, tmp_path, monkeypatch):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        open(home / 'file', 'w').close()
+
+        monkeypatch.setattr('builtins.input', lambda p: 'n')
+
+        calc = CalcOps(repo, home)
+        calc.restore({'file': ['cat1', 'cat2']}).apply()
+
+        assert (home / 'file').is_file()
+        assert not (home / 'file').is_symlink()
+        assert (repo / 'cat1' / 'file').is_file()
+        assert not (repo / 'cat1' / 'file').is_symlink()

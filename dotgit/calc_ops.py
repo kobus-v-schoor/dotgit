@@ -4,15 +4,12 @@ import logging
 from dotgit.file_ops import FileOps
 
 class CalcOps:
-    def __init__(self, repo, restore):
+    def __init__(self, repo, restore_path):
         self.repo = repo
-        self.restore = restore
+        self.restore_path = restore_path
 
     def update(self, files):
         fops = FileOps(self.repo)
-
-        # gonna be using this quite a lot
-        join = os.path.join
 
         for path in files:
             categories = files[path]
@@ -23,8 +20,10 @@ class CalcOps:
             # search through home folder and all categories for viable file
             # candidates
             candidates = set()
-            for cand in [self.restore,*[join(self.repo,c) for c in categories]]:
-                cand = join(cand, path)
+            search = [self.restore_path]
+            search += [os.path.join(self.repo,c) for c in categories]
+            for cand in search:
+                cand = os.path.join(cand, path)
                 if os.path.isfile(cand):
                     if os.path.islink(cand):
                         cand = os.path.realpath(cand)
@@ -54,8 +53,8 @@ class CalcOps:
             else:
                 source = candidates.pop()
 
-            master = join(self.repo, master, path)
-            slaves = [join(self.repo, s, path) for s in slaves]
+            master = os.path.join(self.repo, master, path)
+            slaves = [os.path.join(self.repo, s, path) for s in slaves]
             if source != master:
                 if os.path.exists(master):
                     fops.remove(master)
@@ -70,5 +69,39 @@ class CalcOps:
                             # already linked to master so just ignore
                             continue
                 fops.link(master, slave)
+
+        return fops
+
+    def restore(self, files, hard=False):
+        fops = FileOps(self.repo)
+
+        for path in files:
+            categories = files[path]
+            master = min(categories)
+            source = os.path.join(self.repo, master, path)
+
+            if not os.path.exists(source):
+                logging.debug(f'{source} not found in repo')
+                logging.warning(f'unable to find "{path}" in repo, skipping')
+                continue
+
+            dest = os.path.join(self.restore_path, path)
+
+            if os.path.exists(dest):
+                if os.path.samefile(source, dest):
+                    logging.debug(f'{dest} already linked to repo, skipping')
+                    continue
+
+                a = input(f'{dest} already exists, replace? [Yn] ')
+                a = 'y' if not a else a
+                if a.lower() == 'y':
+                    fops.remove(dest)
+                else:
+                    continue
+
+            if hard:
+                fops.copy(source, dest)
+            else:
+                fops.link(source, dest)
 
         return fops

@@ -82,6 +82,9 @@ class FileOps:
 
         self.clear()
 
+    def append(self, other):
+        self.ops += other.ops
+
     def str_op(self, op, path):
         def strip_wd(p):
             p = str(p)

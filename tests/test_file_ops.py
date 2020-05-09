@@ -88,6 +88,16 @@ class TestFileOps:
         fop.remove('file')
         assert fop.ops == [(Op.REMOVE, 'file')]
 
+    def test_append(self, tmp_path):
+        fop1 = FileOps(tmp_path)
+        fop2 = FileOps(tmp_path)
+
+        fop1.remove('file')
+        fop2.remove('file2')
+
+        fop1.append(fop2)
+        assert fop1.ops == [(Op.REMOVE, 'file'), (Op.REMOVE, 'file2')]
+
     def test_str(self, tmp_path):
         fop = FileOps(tmp_path)
         fop.copy('foo', 'bar')
