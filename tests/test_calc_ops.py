@@ -193,3 +193,16 @@ class TestCalcOps:
         assert not (home / 'file').is_symlink()
         assert (repo / 'cat1' / 'file').is_file()
         assert not (repo / 'cat1' / 'file').is_symlink()
+
+    def test_restore_hardmode(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+
+        calc = CalcOps(repo, home)
+        calc.restore({'file': ['cat1', 'cat2']}, hard=True).apply()
+
+        assert (home / 'file').is_file()
+        assert not (home / 'file').is_symlink()
+        assert (repo / 'cat1' / 'file').is_file()
+        assert not (repo / 'cat1' / 'file').is_symlink()
