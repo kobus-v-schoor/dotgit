@@ -2,7 +2,7 @@ name: publish
 
 on: push
 # release:
-#   types: [created]
+# types: [created]
 
 jobs:
   pypi:
@@ -36,6 +36,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm git openssh
 
       - run: 'mkdir ~/.ssh; echo "$SSH_KEY" > ~/.ssh/id_rsa.pub'
         shell: bash
