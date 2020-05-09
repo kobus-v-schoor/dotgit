@@ -1,36 +1,36 @@
 name: publish
 
-on: push
-# release:
-# types: [created]
+on:
+  release:
+    types: [created]
 
 jobs:
-  # pypi:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
+  pypi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v1
-  #       with:
-  #         python-version: '3.x'
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.x'
 
-  #     - name: Install dependencies
-  #       run: |
-  #           python -m pip install --upgrade pip
-  #           pip install setuptools wheel twine
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
 
-  #     - name: Build package
-  #       run: python setup.py sdist bdist_wheel
+      - name: Build package
+        run: python setup.py sdist bdist_wheel
 
-  #     - name: Upload package
-  #       env:
-  #         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-  #         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-  #       run: twine upload dist/*
+      - name: Upload package
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: twine upload dist/*
 
   arch:
-    # needs: pypi
+    needs: pypi
     runs-on: ubuntu-latest
     container: archlinux:latest
 
@@ -39,10 +39,12 @@ jobs:
         with:
           path: repo
 
+      # install needed packages to update aur repo
       - run: |
           pacman -Syu --noconfirm
           pacman -S --noconfirm git openssh base-devel
 
+      # setup ssh credentials
       - run: |
           mkdir -p /root/.ssh
           echo "$AUR_SSH_KEY" > /root/.ssh/id_rsa
@@ -53,6 +55,7 @@ jobs:
           AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
           AUR_FINGERPRINT: ${{ secrets.AUR_FINGERPRINT }}
 
+      # clone aur repo, update PKGBUILD and .SRCINFO and commit + push changes
       - run: |
           git config --global user.name "Github Actions"
           git config --global user.email "github-actions@dotgit.com"
