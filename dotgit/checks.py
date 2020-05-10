@@ -1,5 +1,6 @@
 import os
 import logging
+import subprocess
 
 import dotgit.info as info
 from dotgit.enums import Actions
@@ -9,6 +10,14 @@ def safety_checks(dir_name: str, action: Actions) -> bool:
     # check that we're not in the user's home folder
     if dir_name == info.home:
         logging.error('dotgit should not be run inside home folder')
+        return False
+
+    try:
+        subprocess.run(['git', '--version'], check=True,
+                         stdout=subprocess.PIPE)
+    except FileNotFoundError:
+        logging.error('"git" command not found in path, needed for proper '
+                      'dotgit operation')
         return False
 
     if action == Actions.INIT:
