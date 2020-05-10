@@ -4,16 +4,17 @@ import logging
 import sys
 import os
 
-# add the directory which contains the dotgit module to the path. this will only
-# ever execute when running the __main__.py script directly since the python
-# package will use an entrypoint
+# add the directory which contains the dotgit module to the path. this will
+# only ever execute when running the __main__.py script directly since the
+# python package will use an entrypoint
 if __name__ == '__main__':
     import site
     mod = os.path.dirname(os.path.realpath(__file__))
     site.addsitedir(os.path.dirname(mod))
 
-from dotgit.args import Arguments
-from dotgit.checks import safety_checks
+from dotgit.args import Arguments  # noqa: E402
+from dotgit.checks import safety_checks  # noqa: E402
+
 
 def main(args=None):
     if args is None:
@@ -28,6 +29,7 @@ def main(args=None):
     if not safety_checks(os.getcwd(), args.action):
         logging.error(f'safety checks failed for {os.getcwd()}, exiting')
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

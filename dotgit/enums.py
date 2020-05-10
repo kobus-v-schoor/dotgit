@@ -1,5 +1,6 @@
 import enum
 
+
 class Actions(enum.Enum):
     INIT = 'init'
     UPDATE = 'update'

@@ -4,6 +4,7 @@ import shlex
 import logging
 import enum
 
+
 class FileState(enum.Enum):
     MODIFIED = 'M'
     ADDED = 'A'
@@ -12,6 +13,7 @@ class FileState(enum.Enum):
     COPIED = 'C'
     UPDATED = 'U'
     UNTRACKED = '?'
+
 
 class Git:
     def __init__(self, repo_dir):
@@ -25,11 +27,11 @@ class Git:
             cmd = shlex.split(cmd)
         logging.info(f'running git command {cmd}')
         try:
-            proc = subprocess.run(cmd, cwd=self.repo_dir, stdout=subprocess.PIPE,
-                    check=True)
+            proc = subprocess.run(cmd, cwd=self.repo_dir,
+                                  stdout=subprocess.PIPE, check=True)
         except subprocess.CalledProcessError as e:
             logging.error(f'git command {cmd} failed with exit code '
-                    f'{e.returncode}')
+                          f'{e.returncode}')
             logging.error(e.stdout.decode())
             raise
         logging.debug(f'git command {cmd} succeeded')

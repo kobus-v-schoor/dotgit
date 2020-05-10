@@ -3,12 +3,14 @@ import logging
 import enum
 import shutil
 
+
 class Op(enum.Enum):
     LINK = enum.auto()
     COPY = enum.auto()
     MOVE = enum.auto()
     REMOVE = enum.auto()
     MKDIR = enum.auto()
+
 
 class FileOps:
     def __init__(self, wd):
@@ -22,7 +24,7 @@ class FileOps:
         return path if os.path.isabs(path) else os.path.join(self.wd, path)
 
     def check_dest_dir(self, path):
-        dirname =  os.path.dirname(path)
+        dirname = os.path.dirname(path)
         if not os.path.isdir(self.check_path(dirname)):
             self.mkdir(dirname)
 
@@ -66,7 +68,7 @@ class FileOps:
 
             if op == Op.LINK:
                 src = os.path.relpath(src, os.path.join(self.wd,
-                    os.path.dirname(dest)))
+                                                        os.path.dirname(dest)))
                 os.symlink(src, dest)
             elif op == Op.COPY:
                 shutil.copyfile(src, dest)
@@ -89,7 +91,7 @@ class FileOps:
         def strip_wd(p):
             p = str(p)
             wd = str(self.wd)
-            return p[len(wd)+1:] if p.startswith(wd) else p
+            return p[len(wd) + 1:] if p.startswith(wd) else p
 
         if type(path) is tuple:
             path = [strip_wd(p) for p in path]

@@ -4,6 +4,7 @@ import logging
 import dotgit.info as info
 from dotgit.enums import Actions
 
+
 def safety_checks(dir_name: str, action: Actions) -> bool:
     # check that we're not in the user's home folder
     if dir_name == info.home:

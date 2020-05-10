@@ -3,6 +3,7 @@ import logging
 
 from dotgit.file_ops import FileOps
 
+
 class CalcOps:
     def __init__(self, repo, restore_path):
         self.repo = repo
@@ -21,7 +22,7 @@ class CalcOps:
             # candidates
             candidates = set()
             search = [self.restore_path]
-            search += [os.path.join(self.repo,c) for c in categories]
+            search += [os.path.join(self.repo, c) for c in categories]
             for cand in search:
                 cand = os.path.join(cand, path)
                 if os.path.isfile(cand):
@@ -43,9 +44,10 @@ class CalcOps:
                 while True:
                     try:
                         choice = int(input('please select the version you '
-                            f'would like to use: 0-{len(candidates)-1}'))
+                                           'would like to use: '
+                                           f'0-{len(candidates)-1}'))
                         choice = candidates[choice]
-                    except:
+                    except (ValueError, EOFError):
                         print('invalid choice entered, please try again')
                         continue
                     break
@@ -116,8 +118,8 @@ class CalcOps:
                 if os.path.isfile(path):
                     fops.remove(path)
             else:
-                if (os.path.islink(path) and
-                        os.path.realpath(path).startswith(self.repo)):
-                    fops.remove(path)
+                if os.path.islink(path):
+                    if os.path.realpath(path).startswith(self.repo):
+                        fops.remove(path)
 
         return fops

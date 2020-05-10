@@ -1,5 +1,6 @@
 import logging
 
+
 class Filelist:
     def __init__(self, fname):
         self.groups = {}
@@ -15,7 +16,7 @@ class Filelist:
                     continue
 
                 # common file
-                if not '=' in line and not ':' in line:
+                if '=' not in line and ':' not in line:
                     line = f'{line}:common'
 
                 # group
@@ -27,7 +28,7 @@ class Filelist:
                 elif ':' in line:
                     path, categories = line.split(':')
                     categories = categories.split(',')
-                    if not path in self.files:
+                    if path not in self.files:
                         self.files[path] = []
                     self.files[path].append(categories)
 
@@ -43,7 +44,7 @@ class Filelist:
                 if set(categories) & set(cat_list):
                     if path in files:
                         logging.error('multiple category lists active for '
-                                f'{path}: {files[path]} and {cat_list}')
+                                      f'{path}: {files[path]} and {cat_list}')
                         raise RuntimeError
                     else:
                         files[path] = cat_list
