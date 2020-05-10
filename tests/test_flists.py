@@ -30,14 +30,24 @@ class TestFilelist:
 
         flist = Filelist(fname)
         assert flist.groups == {}
-        assert flist.files == {'common_file/with/path': [['common']]}
+        assert flist.files == {'common_file/with/path': [{
+            'categories': ['common'],
+            'plugins': ['plain']
+        }]}
 
     def test_file(self, tmp_path):
         fname = self.write_flist(tmp_path, 'file:cat1,cat2\nfile:cat3\n')
 
         flist = Filelist(fname)
         assert flist.groups == {}
-        assert flist.files == {'file': [['cat1', 'cat2'], ['cat3']]}
+        assert flist.files == {
+            'file': [{
+                'categories': ['cat1', 'cat2'],
+                'plugins': ['plain']
+            }, {
+                'categories': ['cat3'],
+                'plugins': ['plain']
+            }]}
 
     def test_mix(self, tmp_path):
         fname = self.write_flist(tmp_path,
@@ -45,19 +55,45 @@ class TestFilelist:
 
         flist = Filelist(fname)
         assert flist.groups == {'group': ['cat1', 'cat2']}
-        assert flist.files == {'cfile':[['common']], 'nfile':[['cat1', 'cat2']]}
+        assert flist.files == {
+            'cfile': [{
+                'categories': ['common'],
+                'plugins': ['plain']
+            }],
+            'nfile': [{
+                'categories': ['cat1', 'cat2'],
+                'plugins': ['plain']
+            }]}
+
+    def test_plugins(self, tmp_path):
+        fname = self.write_flist(tmp_path, 'file:cat1,cat2:encrypt,template')
+
+        flist = Filelist(fname)
+        assert flist.files == {
+            'file': [{
+                'categories': ['cat1', 'cat2'],
+                'plugins': ['encrypt', 'template']
+            }]}
 
     def test_activate_groups(self, tmp_path):
         fname = self.write_flist(tmp_path, 'group=cat1,cat2\nfile:cat1')
 
         flist = Filelist(fname)
-        assert flist.activate(['group']) == {'file': ['cat1']}
+        assert flist.activate(['group']) == {
+            'file': {
+                'categories': ['cat1'],
+                'plugins': ['plain']
+            }}
 
     def test_activate_normal(self, tmp_path):
         fname = self.write_flist(tmp_path, 'file:cat1,cat2\nfile2:cat3\n')
 
         flist = Filelist(fname)
-        assert flist.activate(['cat2']) == {'file': ['cat1', 'cat2']}
+        assert flist.activate(['cat2']) == {
+            'file': {
+                'categories': ['cat1', 'cat2'],
+                'plugins': ['plain'],
+            }}
 
     def test_activate_duplicate(self, tmp_path):
         fname = self.write_flist(tmp_path, 'file:cat1,cat2\nfile:cat2\n')

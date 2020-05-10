@@ -15,22 +15,26 @@ class Filelist:
                 if not line or line.startswith('#'):
                     continue
 
-                # common file
-                if '=' not in line and ':' not in line:
-                    line = f'{line}:common'
-
                 # group
                 if '=' in line:
                     group, categories = line.split('=')
                     categories = categories.split(',')
                     self.groups[group] = categories
                 # file
-                elif ':' in line:
-                    path, categories = line.split(':')
-                    categories = categories.split(',')
+                else:
+                    line = line.split(':')
+                    path, categories, plugins = line[0], ['common'], ['plain']
+                    if len(line) > 1:
+                        categories = line[1].split(',')
+                    if len(line) > 2:
+                        plugins = line[2].split(',')
+
                     if path not in self.files:
                         self.files[path] = []
-                    self.files[path].append(categories)
+                    self.files[path].append({
+                        'categories': categories,
+                        'plugins': plugins
+                    })
 
     def activate(self, categories):
         # expand groups
@@ -40,13 +44,15 @@ class Filelist:
 
         files = {}
         for path in self.files:
-            for cat_list in self.files[path]:
+            for group in self.files[path]:
+                cat_list = group['categories']
                 if set(categories) & set(cat_list):
                     if path in files:
                         logging.error('multiple category lists active for '
-                                      f'{path}: {files[path]} and {cat_list}')
+                                      f'{path}: {files[path]["categories"]} '
+                                      f'and {cat_list}')
                         raise RuntimeError
                     else:
-                        files[path] = cat_list
+                        files[path] = group
 
         return files
