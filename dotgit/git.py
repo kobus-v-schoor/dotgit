@@ -72,3 +72,9 @@ class Git:
                 continue
             mods.append(f'{state.name.lower()} {path}')
         return ', '.join(mods).capitalize()
+
+    def commits(self):
+        return self.run('git log -1 --pretty=%s').strip().split('\n')
+
+    def last_commit(self):
+        return self.commits()[-1]
