@@ -28,6 +28,18 @@ class TestPlainPlugin:
         assert (post / 'file').is_symlink()
         assert (pre / 'file').samefile(post / 'file')
 
+    def test_apply_dir(self, tmp_path):
+        pre, post, data = self.setup_pre_post_data(tmp_path)
+        plugin = PlainPlugin(str(pre), str(post), str(data))
+
+        os.makedirs(pre / 'dir')
+        open(pre / 'dir' / 'file', 'w').close()
+        plugin.apply(os.path.join('dir', 'file'))
+        assert not (pre / 'dir' / 'file').is_symlink()
+        assert (post / 'dir').is_dir()
+        assert (post / 'dir' / 'file').is_symlink()
+        assert (pre / 'dir' / 'file').samefile(post / 'dir' / 'file')
+
     def test_remove(self, tmp_path):
         pre, post, data = self.setup_pre_post_data(tmp_path)
         plugin = PlainPlugin(str(pre), str(post), str(data))
@@ -37,3 +49,15 @@ class TestPlainPlugin:
         assert not (pre / 'file').is_symlink()
         assert (post / 'file').is_symlink()
         assert (pre / 'file').samefile(post / 'file')
+
+    def test_remove_dir(self, tmp_path):
+        pre, post, data = self.setup_pre_post_data(tmp_path)
+        plugin = PlainPlugin(str(pre), str(post), str(data))
+
+        os.makedirs(post / 'dir')
+        open(post / 'dir' / 'file', 'w').close()
+        plugin.remove(os.path.join('dir', 'file'))
+        assert not (pre / 'dir' / 'file').is_symlink()
+        assert (post / 'dir').is_dir()
+        assert (post / 'dir' / 'file').is_symlink()
+        assert (pre / 'dir' / 'file').samefile(post / 'dir' / 'file')
