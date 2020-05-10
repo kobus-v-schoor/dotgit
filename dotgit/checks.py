@@ -14,7 +14,7 @@ def safety_checks(dir_name: str, action: Actions) -> bool:
 
     try:
         subprocess.run(['git', '--version'], check=True,
-                         stdout=subprocess.PIPE)
+                       stdout=subprocess.PIPE)
     except FileNotFoundError:
         logging.error('"git" command not found in path, needed for proper '
                       'dotgit operation')
