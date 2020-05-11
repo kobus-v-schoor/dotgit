@@ -35,3 +35,11 @@ class TestSafetyChecks:
         create_git()
         os.remove(flist)
         assert not safety_checks(tmp_path, Actions.UPDATE)
+
+    def test_old_dotgit(self, tmp_path, caplog):
+        os.makedirs(tmp_path / '.git')
+        open(tmp_path / 'filelist', 'w').close()
+        open(tmp_path / 'cryptlist', 'w').close()
+
+        assert not safety_checks(tmp_path, Actions.UPDATE)
+        assert 'old dotgit repo' in caplog.text

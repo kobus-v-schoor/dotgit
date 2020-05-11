@@ -23,6 +23,12 @@ def safety_checks(dir_name: str, action: Actions) -> bool:
     if action == Actions.INIT:
         return True
 
+    if os.path.isfile(os.path.join(dir_name, 'cryptlist')):
+        logging.error('this appears to be an old dotgit repo, please check '
+                      'the user guide on how to update this repo for the '
+                      'new version of dotgit')
+        return False
+
     if not os.path.isdir(os.path.join(dir_name, '.git')):
         logging.error('''this does not appear to be a git repo, make sure to
         init the repo before running dotgit in this folder''')
