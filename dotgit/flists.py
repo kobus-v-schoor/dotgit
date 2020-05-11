@@ -23,17 +23,17 @@ class Filelist:
                 # file
                 else:
                     line = line.split(':')
-                    path, categories, plugins = line[0], ['common'], ['plain']
+                    path, categories, plugin = line[0], ['common'], 'plain'
                     if len(line) > 1:
                         categories = line[1].split(',')
                     if len(line) > 2:
-                        plugins = line[2].split(',')
+                        plugin = line[2]
 
                     if path not in self.files:
                         self.files[path] = []
                     self.files[path].append({
                         'categories': categories,
-                        'plugins': plugins
+                        'plugin': plugin
                     })
 
     def activate(self, categories):

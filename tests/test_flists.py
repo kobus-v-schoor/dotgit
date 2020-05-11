@@ -32,7 +32,7 @@ class TestFilelist:
         assert flist.groups == {}
         assert flist.files == {'common_file/with/path': [{
             'categories': ['common'],
-            'plugins': ['plain']
+            'plugin': 'plain'
         }]}
 
     def test_file(self, tmp_path):
@@ -43,10 +43,10 @@ class TestFilelist:
         assert flist.files == {
             'file': [{
                 'categories': ['cat1', 'cat2'],
-                'plugins': ['plain']
+                'plugin': 'plain'
             }, {
                 'categories': ['cat3'],
-                'plugins': ['plain']
+                'plugin': 'plain'
             }]}
 
     def test_mix(self, tmp_path):
@@ -58,21 +58,21 @@ class TestFilelist:
         assert flist.files == {
             'cfile': [{
                 'categories': ['common'],
-                'plugins': ['plain']
+                'plugin': 'plain'
             }],
             'nfile': [{
                 'categories': ['cat1', 'cat2'],
-                'plugins': ['plain']
+                'plugin': 'plain'
             }]}
 
-    def test_plugins(self, tmp_path):
-        fname = self.write_flist(tmp_path, 'file:cat1,cat2:encrypt,template')
+    def test_plugin(self, tmp_path):
+        fname = self.write_flist(tmp_path, 'file:cat1,cat2:encrypt')
 
         flist = Filelist(fname)
         assert flist.files == {
             'file': [{
                 'categories': ['cat1', 'cat2'],
-                'plugins': ['encrypt', 'template']
+                'plugin': 'encrypt'
             }]}
 
     def test_activate_groups(self, tmp_path):
@@ -82,7 +82,7 @@ class TestFilelist:
         assert flist.activate(['group']) == {
             'file': {
                 'categories': ['cat1'],
-                'plugins': ['plain']
+                'plugin': 'plain'
             }}
 
     def test_activate_normal(self, tmp_path):
@@ -92,7 +92,7 @@ class TestFilelist:
         assert flist.activate(['cat2']) == {
             'file': {
                 'categories': ['cat1', 'cat2'],
-                'plugins': ['plain'],
+                'plugin': 'plain',
             }}
 
     def test_activate_duplicate(self, tmp_path):
