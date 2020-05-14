@@ -1,6 +1,6 @@
 import os
 
-from dotgit.plugin_plain import PlainPlugin
+from dotgit.plugins.plain import PlainPlugin
 
 
 class TestPlainPlugin:

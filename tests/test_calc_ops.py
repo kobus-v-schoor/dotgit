@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dotgit.calc_ops import CalcOps
 from dotgit.file_ops import FileOps
-from dotgit.plugin_plain import PlainPlugin
+from dotgit.plugins.plain import PlainPlugin
 
 class TestCalcOps:
     def setup_home_repo(self, tmp_path):
