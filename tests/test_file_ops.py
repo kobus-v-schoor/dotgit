@@ -88,6 +88,23 @@ class TestFileOps:
         fop.remove('file')
         assert fop.ops == [(Op.REMOVE, 'file')]
 
+    def test_plugin(self, tmp_path):
+        fop = FileOps(tmp_path)
+
+        class Plugin:
+            def apply(self, source, dest):
+                self.called = True
+                self.source = source
+                self.dest = dest
+
+        plugin = Plugin()
+        fop.plugin(plugin.apply, 'source', 'dest')
+        assert fop.ops == [(plugin.apply, ('source', 'dest'))]
+        fop.apply()
+        assert plugin.called
+        assert plugin.source == str(tmp_path / 'source')
+        assert plugin.dest == str(tmp_path / 'dest')
+
     def test_append(self, tmp_path):
         fop1 = FileOps(tmp_path)
         fop2 = FileOps(tmp_path)
@@ -99,10 +116,21 @@ class TestFileOps:
         assert fop1.ops == [(Op.REMOVE, 'file'), (Op.REMOVE, 'file2')]
 
     def test_str(self, tmp_path):
+        class Plugin:
+            def apply(self, source, dest):
+                self.called = True
+                self.source = source
+                self.dest = dest
+
+        plugin = Plugin()
         fop = FileOps(tmp_path)
+
         fop.copy('foo', 'bar')
         fop.remove('file')
-        assert str(fop) == 'COPY "foo" -> "bar"\nREMOVE "file"'
+        fop.plugin(plugin.apply, 'source', 'dest')
+
+        assert str(fop) == ('COPY "foo" -> "bar"\nREMOVE "file"\n'
+                            'Plugin.apply "source" -> "dest"')
 
     def test_apply(self, tmp_path):
         ## test the creating of the following structure (x marks existing files)

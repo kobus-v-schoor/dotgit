@@ -9,7 +9,7 @@ class CalcOps:
         self.repo = repo
         self.restore_path = restore_path
 
-    def update(self, files):
+    def update(self, files, plugin=None):
         fops = FileOps(self.repo)
 
         for path in files:
@@ -60,7 +60,10 @@ class CalcOps:
             if source != master:
                 if os.path.exists(master):
                     fops.remove(master)
-                fops.move(source, master)
+                if plugin is None:
+                    fops.move(source, master)
+                else:
+                    fops.plugin(plugin.apply, source, master)
 
             for slave in slaves:
                 if slave != source:

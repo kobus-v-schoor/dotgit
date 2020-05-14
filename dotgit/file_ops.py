@@ -51,6 +51,11 @@ class FileOps:
         logging.debug(f'adding rm op for {path}')
         self.ops.append((Op.REMOVE, path))
 
+    def plugin(self, plugin, source, dest):
+        logging.debug(f'adding plugin op ({plugin.__qualname__}) for {source} '
+                      f'-> {dest}')
+        self.ops.append((plugin, (source, dest)))
+
     def apply(self, dry_run=False):
         for op in self.ops:
             op, path = op
@@ -81,6 +86,8 @@ class FileOps:
                     os.remove(path)
             elif op == Op.MKDIR:
                 os.makedirs(path)
+            elif callable(op):
+                op(src, dest)
 
         self.clear()
 
@@ -93,11 +100,18 @@ class FileOps:
             wd = str(self.wd)
             return p[len(wd) + 1:] if p.startswith(wd) else p
 
+        if type(op) is Op:
+            op = op.name
+        else:
+            # this strips out only the class name and function name otherwise
+            # other info like the module name is also there
+            op = '.'.join(op.__qualname__.split('.')[-2:])
+
         if type(path) is tuple:
             path = [strip_wd(p) for p in path]
-            return f'{op.name} "{path[0]}" -> "{path[1]}"'
+            return f'{op} "{path[0]}" -> "{path[1]}"'
         else:
-            return f'{op.name} "{strip_wd(path)}"'
+            return f'{op} "{strip_wd(path)}"'
 
     def __str__(self):
         return '\n'.join(self.str_op(*op) for op in self.ops)
