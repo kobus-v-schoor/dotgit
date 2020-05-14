@@ -15,7 +15,10 @@ if __name__ == '__main__':
 from dotgit.args import Arguments
 from dotgit.enums import Actions
 from dotgit.checks import safety_checks
+from dotgit.flists import Filelist
 from dotgit.git import Git
+from dotgit.calc_ops import CalcOps
+from dotgit.plugins.plain import PlainPlugin
 import dotgit.info as info
 
 
@@ -36,16 +39,6 @@ def init_repo(repo_dir, flist):
         changed = True
     else:
         logging.warning('existing filelist, not recreating')
-
-    gitignore = os.path.join(repo_dir, '.gitignore')
-    if not os.path.isfile(gitignore):
-        logging.info('creating gitignore')
-        with open(gitignore, 'w') as f:
-            f.write('.plugins/*/pre\n.plugins/*/post\n')
-        git.add('.gitignore')
-        changed = True
-    else:
-        logging.warning('existing .gitignore, not re-creating')
 
     if changed:
         git.commit()
@@ -68,9 +61,48 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
         logging.error(f'safety checks failed for {os.getcwd()}, exiting')
         return 1
 
+    # check for init
     if args.action == Actions.INIT:
         init_repo(repo, flist_fname)
         return 0
+
+    # parse filelist
+    filelist = Filelist(flist_fname)
+    try:
+        filelist = filelist.activate(args.categories)
+    except RuntimeError:
+        return 1
+
+    # init plugins
+    plugins_data_dir = os.path.join(repo, '.plugins')
+    plugins = {
+        'plain': PlainPlugin(data_dir=os.path.join(plugins_data_dir, 'plain'),
+                             hard=args.hard_mode)
+    }
+
+    # set up operations
+    if args.action == Actions.UPDATE:
+        operations = [Actions.UPDATE, Actions.RESTORE, Actions.REPO_CLEANUP]
+    elif args.action == Actions.RESTORE:
+        operations = [Actions.RESTORE, Actions.REPO_CLEANUP]
+
+    # calculate and apply file operations
+    dotfiles = os.path.join(repo, 'dotfiles')
+
+    for plugin in plugins:
+        flist = {path: filelist[path]['categories'] for path in filelist if
+                 filelist[path]['plugin'] == plugin}
+        if not flist:
+            continue
+
+        plugin_dir = os.path.join(dotfiles, plugin)
+        calc_ops = CalcOps(plugin_dir, home, plugins[plugin])
+
+        for op in operations:
+            if op == Actions.UPDATE:
+                calc_ops.update(flist).apply(args.dry_run)
+            elif op == Actions.RESTORE:
+                calc_ops.restore(flist).apply(args.dry_run)
 
     return 0
 

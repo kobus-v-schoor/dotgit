@@ -7,3 +7,4 @@ class Actions(enum.Enum):
     RESTORE = 'restore'
     CLEAN = 'clean'
     DIFF = 'diff'
+    REPO_CLEANUP = 'repo-clean'

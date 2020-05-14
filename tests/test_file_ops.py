@@ -112,7 +112,7 @@ class TestFileOps:
         fop1.remove('file')
         fop2.remove('file2')
 
-        fop1.append(fop2)
+        assert fop1.append(fop2) is fop1
         assert fop1.ops == [(Op.REMOVE, 'file'), (Op.REMOVE, 'file2')]
 
     def test_str(self, tmp_path):

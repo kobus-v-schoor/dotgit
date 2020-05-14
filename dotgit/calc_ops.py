@@ -36,6 +36,7 @@ class CalcOps:
                 continue
 
             if len(candidates) > 1:
+                candidates = list(candidates)
                 print(f'multiple candidates found for {path}:\n')
 
                 for i, cand in enumerate(candidates):
@@ -45,14 +46,23 @@ class CalcOps:
                 while True:
                     try:
                         choice = int(input('please select the version you '
-                                           'would like to use: '
-                                           f'0-{len(candidates)-1}'))
+                                           'would like to use '
+                                           f'[0-{len(candidates)-1}]: '))
                         choice = candidates[choice]
                     except (ValueError, EOFError):
                         print('invalid choice entered, please try again')
                         continue
                     break
                 source = choice
+
+                # if one of the candidates is not in the repo and it is not the
+                # source it should be deleted manually since it will not be
+                # deleted in the slave linking below, as the other candidates
+                # would be
+                restore_path = os.path.join(self.restore_path, path)
+                if restore_path in candidates and source != restore_path:
+                    fops.remove(restore_path)
+
             else:
                 source = candidates.pop()
 
