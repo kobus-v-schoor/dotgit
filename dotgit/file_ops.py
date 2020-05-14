@@ -54,6 +54,7 @@ class FileOps:
     def plugin(self, plugin, source, dest):
         logging.debug(f'adding plugin op ({plugin.__qualname__}) for {source} '
                       f'-> {dest}')
+        self.check_dest_dir(dest)
         self.ops.append((plugin, (source, dest)))
 
     def apply(self, dry_run=False):

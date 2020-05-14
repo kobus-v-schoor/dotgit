@@ -4,60 +4,48 @@ from dotgit.plugin_plain import PlainPlugin
 
 
 class TestPlainPlugin:
-    def setup_pre_post_data(self, tmp_path):
-        os.makedirs(tmp_path / 'pre')
-        os.makedirs(tmp_path / 'post')
-        os.makedirs(tmp_path / 'data')
-        return tmp_path / 'pre', tmp_path / 'post', tmp_path / 'data'
-
-    def test_init(self, tmp_path):
-        pre, post, data = self.setup_pre_post_data(tmp_path)
-        plugin = PlainPlugin(str(pre), str(post), str(data))
-
-        assert plugin.pre_dir == str(pre)
-        assert plugin.post_dir == str(post)
-        assert plugin.data_dir == str(data)
-
     def test_apply(self, tmp_path):
-        pre, post, data = self.setup_pre_post_data(tmp_path)
-        plugin = PlainPlugin(str(pre), str(post), str(data))
+        plugin = PlainPlugin(str(tmp_path / 'data'))
 
-        open(pre / 'file', 'w').close()
-        plugin.apply('file')
-        assert not (pre / 'file').is_symlink()
-        assert (post / 'file').is_symlink()
-        assert (pre / 'file').samefile(post / 'file')
+        data = 'test data'
 
-    def test_apply_dir(self, tmp_path):
-        pre, post, data = self.setup_pre_post_data(tmp_path)
-        plugin = PlainPlugin(str(pre), str(post), str(data))
+        with open(tmp_path / 'file', 'w') as f:
+            f.write(data)
 
-        os.makedirs(pre / 'dir')
-        open(pre / 'dir' / 'file', 'w').close()
-        plugin.apply(os.path.join('dir', 'file'))
-        assert not (pre / 'dir' / 'file').is_symlink()
-        assert (post / 'dir').is_dir()
-        assert (post / 'dir' / 'file').is_symlink()
-        assert (pre / 'dir' / 'file').samefile(post / 'dir' / 'file')
+        plugin.apply(tmp_path / 'file', tmp_path / 'file2')
+
+        assert (tmp_path / 'file').exists()
+        assert (tmp_path / 'file2').exists()
+        assert not (tmp_path / 'file').is_symlink()
+        assert not (tmp_path / 'file2').is_symlink()
+
+        with open(tmp_path / 'file2', 'r') as f:
+            assert f.read() == data
 
     def test_remove(self, tmp_path):
-        pre, post, data = self.setup_pre_post_data(tmp_path)
-        plugin = PlainPlugin(str(pre), str(post), str(data))
+        plugin = PlainPlugin(str(tmp_path / 'data'))
 
-        open(post / 'file', 'w').close()
-        plugin.remove('file')
-        assert not (pre / 'file').is_symlink()
-        assert (post / 'file').is_symlink()
-        assert (pre / 'file').samefile(post / 'file')
+        open(tmp_path / 'file', 'w').close()
+        plugin.remove(tmp_path / 'file', tmp_path / 'file2')
 
-    def test_remove_dir(self, tmp_path):
-        pre, post, data = self.setup_pre_post_data(tmp_path)
-        plugin = PlainPlugin(str(pre), str(post), str(data))
+        assert (tmp_path / 'file').exists()
+        assert (tmp_path / 'file2').exists()
+        assert not (tmp_path / 'file').is_symlink()
+        assert (tmp_path / 'file2').is_symlink()
+        assert (tmp_path / 'file').samefile(tmp_path / 'file2')
 
-        os.makedirs(post / 'dir')
-        open(post / 'dir' / 'file', 'w').close()
-        plugin.remove(os.path.join('dir', 'file'))
-        assert not (pre / 'dir' / 'file').is_symlink()
-        assert (post / 'dir').is_dir()
-        assert (post / 'dir' / 'file').is_symlink()
-        assert (pre / 'dir' / 'file').samefile(post / 'dir' / 'file')
+    def test_samefile_link(self, tmp_path):
+        plugin = PlainPlugin(str(tmp_path / 'data'))
+
+        open(tmp_path / 'file', 'w').close()
+        os.symlink(tmp_path / 'file', tmp_path / 'file2')
+
+        assert plugin.samefile(tmp_path / 'file', tmp_path / 'file2')
+
+    def test_samefile_copy(self, tmp_path):
+        plugin = PlainPlugin(str(tmp_path / 'data'))
+
+        open(tmp_path / 'file', 'w').close()
+        open(tmp_path / 'file2', 'w').close()
+
+        assert not plugin.samefile(tmp_path / 'file', tmp_path / 'file2')

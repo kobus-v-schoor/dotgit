@@ -5,11 +5,12 @@ from dotgit.file_ops import FileOps
 
 
 class CalcOps:
-    def __init__(self, repo, restore_path):
-        self.repo = repo
-        self.restore_path = restore_path
+    def __init__(self, repo, restore_path, plugin):
+        self.repo = str(repo)
+        self.restore_path = str(restore_path)
+        self.plugin = plugin
 
-    def update(self, files, plugin=None):
+    def update(self, files):
         fops = FileOps(self.repo)
 
         for path in files:
@@ -60,10 +61,13 @@ class CalcOps:
             if source != master:
                 if os.path.exists(master):
                     fops.remove(master)
-                if plugin is None:
+                # check if source is in repo, if it is only move it else apply
+                # the plugin
+                if source.startswith(self.repo + os.sep):
                     fops.move(source, master)
                 else:
-                    fops.plugin(plugin.apply, source, master)
+                    fops.plugin(self.plugin.apply, source, master)
+                    fops.remove(source)
 
             for slave in slaves:
                 if slave != source:
@@ -77,7 +81,7 @@ class CalcOps:
 
         return fops
 
-    def restore(self, files, hard=False):
+    def restore(self, files):
         fops = FileOps(self.repo)
 
         for path in files:
@@ -93,7 +97,7 @@ class CalcOps:
             dest = os.path.join(self.restore_path, path)
 
             if os.path.exists(dest):
-                if os.path.samefile(source, dest):
+                if self.plugin.samefile(source, dest):
                     logging.debug(f'{dest} already linked to repo, skipping')
                     continue
 
@@ -104,10 +108,7 @@ class CalcOps:
                 else:
                     continue
 
-            if hard:
-                fops.copy(source, dest)
-            else:
-                fops.link(source, dest)
+            fops.plugin(self.plugin.remove, source, dest)
 
         return fops
 

@@ -3,6 +3,7 @@ from pathlib import Path
 
 from dotgit.calc_ops import CalcOps
 from dotgit.file_ops import FileOps
+from dotgit.plugin_plain import PlainPlugin
 
 class TestCalcOps:
     def setup_home_repo(self, tmp_path):
@@ -12,7 +13,7 @@ class TestCalcOps:
 
     def test_update_no_cands(self, tmp_path, caplog):
         home, repo = self.setup_home_repo(tmp_path)
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.update({'file': ['cat1', 'cat2']})
         assert 'unable to find any candidates' in caplog.text
 
@@ -21,7 +22,7 @@ class TestCalcOps:
         os.makedirs(repo / 'cat1')
         open(repo / 'cat1' / 'file', 'w').close()
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.update({'file': ['cat1', 'cat2']}).apply()
 
         assert (repo / 'cat1').is_dir()
@@ -35,7 +36,7 @@ class TestCalcOps:
         os.makedirs(repo / 'cat2')
         open(repo / 'cat2' / 'file', 'w').close()
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.update({'file': ['cat1', 'cat2']}).apply()
 
         assert (repo / 'cat1').is_dir()
@@ -51,7 +52,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         os.symlink(Path('..') / 'cat1' / 'file', repo / 'cat2' / 'file')
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         assert calc.update({'file': ['cat1', 'cat2']}).ops == []
 
     def test_update_master_brokenlinkslave(self, tmp_path):
@@ -61,7 +62,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         os.symlink(Path('..') / 'cat1' / 'nonexistent', repo / 'cat2' / 'file')
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.update({'file': ['cat1', 'cat2']}).apply()
 
         assert (repo / 'cat1').is_dir()
@@ -74,7 +75,7 @@ class TestCalcOps:
         home, repo = self.setup_home_repo(tmp_path)
         open(home / 'file', 'w').close()
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.update({'file': ['cat1', 'cat2']}).apply()
 
         assert (repo / 'cat1').is_dir()
@@ -90,7 +91,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         os.symlink(repo / 'cat1' / 'file', home / 'file')
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.update({'file': ['cat1', 'cat2']}).apply()
 
         assert (repo / 'cat1').is_dir()
@@ -108,7 +109,7 @@ class TestCalcOps:
         open(repo / 'cat2' / 'file', 'w').close()
         os.symlink(Path('..') / 'cat2' / 'file', repo / 'cat3' / 'file')
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.update({'file': ['cat1', 'cat2', 'cat3']}).apply()
 
         assert (repo / 'cat1').is_dir()
@@ -123,7 +124,7 @@ class TestCalcOps:
     def test_restore_nomaster_nohome(self, tmp_path, caplog):
         home, repo = self.setup_home_repo(tmp_path)
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.restore({'file': ['cat1', 'cat2']}).apply()
 
         assert 'unable to find "file" in repo, skipping' in caplog.text
@@ -133,7 +134,7 @@ class TestCalcOps:
         home, repo = self.setup_home_repo(tmp_path)
         open(home / 'file', 'w').close()
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.restore({'file': ['cat1', 'cat2']}).apply()
 
         assert 'unable to find "file" in repo, skipping' in caplog.text
@@ -144,7 +145,7 @@ class TestCalcOps:
         os.makedirs(repo / 'cat1')
         open(repo / 'cat1' / 'file', 'w').close()
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.restore({'file': ['cat1', 'cat2']}).apply()
 
         assert (home / 'file').is_file()
@@ -158,7 +159,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         os.symlink(repo / 'cat1' / 'file', home / 'file')
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         fops = calc.restore({'file': ['cat1', 'cat2']})
         assert fops.ops == []
 
@@ -170,7 +171,7 @@ class TestCalcOps:
 
         monkeypatch.setattr('builtins.input', lambda p: 'y')
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.restore({'file': ['cat1', 'cat2']}).apply()
 
         assert (home / 'file').is_file()
@@ -186,21 +187,8 @@ class TestCalcOps:
 
         monkeypatch.setattr('builtins.input', lambda p: 'n')
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.restore({'file': ['cat1', 'cat2']}).apply()
-
-        assert (home / 'file').is_file()
-        assert not (home / 'file').is_symlink()
-        assert (repo / 'cat1' / 'file').is_file()
-        assert not (repo / 'cat1' / 'file').is_symlink()
-
-    def test_restore_hardmode(self, tmp_path):
-        home, repo = self.setup_home_repo(tmp_path)
-        os.makedirs(repo / 'cat1')
-        open(repo / 'cat1' / 'file', 'w').close()
-
-        calc = CalcOps(repo, home)
-        calc.restore({'file': ['cat1', 'cat2']}, hard=True).apply()
 
         assert (home / 'file').is_file()
         assert not (home / 'file').is_symlink()
@@ -212,7 +200,7 @@ class TestCalcOps:
         os.makedirs(repo / 'cat1')
         open(repo / 'cat1' / 'file', 'w').close()
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.clean({'file': ['cat1', 'cat2']}).apply()
 
         assert not (home / 'file').is_file()
@@ -224,7 +212,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         os.symlink(repo / 'cat1' / 'file', home / 'file')
 
-        calc = CalcOps(str(repo), str(home))
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.clean({'file': ['cat1', 'cat2']}).apply()
 
         assert not (home / 'file').is_file()
@@ -236,7 +224,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         os.symlink(Path('cat1') / 'file', home / 'file')
 
-        calc = CalcOps(str(repo), str(home))
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.clean({'file': ['cat1', 'cat2']}).apply()
 
         assert (home / 'file').is_symlink()
@@ -248,7 +236,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         open(home / 'file', 'w').close()
 
-        calc = CalcOps(str(repo), str(home))
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.clean({'file': ['cat1', 'cat2']}).apply()
 
         assert (home / 'file').is_file()
@@ -260,7 +248,7 @@ class TestCalcOps:
         os.makedirs(repo / 'cat1')
         open(repo / 'cat1' / 'file', 'w').close()
 
-        calc = CalcOps(repo, home)
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
 
         assert not (home / 'file').is_file()
@@ -272,7 +260,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         os.symlink(repo / 'cat1' / 'file', home / 'file')
 
-        calc = CalcOps(str(repo), str(home))
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
 
         assert not (home / 'file').is_file()
@@ -284,7 +272,7 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         open(home / 'file', 'w').close()
 
-        calc = CalcOps(str(repo), str(home))
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
 
         assert not (home / 'file').is_file()
