@@ -5,41 +5,60 @@ from dotgit.enums import Actions
 import dotgit.info as info
 
 class TestSafetyChecks:
-    def test_checks(self, tmp_path):
-        # check that running in home fails
-        assert not safety_checks(info.home, Actions.INIT)
+    def setup_repo(self, repo):
+        os.makedirs(repo / '.git')
+        open(repo / 'filelist', 'w').close()
 
-        # check that using init in empty dir is fine
-        assert safety_checks(tmp_path, Actions.INIT)
+    def test_home(self, tmp_path):
+        home = tmp_path / 'home'
+        repo = tmp_path / 'repo'
 
-        # check that is passes if git and filelist is there
-        git = os.path.join(tmp_path, '.git')
-        flist = os.path.join(tmp_path, 'filelist')
+        assert not safety_checks(home, home, True)
 
-        create_git = lambda : os.makedirs(git)
-        create_flist = lambda : open(flist, 'w').close()
+    def test_init_empty(self, tmp_path):
+        home = tmp_path / 'home'
+        repo = tmp_path / 'repo'
 
-        # check for fail in empty folder for non-init action
-        assert not safety_checks(tmp_path, Actions.UPDATE)
+        assert safety_checks(repo, home, True)
 
-        # check for pass with git and filelist
-        create_git()
-        create_flist()
-        assert safety_checks(tmp_path, Actions.UPDATE)
+    def test_other_empty(self, tmp_path):
+        home = tmp_path / 'home'
+        repo = tmp_path / 'repo'
 
-        # check for git fail
-        os.rmdir(git)
-        assert not safety_checks(tmp_path, Actions.UPDATE)
+        assert not safety_checks(repo, home, False)
 
-        # check for filelist fail
-        create_git()
-        os.remove(flist)
-        assert not safety_checks(tmp_path, Actions.UPDATE)
+    def test_have_all(self, tmp_path):
+        home = tmp_path / 'home'
+        repo = tmp_path / 'repo'
+
+        self.setup_repo(repo)
+
+        assert safety_checks(repo, home, False)
+
+    def test_nogit(self, tmp_path):
+        home = tmp_path / 'home'
+        repo = tmp_path / 'repo'
+
+        self.setup_repo(repo)
+        os.rmdir(repo / '.git')
+
+        assert not safety_checks(repo, home, False)
+
+    def test_nofilelist(self, tmp_path):
+        home = tmp_path / 'home'
+        repo = tmp_path / 'repo'
+
+        self.setup_repo(repo)
+        os.remove(repo / 'filelist')
+
+        assert not safety_checks(repo, home, False)
 
     def test_old_dotgit(self, tmp_path, caplog):
-        os.makedirs(tmp_path / '.git')
-        open(tmp_path / 'filelist', 'w').close()
-        open(tmp_path / 'cryptlist', 'w').close()
+        home = tmp_path / 'home'
+        repo = tmp_path / 'repo'
 
-        assert not safety_checks(tmp_path, Actions.UPDATE)
+        self.setup_repo(repo)
+        open(repo / 'cryptlist', 'w').close()
+
+        assert not safety_checks(repo, home, False)
         assert 'old dotgit repo' in caplog.text

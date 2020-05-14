@@ -16,6 +16,7 @@ from dotgit.args import Arguments
 from dotgit.enums import Actions
 from dotgit.checks import safety_checks
 from dotgit.git import Git
+import dotgit.info as info
 
 
 def init_repo(repo_dir, flist):
@@ -50,7 +51,7 @@ def init_repo(repo_dir, flist):
         git.commit()
 
 
-def main(args=None, cwd=os.getcwd()):
+def main(args=None, cwd=os.getcwd(), home=info.home):
     if args is None:
         args = sys.argv[1:]
 
@@ -63,14 +64,15 @@ def main(args=None, cwd=os.getcwd()):
     flist_fname = os.path.join(repo, 'filelist')
 
     # run safety checks
-    if not safety_checks(repo, args.action):
+    if not safety_checks(repo, home, args.action == Actions.INIT):
         logging.error(f'safety checks failed for {os.getcwd()}, exiting')
         return 1
 
-    # check for init
     if args.action == Actions.INIT:
         init_repo(repo, flist_fname)
         return 0
+
+    return 0
 
 
 if __name__ == '__main__':

@@ -2,13 +2,10 @@ import os
 import logging
 import subprocess
 
-import dotgit.info as info
-from dotgit.enums import Actions
 
-
-def safety_checks(dir_name: str, action: Actions) -> bool:
+def safety_checks(dir_name, home, init):
     # check that we're not in the user's home folder
-    if dir_name == info.home:
+    if dir_name == home:
         logging.error('dotgit should not be run inside home folder')
         return False
 
@@ -20,7 +17,7 @@ def safety_checks(dir_name: str, action: Actions) -> bool:
                       'dotgit operation')
         return False
 
-    if action == Actions.INIT:
+    if init:
         return True
 
     if os.path.isfile(os.path.join(dir_name, 'cryptlist')):
