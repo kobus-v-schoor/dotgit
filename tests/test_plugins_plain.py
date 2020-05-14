@@ -49,3 +49,15 @@ class TestPlainPlugin:
         open(tmp_path / 'file2', 'w').close()
 
         assert not plugin.samefile(tmp_path / 'file', tmp_path / 'file2')
+
+    def test_hard_mode(self, tmp_path):
+        plugin = PlainPlugin(str(tmp_path / 'data'), hard=True)
+
+        open(tmp_path / 'file', 'w').close()
+        plugin.remove(tmp_path / 'file', tmp_path / 'file2')
+
+        assert (tmp_path / 'file').exists()
+        assert (tmp_path / 'file2').exists()
+        assert not (tmp_path / 'file').is_symlink()
+        assert not (tmp_path / 'file2').is_symlink()
+        assert not (tmp_path / 'file').samefile(tmp_path / 'file2')
