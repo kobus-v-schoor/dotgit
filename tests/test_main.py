@@ -128,3 +128,12 @@ class TestMain:
         assert (home / 'file').exists()
         assert not (home / 'file').is_symlink()
         assert (home / 'file').read_text() == data
+
+    def test_dry_run(self, tmp_path):
+        home, repo = self.setup_repo(tmp_path, 'file')
+        open(home / 'file', 'w').close()
+
+        assert main(args=['update', '--dry-run'],
+                    cwd=str(repo), home=str(home)) == 0
+        assert (home / 'file').exists()
+        assert not (home / 'file').is_symlink()
