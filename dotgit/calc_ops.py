@@ -122,18 +122,18 @@ class CalcOps:
 
         return fops
 
-    def clean(self, files, hard=False):
+    def clean(self, files):
         fops = FileOps(self.repo)
 
         for path in files:
-            path = os.path.join(self.restore_path, path)
+            categories = files[path]
+            master = min(categories)
+            repo_path = os.path.join(self.repo, master, path)
 
-            if hard:
-                if os.path.isfile(path):
-                    fops.remove(path)
-            else:
-                if os.path.islink(path):
-                    if os.path.realpath(path).startswith(self.repo):
-                        fops.remove(path)
+            restore_path = os.path.join(self.restore_path, path)
+
+            if os.path.exists(repo_path) and os.path.exists(restore_path):
+                if self.plugin.samefile(repo_path, restore_path):
+                    fops.remove(restore_path)
 
         return fops

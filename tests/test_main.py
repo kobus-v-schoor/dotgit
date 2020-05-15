@@ -129,6 +129,17 @@ class TestMain:
         assert not (home / 'file').is_symlink()
         assert (home / 'file').read_text() == data
 
+    def test_clean(self, tmp_path):
+        home, repo = self.setup_repo(tmp_path, 'file')
+        open(home / 'file', 'w').close()
+
+        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
+        assert (home / 'file').is_symlink()
+        assert repo in (home / 'file').resolve().parents
+
+        assert main(args=['clean'], cwd=str(repo), home=str(home)) == 0
+        assert not (home / 'file').exists()
+
     def test_dry_run(self, tmp_path):
         home, repo = self.setup_repo(tmp_path, 'file')
         open(home / 'file', 'w').close()

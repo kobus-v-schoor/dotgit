@@ -101,6 +101,8 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
                 calc_ops.restore(flist).apply(args.dry_run)
             elif args.action == Actions.RESTORE:
                 calc_ops.restore(flist).apply(args.dry_run)
+            elif args.action == Actions.CLEAN:
+                calc_ops.clean(flist).apply(args.dry_run)
 
         # TODO implement repo cleaning
     elif args.action in [Actions.DIFF, Actions.COMMIT]:

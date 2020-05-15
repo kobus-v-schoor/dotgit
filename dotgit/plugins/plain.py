@@ -1,5 +1,6 @@
 import os
 import shutil
+import filecmp
 
 from dotgit.plugin import Plugin
 
@@ -22,4 +23,7 @@ class PlainPlugin(Plugin):
             os.symlink(source, dest)
 
     def samefile(self, file1, file2):
-        return os.path.samefile(file1, file2)
+        if self.hard:
+            return filecmp.cmp(file1, file2, shallow=False)
+        else:
+            return os.path.samefile(file1, file2)

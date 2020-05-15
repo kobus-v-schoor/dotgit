@@ -243,13 +243,24 @@ class TestCalcOps:
         assert not (home / 'file').is_symlink()
         assert (repo / 'cat1' / 'file').is_file()
 
+    def test_clean_norepo_filehome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        open(home / 'file', 'w').close()
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
+
+        assert (home / 'file').is_file()
+        assert not (home / 'file').is_symlink()
+        assert not (repo / 'cat1' / 'file').exists()
+
     def test_clean_hard_nohome(self, tmp_path):
         home, repo = self.setup_home_repo(tmp_path)
         os.makedirs(repo / 'cat1')
         open(repo / 'cat1' / 'file', 'w').close()
 
-        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
-        calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data', hard=True))
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
 
         assert not (home / 'file').is_file()
         assert (repo / 'cat1' / 'file').is_file()
@@ -260,8 +271,8 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         os.symlink(repo / 'cat1' / 'file', home / 'file')
 
-        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
-        calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data', hard=True))
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
 
         assert not (home / 'file').is_file()
         assert (repo / 'cat1' / 'file').is_file()
@@ -272,8 +283,22 @@ class TestCalcOps:
         open(repo / 'cat1' / 'file', 'w').close()
         open(home / 'file', 'w').close()
 
-        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
-        calc.clean({'file': ['cat1', 'cat2']}, hard=True).apply()
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data', hard=True))
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
 
         assert not (home / 'file').is_file()
+        assert (repo / 'cat1' / 'file').is_file()
+
+    def test_clean_hard_difffilehome(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file', 'w').close()
+        with open(home / 'file', 'w') as f:
+            f.write('test data')
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data', hard=True))
+        calc.clean({'file': ['cat1', 'cat2']}).apply()
+
+        assert (home / 'file').is_file()
+        assert (home / 'file').read_text() == 'test data'
         assert (repo / 'cat1' / 'file').is_file()
