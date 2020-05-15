@@ -110,3 +110,21 @@ class TestMain:
 
         assert (home / 'file').is_symlink()
         assert repo in (home / 'file').resolve().parents
+
+    def test_restore_hard_nohome_repo(self, tmp_path):
+        home, repo = self.setup_repo(tmp_path, 'file')
+        data = 'test data'
+        with open(home / 'file', 'w') as f:
+            f.write(data)
+
+        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
+        assert (home / 'file').is_symlink()
+        assert repo in (home / 'file').resolve().parents
+
+        os.remove(home / 'file')
+        assert not (home / 'file').exists()
+        assert main(args=['restore', '--hard'],
+                    cwd=str(repo), home=str(home)) == 0
+        assert (home / 'file').exists()
+        assert not (home / 'file').is_symlink()
+        assert (home / 'file').read_text() == data
