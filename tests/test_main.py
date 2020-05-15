@@ -95,7 +95,7 @@ class TestMain:
         assert (home / 'file').is_symlink()
         assert repo in (home / 'file').resolve().parents
 
-    def test_update_home_repo(self, tmp_path, monkeypatch):
+    def test_restore_home_repo(self, tmp_path, monkeypatch):
         home, repo = self.setup_repo(tmp_path, 'file')
         open(home / 'file', 'w').close()
 
