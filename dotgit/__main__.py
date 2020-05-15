@@ -80,29 +80,33 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
                              hard=args.hard_mode)
     }
 
-    # set up operations
-    if args.action == Actions.UPDATE:
-        operations = [Actions.UPDATE, Actions.RESTORE, Actions.REPO_CLEANUP]
-    elif args.action == Actions.RESTORE:
-        operations = [Actions.RESTORE, Actions.REPO_CLEANUP]
+    if args.action in [Actions.UPDATE, Actions.RESTORE, Actions.CLEAN]:
+        # calculate and apply file operations
+        dotfiles = os.path.join(repo, 'dotfiles')
+        logging.debug(f'dotfiles path is {dotfiles}')
 
-    # calculate and apply file operations
-    dotfiles = os.path.join(repo, 'dotfiles')
+        for plugin in plugins:
+            # filter out filelist paths that use current plugin
+            flist = {path: filelist[path]['categories'] for path in filelist if
+                     filelist[path]['plugin'] == plugin}
+            if not flist:
+                continue
+            logging.debug(f'active filelist for plugin {plugin}: {flist}')
 
-    for plugin in plugins:
-        flist = {path: filelist[path]['categories'] for path in filelist if
-                 filelist[path]['plugin'] == plugin}
-        if not flist:
-            continue
+            plugin_dir = os.path.join(dotfiles, plugin)
+            calc_ops = CalcOps(plugin_dir, home, plugins[plugin])
 
-        plugin_dir = os.path.join(dotfiles, plugin)
-        calc_ops = CalcOps(plugin_dir, home, plugins[plugin])
-
-        for op in operations:
-            if op == Actions.UPDATE:
+            if args.action == Actions.UPDATE:
                 calc_ops.update(flist).apply(args.dry_run)
-            elif op == Actions.RESTORE:
                 calc_ops.restore(flist).apply(args.dry_run)
+            elif args.action == Actions.RESTORE:
+                calc_ops.restore(flist).apply(args.dry_run)
+
+        # TODO implement repo cleaning
+    elif args.action in [Actions.DIFF, Actions.COMMIT]:
+        # calculate and apply git operations
+        # TODO implement git operations
+        pass
 
     return 0
 
