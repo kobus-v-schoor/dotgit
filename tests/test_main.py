@@ -81,3 +81,32 @@ class TestMain:
 
         assert (home / 'file').is_symlink()
         assert repo in (home / 'file').resolve().parents
+
+    def test_restore_nohome_repo(self, tmp_path):
+        home, repo = self.setup_repo(tmp_path, 'file')
+        open(home / 'file', 'w').close()
+
+        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
+        assert (home / 'file').is_symlink()
+        assert repo in (home / 'file').resolve().parents
+
+        os.remove(home / 'file')
+        assert main(args=['restore'], cwd=str(repo), home=str(home)) == 0
+        assert (home / 'file').is_symlink()
+        assert repo in (home / 'file').resolve().parents
+
+    def test_update_home_repo(self, tmp_path, monkeypatch):
+        home, repo = self.setup_repo(tmp_path, 'file')
+        open(home / 'file', 'w').close()
+
+        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
+
+        monkeypatch.setattr('builtins.input', lambda p: 'y')
+
+        os.remove(home / 'file')
+        open(home / 'file', 'w').close()
+
+        assert main(args=['restore'], cwd=str(repo), home=str(home)) == 0
+
+        assert (home / 'file').is_symlink()
+        assert repo in (home / 'file').resolve().parents
