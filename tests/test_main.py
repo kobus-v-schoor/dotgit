@@ -148,3 +148,30 @@ class TestMain:
                     cwd=str(repo), home=str(home)) == 0
         assert (home / 'file').exists()
         assert not (home / 'file').is_symlink()
+
+    def test_commit_nochanges(self, tmp_path, caplog):
+        home, repo = self.setup_repo(tmp_path, '')
+        assert main(args=['commit'], cwd=str(repo), home=str(home)) == 0
+        assert 'no changes detected' in caplog.text
+
+    def test_commit_changes(self, tmp_path, caplog):
+        home, repo = self.setup_repo(tmp_path, 'file')
+        git = Git(str(repo))
+        open(home / 'file', 'w').close()
+        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
+        assert main(args=['commit'], cwd=str(repo), home=str(home)) == 0
+        assert 'not changes detected' not in caplog.text
+        assert 'filelist' in git.last_commit()
+
+    def test_commit_ignore(self, tmp_path, caplog):
+        home, repo = self.setup_repo(tmp_path, 'file')
+        git = Git(str(repo))
+        open(home / 'file', 'w').close()
+        os.makedirs(repo / '.plugins')
+        open(repo / '.plugins' / 'plugf', 'w').close()
+
+        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
+        assert main(args=['commit'], cwd=str(repo), home=str(home)) == 0
+        assert 'not changes detected' not in caplog.text
+        assert 'filelist' in git.last_commit()
+        assert 'plugf' not in git.last_commit()

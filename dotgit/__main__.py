@@ -73,6 +73,9 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
     except RuntimeError:
         return 1
 
+    # set up git interface
+    git = Git(repo)
+
     # init plugins
     plugins_data_dir = os.path.join(repo, '.plugins')
     plugins = {
@@ -107,8 +110,24 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
         # TODO implement repo cleaning
     elif args.action in [Actions.DIFF, Actions.COMMIT]:
         # calculate and apply git operations
-        # TODO implement git operations
-        pass
+        if args.action == Actions.DIFF:
+            # TODO implement diff
+            pass
+        elif args.action == Actions.COMMIT:
+            if not git.has_changes():
+                logging.warning('no changes detected in repo, not creating '
+                                'commit')
+                return 0
+            git.add()
+            msg = git.gen_commit_message(ignore=['.plugins/'])
+            git.commit(msg)
+
+            if git.has_remote():
+                ans = input('remote for repo detected, push to remote? [Yn] ')
+                ans = ans if ans else 'y'
+                if ans.lower() == 'y':
+                    git.push()
+                    logging.info('successfully pushed to git remote')
 
     return 0
 

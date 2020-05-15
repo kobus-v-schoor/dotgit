@@ -63,12 +63,15 @@ class Git:
     def has_changes(self):
         return bool(self.run('git status -s --porcelain').strip())
 
-    def gen_commit_message(self):
+    def gen_commit_message(self, ignore=[]):
         mods = []
         for stat in self.status():
             state, path = stat
             # skip all untracked files since they will not be committed
             if state == FileState.UNTRACKED:
+                continue
+            if any((path.startswith(p) for p in ignore)):
+                logging.debug(f'ignoring {path} from commit message')
                 continue
             mods.append(f'{state.name.lower()} {path}')
         return ', '.join(mods).capitalize()
@@ -78,3 +81,9 @@ class Git:
 
     def last_commit(self):
         return self.commits()[-1]
+
+    def has_remote(self):
+        return bool(self.run('git remote').strip())
+
+    def push(self):
+        self.run('git push')
