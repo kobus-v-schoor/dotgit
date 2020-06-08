@@ -27,7 +27,7 @@ jobs:
         run: flake8 dotgit --count --statistics --show-source
 
       - name: Run unit tests
-        run: pytest --cov=dotgit
+        run: python3 -m pytest --cov=dotgit
 
       - name: Upload coverage report to Coveralls
         env:
