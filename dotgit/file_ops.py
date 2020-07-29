@@ -86,7 +86,8 @@ class FileOps:
                 else:
                     os.remove(path)
             elif op == Op.MKDIR:
-                os.makedirs(path)
+                if not os.path.isdir(path):
+                    os.makedirs(path)
             elif callable(op):
                 op(src, dest)
 

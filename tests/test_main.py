@@ -175,3 +175,16 @@ class TestMain:
         assert 'not changes detected' not in caplog.text
         assert 'filelist' in git.last_commit()
         assert 'plugf' not in git.last_commit()
+
+    def test_diff(self, tmp_path, capsys):
+        home, repo = self.setup_repo(tmp_path, 'file\nfile2')
+        open(home / 'file', 'w').close()
+        open(home / 'file2', 'w').close()
+
+        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
+        assert main(args=['diff'], cwd=str(repo), home=str(home)) == 0
+
+        captured = capsys.readouterr()
+        assert captured.out == ('added dotfiles/plain/common/file\n'
+                                'added dotfiles/plain/common/file2\n'
+                                'modified filelist\n')

@@ -144,3 +144,8 @@ class TestGit:
         assert git.has_changes()
         git.commit()
         assert not git.has_changes()
+
+    def test_diff(self, tmp_path):
+        git, repo = self.setup_git(tmp_path)
+        self.touch(repo, 'foo')
+        assert git.diff() == ['added foo']

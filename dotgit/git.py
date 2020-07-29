@@ -87,3 +87,15 @@ class Git:
 
     def push(self):
         self.run('git push')
+
+    def diff(self):
+        self.add()
+        status = self.status()
+        self.reset()
+
+        diff = []
+
+        for path in status:
+            diff.append(f'{path[0].name.lower()} {path[1]}')
+
+        return diff
