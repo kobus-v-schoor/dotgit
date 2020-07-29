@@ -3,6 +3,7 @@ import argparse
 
 from dotgit.enums import Actions
 import dotgit.info as info
+import dotgit.help
 
 HELP = {'verbose': 'print more info to the console',
         'dry-run': 'do not actually execute any file operations',
@@ -11,17 +12,12 @@ HELP = {'verbose': 'print more info to the console',
         'category': 'categories to activate. (default: %(default)s)'
         }
 
-EPILOG = '''
-PLACEHOLDER TEXT. This will be replaces with a long help text explaining each
-action in detail
-'''
-
 
 class Arguments:
     def __init__(self, args=None):
         # construct parser
         formatter = argparse.RawDescriptionHelpFormatter
-        parser = argparse.ArgumentParser(epilog=EPILOG,
+        parser = argparse.ArgumentParser(epilog=dotgit.help.HELP,
                                          formatter_class=formatter)
 
         # add parser options
