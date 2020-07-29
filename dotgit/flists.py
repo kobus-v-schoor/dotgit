@@ -1,4 +1,5 @@
 import logging
+import os
 
 
 class Filelist:
@@ -56,3 +57,25 @@ class Filelist:
                         files[path] = group
 
         return files
+
+    # generates a list of all the filenames in each plugin for later use when
+    # cleaning the repo
+    def manifest(self):
+        manifest = {}
+
+        for path in self.files:
+            for instance in self.files[path]:
+                plugin = instance['plugin']
+                for category in instance['categories']:
+                    if category in self.groups:
+                        categories = self.groups[category]
+                    else:
+                        categories = [category]
+
+                    if plugin not in manifest:
+                        manifest[plugin] = []
+
+                    for category in categories:
+                        manifest[plugin].append(os.path.join(category, path))
+
+        return manifest

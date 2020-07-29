@@ -68,6 +68,9 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
 
     # parse filelist
     filelist = Filelist(flist_fname)
+    # generate manifest for later cleaning
+    manifest = filelist.manifest()
+    # activate categories on filelist
     try:
         filelist = filelist.activate(args.categories)
     except RuntimeError:
@@ -107,7 +110,8 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
             elif args.action == Actions.CLEAN:
                 calc_ops.clean(flist).apply(args.dry_run)
 
-        # TODO implement repo cleaning
+            calc_ops.clean_repo(manifest[plugin]).apply(args.dry_run)
+
     elif args.action in [Actions.DIFF, Actions.COMMIT]:
         # calculate and apply git operations
         if args.action == Actions.DIFF:

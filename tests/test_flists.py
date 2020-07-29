@@ -101,3 +101,22 @@ class TestFilelist:
         flist = Filelist(fname)
         with pytest.raises(RuntimeError):
             flist.activate(['cat2'])
+
+    def test_manifest(self, tmp_path):
+        fname = self.write_flist(tmp_path,
+                                 'group=cat1,cat2\ncfile\nnfile:cat1,cat2\n'
+                                 'gfile:group\npfile:cat1,cat2:encrypt')
+
+        flist = Filelist(fname)
+        manifest = flist.manifest()
+
+        assert type(manifest) is dict
+        assert sorted(manifest) == sorted(['plain', 'encrypt'])
+
+        assert sorted(manifest['plain']) == sorted(['common/cfile',
+                                                    'cat1/nfile', 'cat2/nfile',
+                                                    'cat1/gfile',
+                                                    'cat2/gfile'])
+
+        assert sorted(manifest['encrypt']) == sorted(['cat1/pfile',
+                                                      'cat2/pfile'])

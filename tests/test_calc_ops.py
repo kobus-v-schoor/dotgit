@@ -302,3 +302,18 @@ class TestCalcOps:
         assert (home / 'file').is_file()
         assert (home / 'file').read_text() == 'test data'
         assert (repo / 'cat1' / 'file').is_file()
+
+    def test_clean_repo(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        open(repo / 'cat1' / 'file1', 'w').close()
+        open(repo / 'cat1' / 'file2', 'w').close()
+        os.makedirs(repo / 'cat2')
+        open(repo / 'cat2' / 'file1', 'w').close()
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data', hard=True))
+        calc.clean_repo(['cat1/file1']).apply()
+
+        assert (repo / 'cat1' / 'file1').is_file()
+        assert not (repo / 'cat1' / 'file2').is_file()
+        assert not (repo / 'cat2' / 'file2').is_file()

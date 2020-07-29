@@ -122,6 +122,7 @@ class CalcOps:
 
         return fops
 
+    # removes links from restore path that point to the repo
     def clean(self, files):
         fops = FileOps(self.repo)
 
@@ -135,5 +136,27 @@ class CalcOps:
             if os.path.exists(repo_path) and os.path.exists(restore_path):
                 if self.plugin.samefile(repo_path, restore_path):
                     fops.remove(restore_path)
+
+        return fops
+
+    # will go through the repo and search for files that should no longer be
+    # there. accepts a list of filenames that are allowed
+    def clean_repo(self, filenames):
+        fops = FileOps(self.repo)
+
+        if not os.path.isdir(self.repo):
+            return fops
+
+        for category in os.listdir(self.repo):
+            category_path = os.path.join(self.repo, category)
+            for root, dirs, fnames in os.walk(category_path):
+                root = root[len(category_path):]
+                for fname in fnames:
+                    fname = os.path.join(root, fname)
+                    path = os.path.join(category, fname)
+
+                    if path not in filenames:
+                        logging.info(f'{path} not found in manifest, removing')
+                        fops.remove(path)
 
         return fops
