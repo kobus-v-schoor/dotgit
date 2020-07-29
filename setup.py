@@ -14,7 +14,7 @@ setuptools.setup(
         long_description_content_type = 'text/markdown',
         url = info.__url__,
         license = info.__license__,
-        packages = ['dotgit'],
+        packages = ['dotgit', 'dotgit.plugins'],
         entry_points = {
             'console_scripts': ['dotgit=dotgit.__main__:main']
             },
