@@ -154,7 +154,23 @@ class CalcOps:
 
         for category in os.listdir(self.repo):
             category_path = os.path.join(self.repo, category)
+
+            # remove empty category folders
+            if not os.listdir(category_path):
+                logging.info(f'{category} is empty, removing')
+                fops.remove(category)
+                continue
+
             for root, dirs, fnames in os.walk(category_path):
+                # remove empty directories as well
+                for dname in dirs:
+                    dname = os.path.join(root, dname)
+                    path = os.path.join(category, dname)
+
+                    if not os.listdir(dname):
+                        logging.info(f'{dname} is empty, removing')
+                        fops.remove(path)
+
                 root = root[len(category_path):]
                 for fname in fnames:
                     fname = os.path.join(root, fname)

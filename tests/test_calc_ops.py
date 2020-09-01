@@ -311,9 +311,29 @@ class TestCalcOps:
         os.makedirs(repo / 'cat2')
         open(repo / 'cat2' / 'file1', 'w').close()
 
-        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data', hard=True))
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.clean_repo(['cat1/file1']).apply()
 
         assert (repo / 'cat1' / 'file1').is_file()
         assert not (repo / 'cat1' / 'file2').is_file()
         assert not (repo / 'cat2' / 'file2').is_file()
+
+    def test_clean_repo_dirs(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1' / 'empty')
+        assert (repo / 'cat1' / 'empty').is_dir()
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
+        calc.clean_repo([]).apply()
+
+        assert not (repo / 'cat1' / 'empty').is_dir()
+
+    def test_clean_repo_categories(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat1')
+        assert (repo / 'cat1').is_dir()
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
+        calc.clean_repo([]).apply()
+
+        assert not (repo / 'cat1').is_dir()
