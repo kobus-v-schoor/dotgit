@@ -154,6 +154,7 @@ version's format. To do that, do the following:
 * Insert steps here...
 
 Should you decide you'd like to stick to the old version of dotgit, you are
-welcome to do so. The link to the original script is _insert link here_.
-Please note that I will not be able to support the old version anymore, and as
-such your on your own if you decide to use the old version.
+welcome to do so. Installing the pip package will also make the original dotgit
+available as the command "dotgit.sh" (AUR package as well). Please note that I
+will not be able to support the old version anymore, and as such you're on your
+own if you decide to use the old version.
