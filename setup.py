@@ -18,6 +18,7 @@ setuptools.setup(
         entry_points = {
             'console_scripts': ['dotgit=dotgit.__main__:main']
             },
+        scripts = ['old/dotgit.sh'],
         package_data = {'': ['LICENSE']},
         include_package_data = True,
         classifiers = [
