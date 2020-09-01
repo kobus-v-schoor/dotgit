@@ -71,10 +71,15 @@ class CalcOps:
             if source != master:
                 if os.path.exists(master):
                     fops.remove(master)
-                # check if source is in repo, if it is only move it else apply
-                # the plugin
+                # check if source is in repo, if it is not apply the plugin
                 if source.startswith(self.repo + os.sep):
-                    fops.move(source, master)
+                    # if the source is one of the slaves, move the source
+                    # otherwise just copy it because it might have changed into
+                    # a seperate category - cleanup will remove it if needed
+                    if source in slaves:
+                        fops.move(source, master)
+                    else:
+                        fops.copy(source, master)
                 else:
                     fops.plugin(self.plugin.apply, source, master)
                     fops.remove(source)

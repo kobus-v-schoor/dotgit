@@ -30,9 +30,9 @@ class Git:
             proc = subprocess.run(cmd, cwd=self.repo_dir,
                                   stdout=subprocess.PIPE, check=True)
         except subprocess.CalledProcessError as e:
-            logging.error(f'git command {cmd} failed with exit code '
-                          f'{e.returncode}')
             logging.error(e.stdout.decode())
+            logging.error(f'git command {cmd} failed with exit code '
+                          f'{e.returncode}\n')
             raise
         logging.debug(f'git command {cmd} succeeded')
         return proc.stdout.decode()
@@ -89,6 +89,9 @@ class Git:
         self.run('git push')
 
     def diff(self):
+        if not self.has_changes():
+            return ['no changes']
+
         self.add()
         status = self.status()
         self.reset()
