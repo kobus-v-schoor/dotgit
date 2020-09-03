@@ -22,9 +22,10 @@ def safety_checks(dir_name, home, init):
 
     if os.path.isfile(os.path.join(dir_name, 'cryptlist')):
         logging.error('this appears to be an old dotgit repo, please check '
-                      'the user guide on how to update this repo for the '
-                      'new version of dotgit or use the old version of dotgit'
-                      'by rather running dotgit.sh')
+                      'https://github.com/kobus-v-schoor/dotgit for '
+                      'instructions on how to migrate your repo to the new '
+                      'version of dotgit or use the old version of dotgit by '
+                      'rather running "dotgit.sh"')
         return False
 
     if not os.path.isdir(os.path.join(dir_name, '.git')):

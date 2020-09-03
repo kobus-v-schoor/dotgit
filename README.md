@@ -158,16 +158,17 @@ had to change. Unfortunately this means that the new repos are not directly
 compatible with the old ones, although it is easy to migrate to the new
 version's format. To do so, do the following:
 
-- Firstly, do a hard restore using the old version of dotgit (either bundled
-  with the new package or simply using an old install) by running
-  `dotgit.sh hard-restore`. Doing so will copy all the files out of your repo
-  into your home folder.
-- Delete the old dotfiles folder inside your repo named "dotfiles"
+- Firstly, backup your current dotfiles repo in case something goes wrong
+- Next, inside your dotfiles repo, move the dotfiles folder to its new location
+  by running `mv dotfiles tmp; mkdir dotfiles; mv tmp dotfiles/plain`.
 - You can leave your filelist as-is, the filelist syntax hasn't changed. Since
   the new version doesn't support encryption (yet) you can either delete your
-  "cryptlist" file or keep it, it won't used anymore.
-- With the new version of dotgit, run `dotgit update -v`. This will copy back
-  your files from your home folder into your dotgit repo.
+  "cryptlist" file or keep it, it won't used anymore. Note that the encrypted
+  files in your repo will be deleted once you run the new dotgit since it won't
+  be able to find them in the filelist.
+- With the new version of dotgit, run `dotgit update -v`. This will update the
+  repo if necessary and will also fix the symlinks in your home folder.
+- Commit the changes to your repo using either git or `dotgit commit`
 - Familiarize yourself with the new dotgit syntax which has changed slightly to
   better follow conventions commonly found on the command-line by reading
   through the help using `dotgit -h`
