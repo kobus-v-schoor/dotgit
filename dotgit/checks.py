@@ -23,12 +23,13 @@ def safety_checks(dir_name, home, init):
     if os.path.isfile(os.path.join(dir_name, 'cryptlist')):
         logging.error('this appears to be an old dotgit repo, please check '
                       'the user guide on how to update this repo for the '
-                      'new version of dotgit')
+                      'new version of dotgit or use the old version of dotgit'
+                      'by rather running dotgit.sh')
         return False
 
     if not os.path.isdir(os.path.join(dir_name, '.git')):
-        logging.error('''this does not appear to be a git repo, make sure to
-        init the repo before running dotgit in this folder''')
+        logging.error('this does not appear to be a git repo, make sure to '
+                      'init the repo before running dotgit in this folder')
         return False
 
     for flist in ['filelist']:

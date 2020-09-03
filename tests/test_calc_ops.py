@@ -102,6 +102,27 @@ class TestCalcOps:
         assert (home / 'file').is_symlink()
         assert (home / 'file').samefile(repo / 'cat1' / 'file')
 
+    def test_update_externallinkedhome_nomaster_noslave(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+
+        (home / 'foo').touch()
+        (home / 'file').symlink_to(home / 'foo')
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
+        calc.update({'file': ['cat']}).apply()
+
+        assert (repo / 'cat').is_dir()
+        assert (repo / 'cat' / 'file').exists()
+        assert not (repo / 'cat' / 'file').is_symlink()
+
+        calc.restore({'file': ['cat']}).apply()
+
+        assert (home / 'file').is_symlink()
+        assert (home / 'file').samefile(repo / 'cat' / 'file')
+        assert repo in (home / 'file').resolve().parents
+        assert (home / 'foo').exists()
+        assert not (home / 'foo').is_symlink()
+
     def test_update_changed_master(self, tmp_path):
         home, repo = self.setup_home_repo(tmp_path)
         os.makedirs(repo / 'cat2')

@@ -24,11 +24,14 @@ class CalcOps:
             candidates = set()
             search = [self.restore_path]
             search += [os.path.join(self.repo, c) for c in categories]
+            original_path = {}
             for cand in search:
                 cand = os.path.join(cand, path)
                 if os.path.isfile(cand):
                     if os.path.islink(cand):
+                        old = cand
                         cand = os.path.realpath(cand)
+                        original_path[cand] = old
                     candidates.add(cand)
 
             if not candidates:
@@ -82,7 +85,10 @@ class CalcOps:
                         fops.copy(source, master)
                 else:
                     fops.plugin(self.plugin.apply, source, master)
-                    fops.remove(source)
+                    if source in original_path:
+                        fops.remove(original_path[source])
+                    else:
+                        fops.remove(source)
 
             for slave in slaves:
                 if slave != source:
