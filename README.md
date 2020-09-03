@@ -144,17 +144,30 @@ Currently, two features are missing from the python rewrite:
 * Encryption support: this will be added in a future release
 * Directory support: after much consideration it was decided to rather to not
   re-implement this. It requires a lot of special treatment that breaks some of
-  the logic that works very well for single files.
-
-To make room for future improvements, the layout of the dotgit dotfiles repos
-had to change. Unfortunately this means that the new repos are not directly
-compatible with the old ones, although it is easy to migrate to the new
-version's format. To do that, do the following:
-
-* Insert steps here...
+  the logic that works very well for single files. Excluding it made the
+  file-handling logic much more robust
 
 Should you decide you'd like to stick to the old version of dotgit, you are
 welcome to do so. Installing the pip package will also make the original dotgit
 available as the command "dotgit.sh" (AUR package as well). Please note that I
 will not be able to support the old version anymore, and as such you're on your
 own if you decide to use the old version.
+
+To make room for future improvements, the layout of the dotgit dotfiles repos
+had to change. Unfortunately this means that the new repos are not directly
+compatible with the old ones, although it is easy to migrate to the new
+version's format. To do so, do the following:
+
+- Firstly, do a hard restore using the old version of dotgit (either bundled
+  with the new package or simply using an old install) by running
+  `dotgit.sh hard-restore`. Doing so will copy all the files out of your repo
+  into your home folder.
+- Delete the old dotfiles folder inside your repo named "dotfiles"
+- You can leave your filelist as-is, the filelist syntax hasn't changed. Since
+  the new version doesn't support encryption (yet) you can either delete your
+  "cryptlist" file or keep it, it won't used anymore.
+- With the new version of dotgit, run `dotgit update -v`. This will copy back
+  your files from your home folder into your dotgit repo.
+- Familiarize yourself with the new dotgit syntax which has changed slightly to
+  better follow conventions commonly found on the command-line by reading
+  through the help using `dotgit -h`
