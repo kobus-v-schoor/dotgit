@@ -187,7 +187,7 @@ class CalcOps:
                 for fname in files:
                     fname = os.path.relpath(os.path.join(root, fname),
                                             self.repo)
-                    if not fname in filenames:
+                    if fname not in filenames:
                         logging.info(f'{fname} is not in the manifest, '
                                      'removing')
                         fops.remove(fname)
