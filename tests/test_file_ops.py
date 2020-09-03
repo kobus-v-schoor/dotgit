@@ -97,6 +97,9 @@ class TestFileOps:
                 self.source = source
                 self.dest = dest
 
+            def strify(self, op):
+                return 'Plugin.apply'
+
         plugin = Plugin()
         fop.plugin(plugin.apply, 'source', 'dest')
         assert fop.ops == [(plugin.apply, ('source', 'dest'))]
@@ -121,6 +124,9 @@ class TestFileOps:
                 self.called = True
                 self.source = source
                 self.dest = dest
+
+            def strify(self, op):
+                return 'Plugin.apply'
 
         plugin = Plugin()
         fop = FileOps(tmp_path)

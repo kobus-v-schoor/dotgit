@@ -33,3 +33,10 @@ class PlainPlugin(Plugin):
             return filecmp.cmp(file1, file2, shallow=False)
         else:
             return os.path.samefile(file1, file2)
+
+    def strify(self, op):
+        if op == self.apply:
+            return "COPY"
+        elif op == self.remove:
+            return "COPY" if self.hard else "LINK"
+        return ""

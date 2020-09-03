@@ -24,3 +24,8 @@ class Plugin:
 
     def samefile(self, file1, file2):
         pass
+
+    # takes a callable (one of the plugin's ops) and returns a string
+    # describing the op
+    def strify(self, op):
+        pass

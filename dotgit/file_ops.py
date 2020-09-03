@@ -2,6 +2,7 @@ import os
 import logging
 import enum
 import shutil
+import inspect
 
 
 class Op(enum.Enum):
@@ -106,9 +107,7 @@ class FileOps:
         if type(op) is Op:
             op = op.name
         else:
-            # this strips out only the class name and function name otherwise
-            # other info like the module name is also there
-            op = '.'.join(op.__qualname__.split('.')[-2:])
+            op = dict(inspect.getmembers(op))['__self__'].strify(op)
 
         if type(path) is tuple:
             path = [strip_wd(p) for p in path]
