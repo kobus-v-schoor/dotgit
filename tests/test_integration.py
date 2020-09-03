@@ -58,7 +58,7 @@ class TestIntegration:
 
     # adds a shared category file to the repo, then makes it an invidual
     # category file
-    def test_add_separate_cats(self, tmp_path, monkeypatch):
+    def test_add_separate_cats(self, tmp_path):
         home, repo = self.setup_repo(tmp_path)
         filelist = repo / "filelist"
 
@@ -69,8 +69,6 @@ class TestIntegration:
         assert (home / "foo").is_symlink()
         assert (home / "foo").exists()
         assert (home / "foo").resolve().parent.match("*/asd")
-
-        monkeypatch.setattr('builtins.input', lambda p: 'y')
 
         filelist.write_text("foo:asd\nfoo")
         main(args=['update'], cwd=str(repo), home=str(home))

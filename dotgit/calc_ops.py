@@ -122,12 +122,19 @@ class CalcOps:
                     logging.debug(f'{dest} already linked to repo, skipping')
                     continue
 
-                a = input(f'{dest} already exists, replace? [Yn] ')
-                a = 'y' if not a else a
-                if a.lower() == 'y':
+                # check if the dest is already a symlink to the repo, if it is
+                # just remove it without asking
+                if os.path.realpath(dest).startswith(self.repo):
+                    logging.info(f'{dest} already linked to repo, replacing '
+                                 'with new file')
                     fops.remove(dest)
                 else:
-                    continue
+                    a = input(f'{dest} already exists, replace? [Yn] ')
+                    a = 'y' if not a else a
+                    if a.lower() == 'y':
+                        fops.remove(dest)
+                    else:
+                        continue
 
             fops.plugin(self.plugin.remove, source, dest)
 
