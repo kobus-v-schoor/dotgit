@@ -135,6 +135,10 @@ class CalcOps:
                         fops.remove(dest)
                     else:
                         continue
+            # check if the destination is a dangling symlink, if it is just
+            # remove it
+            elif os.path.islink(dest):
+                fops.remove(dest)
 
             fops.plugin(self.plugin.remove, source, dest)
 

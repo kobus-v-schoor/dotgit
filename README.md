@@ -126,7 +126,7 @@ following plugins are planned for some future release:
 * Encryption using GnuPG
 * Templating
 
-## Migrating from v1
+## Migrating from v1.x
 
 After many years dotgit was finally completely rewritten in python. The first
 version was written in pure bash, and while this was appealing at first it
@@ -161,11 +161,12 @@ version's format. To do so, do the following:
 - Firstly, backup your current dotfiles repo in case something goes wrong
 - Next, inside your dotfiles repo, move the dotfiles folder to its new location
   by running `mv dotfiles tmp; mkdir dotfiles; mv tmp dotfiles/plain`.
-- You can leave your filelist as-is, the filelist syntax hasn't changed. Since
-  the new version doesn't support encryption (yet) you can either delete your
-  "cryptlist" file or keep it, it won't used anymore. Note that the encrypted
-  files in your repo will be deleted once you run the new dotgit since it won't
-  be able to find them in the filelist.
+- You can leave your filelist as-is, the filelist syntax hasn't changed. You
+  will need to delete your "cryptlist" file as this signals to dotgit that this
+  is an old repo. Once the new version supports encryption it will not make use
+  of a seperate "cryptlist" file anyway, so there is no reason to keep it. Note
+  that the encrypted files in your repo will be deleted once you run the new
+  dotgit since it won't be able to find them in the filelist.
 - With the new version of dotgit, run `dotgit update -v`. This will update the
   repo if necessary and will also fix the symlinks in your home folder.
 - Commit the changes to your repo using either git or `dotgit commit`

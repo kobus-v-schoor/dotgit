@@ -216,6 +216,20 @@ class TestCalcOps:
         assert (repo / 'cat1' / 'file').is_file()
         assert not (repo / 'cat1' / 'file').is_symlink()
 
+    def test_restore_dangling_home(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+        os.makedirs(repo / 'cat')
+        (repo / 'cat' / 'foo').touch()
+
+        (home / 'foo').symlink_to('/non/existent/path')
+        assert not (home / 'foo').exists()
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
+        calc.restore({'foo': ['cat']}).apply()
+
+        assert (home / 'foo').is_symlink()
+        assert (home / 'foo').exists()
+
     def test_clean_nohome(self, tmp_path):
         home, repo = self.setup_home_repo(tmp_path)
         os.makedirs(repo / 'cat1')
