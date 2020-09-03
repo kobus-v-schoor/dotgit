@@ -99,10 +99,10 @@ package](https://aur.archlinux.org/packages/dotgit)
    and run the init step inside the cloned repo.
 4. Add your first dotfile `echo .bashrc >> filelist`
 5. Update your dotgit repo (you need to do this whenever you change the
-   filelist) with `dotgit update`. Once you do this your dotfile has been moved
-   from your home directory to your dotfiles repo, and a symlink was created in
-   your home directory in place of the original file pointing to the file
-   inside your dotfiles repo.
+   filelist) with `dotgit update -v`. Once you do this your dotfile has been
+   moved from your home directory to your dotfiles repo, and a symlink was
+   created in your home directory in place of the original file pointing to the
+   file inside your dotfiles repo.
 6. Commit your changes to your dotgit repo by doing running `dotgit commit`
 
 That's it! When you want to push your changes to your git remote you just do a
