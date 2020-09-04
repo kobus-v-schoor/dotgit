@@ -1,13 +1,8 @@
 name: publish-aur
 
-# on:
-#   release:
-#     types: [created]
-
 on:
-  push:
-    tags:
-    - '*'
+  release:
+    types: [created]
 
 jobs:
   arch:
