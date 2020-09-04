@@ -21,7 +21,7 @@ setuptools.setup(
         scripts = ['old/dotgit.sh'],
         include_package_data = True,
         classifiers = [
-            'Development Status :: 5 - Production/Stable'
+            'Development Status :: 5 - Production/Stable',
             'Programming Language :: Python :: 3',
             'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
             'Operating System :: POSIX',
