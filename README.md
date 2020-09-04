@@ -74,6 +74,9 @@ Lastly the `.foo` will only be used when you explicitly use the category
 `server`. This way you can for instance keep your "server" dotfiles in your
 main dotfiles repo without cluttering your normal dotgit workflow.
 
+You can also have a look at my personal dotfiles which I manage with dotgit
+[here](https://github.com/kobus-v-schoor/dotfiles).
+
 ## Installation
 
 Arch Linux users can install the
