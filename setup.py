@@ -1,5 +1,4 @@
 import setuptools
-from glob import glob
 import dotgit.info as info
 
 with open('README.md', 'r') as readme:
@@ -15,13 +14,14 @@ setuptools.setup(
         long_description_content_type = 'text/markdown',
         url = info.__url__,
         license = info.__license__,
+        license_file = 'LICENSE',
         packages = ['dotgit', 'dotgit.plugins'],
         entry_points = {
             'console_scripts': ['dotgit=dotgit.__main__:main']
             },
         scripts = ['old/dotgit.sh'],
-        data_files = [('completion', glob('pkg/completion/*'))],
-        package_data = {'': ['LICENSE']},
+        data_files = [('share/bash-completion/completions',
+             ['pkg/completion/bash/dotgit'])],
         include_package_data = True,
         classifiers = [
             'Development Status :: 2 - Pre-Alpha',
