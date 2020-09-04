@@ -21,11 +21,12 @@ setuptools.setup(
         scripts = ['old/dotgit.sh'],
         include_package_data = True,
         classifiers = [
-            'Development Status :: 2 - Pre-Alpha',
+            'Development Status :: 5 - Production/Stable'
             'Programming Language :: Python :: 3',
             'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
             'Operating System :: POSIX',
             'Operating System :: MacOS',
+            'Topic :: Utilities',
             ],
         python_requires = '>=3.6',
         )
