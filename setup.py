@@ -20,7 +20,7 @@ setuptools.setup(
             'console_scripts': ['dotgit=dotgit.__main__:main']
             },
         scripts = ['old/dotgit.sh'],
-        data_files = [('completion', glob('pkg/completion/*'))]
+        data_files = [('completion', glob('pkg/completion/*'))],
         package_data = {'': ['LICENSE']},
         include_package_data = True,
         classifiers = [
