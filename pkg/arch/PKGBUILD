@@ -20,4 +20,6 @@ package()
 {
 	cd "dotgit-$pkgver"
 	python setup.py install --root="$pkgdir/" --optimize=1 --skip-build
+	install -Dm644 pkg/completion/bash.sh -T \
+		"$pkgdir/usr/share/bash-completion/completions/dotgit"
 }
