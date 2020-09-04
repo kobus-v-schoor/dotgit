@@ -1,45 +1,42 @@
 # dotgit
 
 ![tests](https://github.com/kobus-v-schoor/dotgit/workflows/tests/badge.svg)
-[![coverage](https://coveralls.io/repos/github/kobus-v-schoor/dotgit/badge.svg?branch=python)](https://coveralls.io/github/kobus-v-schoor/dotgit?branch=python)
-![publish](https://github.com/kobus-v-schoor/dotgit/workflows/publish/badge.svg)
+[![coverage](https://coveralls.io/repos/github/kobus-v-schoor/dotgit/badge.svg)](https://coveralls.io/github/kobus-v-schoor/dotgit)
+![publish-pypi](https://github.com/kobus-v-schoor/dotgit/workflows/publish-pypi/badge.svg)
 [![downloads](https://img.shields.io/pypi/dm/dotgit)](https://pypi.org/project/dotgit/)
 
 ## A comprehensive and versatile dotfiles manager
 
 dotgit will allows you to easily store all your dotfiles for any number of
 machines in a single git repository. Written in python with no external
-dependencies besides git, it works on both Linux and MacOS.
+dependencies besides git, it works on both Linux and MacOS (should also work on
+other \*nix environments)
 
 ## Project goals
 
-* Make it possible to store different versions of the same file in a single
-  repository, but also to
-* Make it possible to share the same file between more than one host/category
+* Share files between machines or keep separate versions, all in the same repo
 * Make use of an intuitive filelist
-* Use simple one-liners to interact with dotgit
-* Categorising of files
-* Make using git with the repo easy without impairing git's power
-* Keep all your dotfiles for different setups/machines in a single repository
+* Grouping of files to make organization easy
+* Make git source-control convenient and easy to use
 
 ## Why use dotgit?
 
-* Easily keep several versions of the same file (e.g. for different hosts) in
-  the same repo
-* Easily share files between hosts (e.g. a common .vimrc)
-* dotgit is managed through an intuitive filelist which allows you to easily
-  set up complex configurations
-* dotgit uses a straight-forward file-hierarchy similar to GNU Stow
+* You can very easily organize and categorize your dotfiles, making it easy to
+  store different setups in the same repo (e.g. your workstation and your
+  headless server dotfiles, both in the same repo)
+* dotgit was designed with its most important goal being to make managing
+  multiple machine's dotfiles easy, by allowing to easily share and separate
+  dotfiles between machines
+* Ease-of-use is baked into everything without hindering more advanced users.
+  For instance, dotgit can automatically commit and push commits for you should
+  you want it to, but you can just as easily make the commits yourself
 * dotgit has an automated test suite that tests its functionality with several
-  versions of Python on Linux and MacOS
-* If you're uncomfortable with git, you can still easily use dotgit by letting
-  dotgit work with git for you. If you prefer to work with git yourself you can
-  easily do that - a dotgit repository is just a normal git repository and you
-  don't need to use dotgit's git functionality at all if you don't want to.
+  versions of Python on Linux and MacOS to ensure cross-platform compatibility
 * Support for both symlinking or copying dotfiles to your home directory.
-  Copying allows you to quickly bootstrap a machine and remove the repo should
-  you need to.
-* No external dependencies apart from git
+  Copying allows you to quickly bootstrap a machine without leaving your repo
+  or dotgit on it
+* No external dependencies apart from git allowing you to install and use
+  dotgit easily in any environment that supports Python
 
 ## Usage example
 
@@ -74,19 +71,27 @@ repository (unless a category is specifically used along with the dotgit
 commands).
 
 Lastly the `.foo` will only be used when you explicitly use the category
-`server`. This makes it easy to keep separate configurations inside the same
-repository.
+`server`. This way you can for instance keep your "server" dotfiles in your
+main dotfiles repo without cluttering your normal dotgit workflow.
 
 ## Installation
 
-The easiest way to install dotgit is using pip:
+Arch Linux users can install the
+[AUR package](https://aur.archlinux.org/packages/dotgit).
+
+If you are not on Arch, the easiest way to install dotgit is using pip
+(substitute `pip` with `pip3` if you're on a Debian-like system):
 
 ```
 pip install dotgit
 ```
 
-Arch Linux users can also install the [AUR
-package](https://aur.archlinux.org/packages/dotgit)
+You can also get bash-completion to work by installing dotgit's bash-completion
+in your home folder:
+
+```
+curl https://raw.githubusercontent.com/kobus-v-schoor/dotgit/master/pkg/completion/bash.sh >> ~/.bash_completion
+```
 
 ## Getting started
 
@@ -103,7 +108,7 @@ package](https://aur.archlinux.org/packages/dotgit)
    moved from your home directory to your dotfiles repo, and a symlink was
    created in your home directory in place of the original file pointing to the
    file inside your dotfiles repo.
-6. Commit your changes to your dotgit repo by doing running `dotgit commit`
+6. Commit your changes to your dotgit repo by running `dotgit commit`
 
 That's it! When you want to push your changes to your git remote you just do a
 `git push` as usual (dotgit will also offer to do this for you).
@@ -117,11 +122,15 @@ one).
 To restore your dotfiles on another machine, just clone your repo, install
 dotgit and run `dotgit restore` inside your repo.
 
+It is strongly recommended to look through dotgit's help by running `dotgit
+--help`. This will show you good ways to use dotgit and explain dotgit's options
+in detail.
+
 ## Future goals
 
-dotgit was written with a plugin architecture in mind. It currently only has
-one plugin, namely the "plain" plugin, which just does symlinking. The
-following plugins are planned for some future release:
+dotgit was written with a plugin architecture. It currently only has one plugin,
+namely the "plain" plugin, which just does symlinking. The following plugins are
+planned for future releases:
 
 * Encryption using GnuPG
 * Templating
@@ -164,7 +173,7 @@ version's format. To do so, do the following:
 - You can leave your filelist as-is, the filelist syntax hasn't changed. You
   will need to delete your "cryptlist" file as this signals to dotgit that this
   is an old repo. Once the new version supports encryption it will not make use
-  of a seperate "cryptlist" file anyway, so there is no reason to keep it. Note
+  of a separate "cryptlist" file anyway, so there is no reason to keep it. Note
   that the encrypted files in your repo will be deleted once you run the new
   dotgit since it won't be able to find them in the filelist.
 - With the new version of dotgit, run `dotgit update -v`. This will update the
