@@ -15,14 +15,14 @@ class PlainPlugin(Plugin):
 
     # copies file from outside the repo to the repo
     def apply(self, source, dest):
-        shutil.copyfile(source, dest)
+        shutil.copy2(source, dest)
 
     # if not in hard mode, creates a symlink in dest (outside the repo) that
     # points to source (inside the repo)
     # if in hard mode, copies the file from the repo to the dest.
     def remove(self, source, dest):
         if self.hard:
-            shutil.copyfile(source, dest)
+            shutil.copy2(source, dest)
         else:
             os.symlink(source, dest)
 
