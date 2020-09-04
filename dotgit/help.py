@@ -1,80 +1,70 @@
 HELP = '''
 INITIAL SETUP:
-    Firstly create an online git repository (eg. on GitHub). Clone this
-    repository to your home folder ('git clone {repo_url} {repo_dest}', check
-    online for more details). Next, cd into the repository and run 'dotgit
-    init'. Next, setup your dogit repository by editing the filelist as
-    explained in the "filelist syntax" section
+    If you are planning on storing your dotfiles somewhere online, create a
+    repository on your chosen platform and clone it to where you intend to
+    store your dotfiles. Otherwise, create a directory to store your dotfiles
+    and run 'dotgit init' inside of it (you should also run this inside a
+    freshly cloned repo)
 
 FILELIST SYNTAX:
-    There is only one file inside your dotgit repository that you will be
-    editing namely the filelist (file named "filelist" in the root directory of
-    your dotfiles repo)
+    Your filelist is where you will specify what dotfiles you want to store
+    inside your dotgit repository. It is located in the root of your dotfiles
+    repo with the name "filelist".
 
-    The filelist uses '#' at the beginning of a line do denote a comment.
-    Blank lines are ignored.
+    Blank lines are ignored, and lines starting with "#" are comments which are
+    also ignored.
 
-    The filelist uses the following syntax:
+    An example filelist might look something like this:
 
+    # this is a comment
     file_name:category1,category2
-
-    or simply:
-
-    file_name
+    second_file
 
     "file_name" can contain spaces and can be any file or folder inside your
-    home directory. Categories allows you to group files together to more
-    easily manage them as one group.  If no category is specified it is
-    implicitly added to the "common" category. When you specify multiple
-    categories for a single file dotgit will link their files together and they
-    will share the same file. You can also use categories to separate different
-    versions of the same file. For example:
+    home directory. You need to specify the file's name relative to your home
+    folder, i.e. ".bashrc" for your bash config.
 
-    .vimrc:c1,c2
-    .vimrc:c3
+    Categories allow you to group files together to make it easy to manipulate
+    them as a group. If no category is specified for a file it is automatically
+    added to the "common" category. When you specify multiple categories for a
+    file (like above) the file is shared between the categories, meaning
+    changes to the file in the one category also affects the other. You can
+    also use categories to separate different versions of the same file, for
+    instance:
 
-    In this example categories c1 and c2 will share the same .vimrc and c3 will
-    have its own version of .vimrc. Categories can be anything you want it to
-    be but there are two approaches that tend to work well.
+    .vimrc:server
+    .vimrc:workstation
 
-    The most straight-forward usage is to use your hostnames of your machines
-    as the categories. This works kind-of okay but the second approach tends to
-    work better.
+    Category groups allow you to group multiple categories together. Their
+    syntax looks as follows:
 
-    A better approach is to group dotfiles that work together all in one
-    category, e.g. you might group your .xinitrc and your .Xresources into one
-    "x" category. Then use the groups functionality (explained below) to group
-    these categories into your hosts
+    group_name=category1,category2
 
-    After creating multiple categories it might become tedious to specify them
-    all on the command-line, this is where category groups come in. Category
-    groups also works well to group package groups (as explained above) into
-    hosts. You can specify a group with the following syntax:
+    This makes it even easier to manage groups of dotfiles. You can use groups
+    and categories any way you like, but one approach tends to work very well.
+    It looks as follows:
 
-    group1=category1,category2
-
-    Then, instead of running 'dotgit update category1 category2' every time you
-    can just run 'dotgit update group1'. Implicitly added categories (common
-    and your hostname) can also be expanded, meaning that if you have a group
-    name that matches your hostname it will be expanded for you and you can
-    just run 'dotgit update'. Building on the methodology explained above, a
-    configuration that works well can be set up like this:
-
-    laptop=x,vim
-    desktop=x
+    server=vim,shell
+    workstation=x,vim,shell
 
     .vimrc:vim
+    .bashrc:shell
     .xinitrc:x
-    .Xresources:x
 
-    .bashrc
+    In the example above, you separate your dotfiles into categories that
+    groups similar dotfiles (e.g. all your vim-related dotfiles in one
+    category). Next, you create groups that matches the hostnames of the
+    machines that you intend to use it on. The groups then contain all the
+    categories you want to use on that machines. Using this method allows you
+    to easily add and remove categories on your hosts almost like they are
+    packages.
 
-    In the above example, the filelist contains two groups both matching the
-    host names that they will be used on. "laptop" will make use of both the x
-    and the vim packages (categories) and as such all the files listed on the
-    filelist will be restored. On the "desktop" machine we decide to not use
-    the vim configuration files, and so only the "x" files and the ".bashrc"
-    file is restored.
+    Note that if you run dotgit commands without specifying any categories,
+    dotgit automatically assumes the "common" category as well as a category
+    with your hostname (e.g. "kobus-laptop"). This means that if you use groups
+    (or categories) that match the hostnames you want to use dotgit on you
+    don't need to specify any categories when running dotgit as your hostname
+    already matches the correct categories.
 
 OPTIONS:
 
@@ -87,9 +77,9 @@ OPTIONS:
     For instance, if you specify "c1" after "update" only files marked with the
     "c1" category will be updated.
 
-    It is recommended that you run dotgit with verbose mode (-v) and --dry-run
-    turned on whenever you perform an update operation to see what would happen
-    should you run your chosen command.
+    It is recommended that you run dotgit with verbose mode (-v) to see what is
+    happening. You can also run dotgit with "--dry-run" to prevent any changes
+    to your filesystem if you want to check what dotgit would have done.
 
     init           - setup a new dotgit repository inside the current directory
 
@@ -99,16 +89,13 @@ OPTIONS:
                      unnecessary. If you run dotgit in symlink mode take note
                      that running update will delete the original file inside
                      your home folder and replace it with a link to the
-                     repository.
+                     repository automatically.
 
-    restore        - run this to create links from your home folder to your
+    restore        - creates links in your home folder pointing to your
                      repository. You need to run this whenever you want to
                      setup a new machine or if you made changes to the filelist
                      on another machine and you want the changes to be added to
-                     the current machine. Take note that dotgit will first
-                     remove old links to your dotfiles repository and then
-                     create the new links. You will thus need to specify all
-                     the categories that you want to restore in one run
+                     the current machine.
 
     clean          - This will remove all links in your home folder that point
                      to your dotfiles repository
@@ -117,7 +104,7 @@ OPTIONS:
                      repository
 
     commit         - This will generate a git commit message and push to a
-                     remote if it can find one
+                     remote if it can find one (will ask for confirmation)
 
     The 'update', 'restore' and 'clean' actions have a 'hard' mode, activated
     by using the --hard flag. When in this mode dotgit will copy the files
