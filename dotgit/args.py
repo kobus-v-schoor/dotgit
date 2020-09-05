@@ -5,12 +5,13 @@ from dotgit.enums import Actions
 import dotgit.info as info
 import dotgit.help
 
-HELP = {'verbose': 'print more info to the console',
-        'dry-run': 'do not actually execute any file operations',
-        'hard-mode': 'copy files instead of symlinking them',
-        'action': 'action to take on active categories',
-        'category': 'categories to activate. (default: %(default)s)'
-        }
+HELP = {
+    'verbose': 'print more info to the console',
+    'dry-run': 'do not actually execute any file operations',
+    'hard-mode': 'copy files instead of symlinking them',
+    'action': 'action to take on active categories',
+    'category': 'categories to activate. (default: %(default)s)'
+}
 
 
 class Arguments:
@@ -21,6 +22,8 @@ class Arguments:
                                          formatter_class=formatter)
 
         # add parser options
+        parser.add_argument('--version', action='version',
+                            version=f'dotgit {info.__version__}')
         parser.add_argument('--verbose', '-v', action='count', default=0,
                             help=HELP['verbose'])
         parser.add_argument('--dry-run', action='store_true',
