@@ -63,3 +63,39 @@ class TestEncryptPlugin:
         assert str(dfile) in plugin.hashes
         assert plugin.hashes[str(dfile)] == hash_file(str(sfile))
         assert (tmp_path / "hashes").read_text()
+
+    def test_remove(self, tmp_path, monkeypatch):
+        txt = 'hello world'
+        password = 'password123'
+
+        tfile = tmp_path / 'temp'
+        sfile = tmp_path / 'source'
+        dfile = tmp_path / 'dest'
+
+        tfile.write_text(txt)
+        gpg = GPG(password)
+        gpg.encrypt(str(tfile), str(sfile))
+
+        monkeypatch.setattr('getpass.getpass', lambda prompt: password)
+        plugin = EncryptPlugin(data_dir=str(tmp_path))
+
+        plugin.remove(str(sfile), str(dfile))
+
+        assert dfile.read_text() == tfile.read_text()
+
+    def test_samefile(self, tmp_path, monkeypatch):
+        txt = 'hello world'
+        password = 'password123'
+
+        sfile = tmp_path / 'source'
+        dfile = tmp_path / 'dest'
+
+        sfile.write_text(txt)
+
+        monkeypatch.setattr('getpass.getpass', lambda prompt: password)
+        plugin = EncryptPlugin(data_dir=str(tmp_path))
+
+        plugin.apply(str(sfile), str(dfile))
+
+        assert hash_file(str(sfile)) != hash_file(str(dfile))
+        assert plugin.samefile(repo_file=str(dfile), ext_file=str(sfile))
