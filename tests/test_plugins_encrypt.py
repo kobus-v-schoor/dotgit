@@ -111,11 +111,8 @@ class TestEncryptPlugin:
 
         monkeypatch.setattr('getpass.getpass', lambda prompt: password)
         plugin = EncryptPlugin(data_dir=str(tmp_path))
+        # store password by encrypting one file
         plugin.apply(str(sfile), str(dfile))
 
-        dfile.unlink()
-
-        plugin = EncryptPlugin(data_dir=str(tmp_path))
-        plugin.apply(str(sfile), str(dfile))
-
-        assert sfile.read_bytes() != dfile.read_bytes()
+        assert plugin.verify_password(password)
+        assert not plugin.verify_password(password + '123')

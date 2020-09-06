@@ -5,6 +5,7 @@ import json
 import getpass
 import hashlib
 import os
+import tempfile
 
 from dotgit.plugin import Plugin
 
@@ -72,7 +73,6 @@ def key_stretch(password, salt):
     return key.hex()
 
 
-# TODO implement method to change password
 class EncryptPlugin(Plugin):
     def __init__(self, data_dir, *args, **kwargs):
         self.gpg = None
@@ -93,32 +93,18 @@ class EncryptPlugin(Plugin):
         with open(self.hashes_path, 'w') as f:
             json.dump(self.hashes, f)
 
-    def setup_password(self):
-        print('No encryption password was found for this repo. To continue '
-              'please set an encryption password\n')
-
-        while True:
-            p1 = getpass.getpass(prompt='Encryption password: ')
-            p2 = getpass.getpass(prompt='Confirm password: ')
-
-            if p1 != p2:
-                print('Passwords do not match, please try again')
-            else:
-                break
-
-        pword = p1
-
+    # sets the password in the plugin's data dir. do not use directly, use
+    # change_password instead
+    def save_password(self, password):
         # get salt from crypto-safe random source
         salt = os.urandom(32)
         # calculate password hash
-        key = key_stretch(pword.encode(), salt)
+        key = key_stretch(password.encode(), salt)
 
         # save salt and hash
         with open(self.pword_path, 'w') as f:
             d = {'pword': key, 'salt': salt.hex()}
             json.dump(d, f)
-
-        return pword
 
     # takes a password and checks if the correct password was entered
     def verify_password(self, password):
@@ -126,13 +112,55 @@ class EncryptPlugin(Plugin):
             d = json.load(f)
         return key_stretch(password, d['salt']) == d['pword']
 
+    # asks the user for a new password and re-encrypts all the files with the
+    # new password. if repo is None no attempt is made to re-encrypt files
+    def change_password(self, repo=None):
+        while True:
+            p1 = getpass.getpass(prompt='Enter new password: ')
+            p2 = getpass.getpass(prompt='Re-enter new password: ')
+
+            if p1 != p2:
+                print('Entered passwords do not match, please try again')
+            else:
+                break
+
+        new_pword = p1
+        new_gpg = GPG(new_pword)
+
+        if repo is not None:
+            self.init_password()
+
+            for root, dirs, files in os.walk(repo):
+                for fname in files:
+                    fname = os.path.join(root, fname)
+                    logging.info(f'changing passphrase for '
+                                 f'{os.relpath(repo, fname)}')
+
+                    # make a secure temporary file
+                    fs, sfname = tempfile.mkstemp()
+                    # close the file-handle
+                    os.close(fs)
+
+                    # decrypt with old passphrase and re-encrypt with new
+                    # passphrase
+                    self.gpg.decrypt(fname, sfname)
+                    new_gpg.encrypt(sfname, fname)
+
+                    os.remove(sfname)
+
+        self.gpg = new_gpg
+        self.save_password(new_pword)
+        return new_pword
+
     # gets the password from the user if needed
     def init_password(self):
         if self.gpg is not None:
             return
 
         if not os.path.exists(self.pword_path):
-            password = self.setup_password()
+            print('No encryption password was found for this repo. To '
+                  'continue please set an encryption password\n')
+            password = self.change_password()
         else:
             while True:
                 password = getpass.getpass(prompt='Encryption password: ')
