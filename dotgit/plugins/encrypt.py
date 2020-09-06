@@ -18,8 +18,10 @@ class GPG:
         if not type(cmd) is list:
             cmd = shlex.split(cmd)
 
-        # these are needed to read the password from stdin
-        pre = ['--passphrase-fd', '0', '--pinentry-mode', 'loopback']
+        # these are needed to read the password from stdin and to not ask
+        # questions
+        pre = ['--passphrase-fd', '0', '--pinentry-mode', 'loopback',
+               '--batch', '--yes']
         # insert pre into the gpg command string
         cmd = cmd[:1] + pre + cmd[1:]
 
@@ -134,19 +136,23 @@ class EncryptPlugin(Plugin):
                 for fname in files:
                     fname = os.path.join(root, fname)
                     logging.info(f'changing passphrase for '
-                                 f'{os.relpath(repo, fname)}')
+                                 f'{os.path.relpath(fname, repo)}')
 
                     # make a secure temporary file
                     fs, sfname = tempfile.mkstemp()
-                    # close the file-handle
+                    # close the file-handle since we won't be using it (just
+                    # there for gpg to write to)
                     os.close(fs)
 
-                    # decrypt with old passphrase and re-encrypt with new
-                    # passphrase
-                    self.gpg.decrypt(fname, sfname)
-                    new_gpg.encrypt(sfname, fname)
-
-                    os.remove(sfname)
+                    try:
+                        # decrypt with old passphrase and re-encrypt with new
+                        # passphrase
+                        self.gpg.decrypt(fname, sfname)
+                        new_gpg.encrypt(sfname, fname)
+                    except:
+                        raise
+                    finally:
+                        os.remove(sfname)
 
         self.gpg = new_gpg
         self.save_password(new_pword)

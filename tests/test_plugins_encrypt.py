@@ -116,3 +116,29 @@ class TestEncryptPlugin:
 
         assert plugin.verify_password(password)
         assert not plugin.verify_password(password + '123')
+
+    def test_change_password(self, tmp_path, monkeypatch):
+        txt = 'hello world'
+        password = 'password123'
+
+        repo = tmp_path / 'repo'
+        repo.mkdir()
+
+        sfile = tmp_path / 'source'
+        dfile = repo / 'dest'
+
+        sfile.write_text(txt)
+
+        monkeypatch.setattr('getpass.getpass', lambda prompt: password)
+        plugin = EncryptPlugin(data_dir=str(tmp_path))
+
+        plugin.apply(str(sfile), str(dfile))
+
+        password = password + '123'
+        plugin.change_password(repo=str(repo))
+        gpg = GPG(password)
+
+        tfile = tmp_path / 'temp'
+        gpg.decrypt(str(dfile), str(tfile))
+
+        assert tfile.read_text() == txt
