@@ -28,11 +28,11 @@ class PlainPlugin(Plugin):
 
     # if not in hard mode, checks if symlink points to file in repo
     # if in hard mode, a bit-by-bit comparison is made to compare the files
-    def samefile(self, file1, file2):
+    def samefile(self, repo_file, ext_file):
         if self.hard:
-            return filecmp.cmp(file1, file2, shallow=False)
+            return filecmp.cmp(repo_file, ext_file, shallow=False)
         else:
-            return os.path.samefile(file1, file2)
+            return os.path.samefile(repo_file, ext_file)
 
     def strify(self, op):
         if op == self.apply:

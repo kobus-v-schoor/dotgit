@@ -5,8 +5,10 @@ class Plugin:
     def __init__(self, data_dir):
         self.data_dir = data_dir
 
-        if os.path.isdir(self.data_dir):
-            self.setup_data()
+        if not os.path.isdir(self.data_dir):
+            os.makedirs(self.data_dir)
+
+        self.setup_data()
 
     def setup_data(self):
         pass
@@ -22,7 +24,9 @@ class Plugin:
     def remove(self, source, dest):
         pass
 
-    def samefile(self, file1, file2):
+    # takes a path to a repo_file and an ext_file and compares them, should
+    # return true if they are the same file
+    def samefile(self, repo_file, ext_file):
         pass
 
     # takes a callable (one of the plugin's ops) and returns a string
