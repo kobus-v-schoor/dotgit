@@ -149,7 +149,7 @@ class EncryptPlugin(Plugin):
                         # passphrase
                         self.gpg.decrypt(fname, sfname)
                         new_gpg.encrypt(sfname, fname)
-                    except:
+                    except:  # noqa: E722
                         raise
                     finally:
                         os.remove(sfname)
