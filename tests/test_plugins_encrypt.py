@@ -99,3 +99,23 @@ class TestEncryptPlugin:
 
         assert hash_file(str(sfile)) != hash_file(str(dfile))
         assert plugin.samefile(repo_file=str(dfile), ext_file=str(sfile))
+
+    def test_verify(self, tmp_path, monkeypatch):
+        txt = 'hello world'
+        password = 'password123'
+
+        sfile = tmp_path / 'source'
+        dfile = tmp_path / 'dest'
+
+        sfile.write_text(txt)
+
+        monkeypatch.setattr('getpass.getpass', lambda prompt: password)
+        plugin = EncryptPlugin(data_dir=str(tmp_path))
+        plugin.apply(str(sfile), str(dfile))
+
+        dfile.unlink()
+
+        plugin = EncryptPlugin(data_dir=str(tmp_path))
+        plugin.apply(str(sfile), str(dfile))
+
+        assert sfile.read_bytes() != dfile.read_bytes()
