@@ -1,4 +1,4 @@
-from dotgit.plugins.encrypt import GPG, EncryptPlugin
+from dotgit.plugins.encrypt import GPG, hash_file, EncryptPlugin
 
 
 class TestGPG:
@@ -25,6 +25,41 @@ class TestGPG:
         gpg.decrypt(str(output_file), str(input_file))
         assert input_file.read_text() == txt
 
+class TestHash:
+    def test_hash(self, tmp_path):
+        f = tmp_path / 'file'
+        f.write_text('hello world')
+        assert (hash_file(str(f)) == 'b94d27b9934d3e08a52e52d7da7dabfac484efe3'
+                '7a5380ee9088f7ace2efcde9')
+
 
 class TestEncryptPlugin:
-    pass
+    def test_setup(self, tmp_path):
+        (tmp_path / 'hashes').write_text('{"foo": "abcde"}')
+        plugin = EncryptPlugin(data_dir=str(tmp_path))
+
+        assert plugin.hashes == {'foo': 'abcde'}
+
+    def test_apply(self, tmp_path, monkeypatch):
+        sfile = tmp_path / 'source'
+        dfile = tmp_path / 'dest'
+        tfile = tmp_path / 'temp'
+
+        txt = 'hello world'
+        sfile.write_text(txt)
+
+        password = 'password123'
+        monkeypatch.setattr('getpass.getpass', lambda prompt: password)
+
+        plugin = EncryptPlugin(data_dir=str(tmp_path))
+        plugin.apply(str(sfile), str(dfile))
+
+        assert sfile.read_bytes() != dfile.read_bytes()
+
+        gpg = GPG(password)
+        gpg.decrypt(str(dfile), str(tfile))
+
+        assert tfile.read_text() == txt
+        assert str(dfile) in plugin.hashes
+        assert plugin.hashes[str(dfile)] == hash_file(str(sfile))
+        assert (tmp_path / "hashes").read_text()
