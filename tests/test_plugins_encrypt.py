@@ -147,3 +147,33 @@ class TestEncryptPlugin:
         gpg.decrypt(str(dfile), str(tfile))
 
         assert tfile.read_text() == txt
+
+    def test_clean_data(self, tmp_path, monkeypatch):
+        txt = 'hello world'
+        password = 'password123'
+
+        repo = tmp_path / 'repo'
+        repo.mkdir()
+
+        sfile = tmp_path / 'source'
+        sfile.write_text(txt)
+
+        dfile = repo / 'dest'
+
+        monkeypatch.setattr('getpass.getpass', lambda prompt: password)
+        plugin = EncryptPlugin(data_dir=str(tmp_path), repo_dir=str(repo))
+
+        plugin.apply(str(sfile), str(dfile))
+
+        rel_path = str(dfile.relative_to(repo))
+
+        assert rel_path in plugin.hashes
+        assert rel_path in plugin.modes
+
+        plugin.clean_data(['foo'])
+
+        assert rel_path not in plugin.hashes
+        assert rel_path not in plugin.modes
+
+        assert rel_path not in (tmp_path / 'hashes').read_text()
+        assert rel_path not in (tmp_path / 'modes').read_text()

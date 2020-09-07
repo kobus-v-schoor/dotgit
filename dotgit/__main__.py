@@ -118,6 +118,7 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
                 calc_ops.clean(flist).apply(args.dry_run)
 
             calc_ops.clean_repo(manifest[plugin]).apply(args.dry_run)
+            plugins[plugin].clean_data(manifest[plugin])
 
     elif args.action in [Actions.DIFF, Actions.COMMIT]:
         # calculate and apply git operations

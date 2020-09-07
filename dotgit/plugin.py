@@ -11,7 +11,13 @@ class Plugin:
 
         self.setup_data()
 
+    # does plugin-specific setting up of data located in the data_dir
     def setup_data(self):
+        pass
+
+    # cleans up plugin's data by removing entries that is no longer in the
+    # given manifest
+    def clean_data(self, manifest):
         pass
 
     # takes a source (outside the repo) and applies its operation and store the

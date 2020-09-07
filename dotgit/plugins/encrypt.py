@@ -98,7 +98,16 @@ class EncryptPlugin(Plugin):
         else:
             self.modes = {}
 
-    # saves the current hashes to the data dir
+    # removes file entries in modes and hashes that are no longer in the
+    # manifest
+    def clean_data(self, manifest):
+        for data in [self.hashes, self.modes]:
+            diff = set(data) - set(manifest)
+            for key in diff:
+                data.pop(key)
+        self.save_data()
+
+    # saves the current hashes and modes to the data dir
     def save_data(self):
         with open(self.hashes_path, 'w') as f:
             json.dump(self.hashes, f)
