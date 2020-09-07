@@ -141,7 +141,7 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
                     logging.info('successfully pushed to git remote')
 
     elif args.action == Actions.PASSWD:
-        logging.debug(f'attempting to change encryption password')
+        logging.debug('attempting to change encryption password')
         repo = os.path.join(dotfiles, 'encrypt')
         if os.path.exists(repo):
             plugins['encrypt'].init_password()
