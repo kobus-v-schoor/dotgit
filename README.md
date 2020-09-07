@@ -12,6 +12,17 @@ machines in a single git repository. Written in python with no external
 dependencies besides git, it works on both Linux and MacOS (should also work on
 other \*nix environments)
 
+## Table of Contents
+
+* [Project goals](#project-goals)
+* [Why use dotgit?](#why-use-dotgit)
+* [Usage example](#usage-example)
+* [Installation](#installation)
+* [Getting started](#getting-started)
+* [Example workflow](#example-workflow)
+* [Future goals](#future-goals)
+* [Migrating from v1.x](#migrating-from-v1x)
+
 ## Project goals
 
 * Share files between machines or keep separate versions, all in the same repo
