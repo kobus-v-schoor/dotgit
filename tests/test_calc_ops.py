@@ -142,6 +142,23 @@ class TestCalcOps:
         assert (repo / 'cat3' / 'file').is_symlink()
         assert (repo / 'cat3' / 'file').samefile(repo / 'cat1' / 'file')
 
+    def test_update_multiple_candidates(self, tmp_path, monkeypatch):
+        home, repo = self.setup_home_repo(tmp_path)
+
+        (repo / 'cat1').mkdir()
+        (repo / 'cat2').mkdir()
+
+        (repo / 'cat1' / 'file').write_text('file1')
+        (repo / 'cat2' / 'file').write_text('file2')
+
+        monkeypatch.setattr('builtins.input', lambda p: '1')
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
+        calc.update({'file': ['cat1', 'cat2']}).apply()
+
+        assert (repo / 'cat1' / 'file').read_text() == 'file2'
+        assert (repo / 'cat2' / 'file').is_symlink()
+
     def test_restore_nomaster_nohome(self, tmp_path, caplog):
         home, repo = self.setup_home_repo(tmp_path)
 
