@@ -138,8 +138,11 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
     elif args.action == Actions.PASSWD:
         logging.debug(f'attempting to change encryption password')
         repo = os.path.join(dotfiles, 'encrypt')
-        repo = repo if os.path.exists(repo) else None
-        plugins['encrypt'].change_password(repo=repo)
+        if os.path.exists(repo):
+            plugins['encrypt'].init_password()
+            plugins['encrypt'].change_password(repo=repo)
+        else:
+            plugins['encrypt'].change_password()
 
     return 0
 
