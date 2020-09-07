@@ -30,9 +30,15 @@ class PlainPlugin(Plugin):
     # if in hard mode, a bit-by-bit comparison is made to compare the files
     def samefile(self, repo_file, ext_file):
         if self.hard:
+            if os.path.islink(ext_file):
+                return False
+            if not os.path.exists(repo_file):
+                return False
             return filecmp.cmp(repo_file, ext_file, shallow=False)
         else:
-            return os.path.samefile(repo_file, ext_file)
+            # not using os.samefile since it resolves repo_file as well which
+            # is not what we want
+            return os.path.realpath(ext_file) == os.path.abspath(repo_file)
 
     def strify(self, op):
         if op == self.apply:

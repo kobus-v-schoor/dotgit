@@ -19,27 +19,37 @@ class CalcOps:
             master = min(categories)
             slaves = [c for c in categories if c != master]
 
-            # search through home folder and all categories for viable file
-            # candidates
-            candidates = set()
-            search = [self.restore_path]
-            search += [os.path.join(self.repo, c) for c in categories]
+            # checks if a candidate exists and also checks if the candidate is
+            # a link so that its resolved path can be used
             original_path = {}
-            for cand in search:
+
+            def check_cand(cand):
                 cand = os.path.join(cand, path)
                 if os.path.isfile(cand):
                     if os.path.islink(cand):
                         old = cand
                         cand = os.path.realpath(cand)
                         original_path[cand] = old
-                    candidates.add(cand)
+                    return [cand]
+                return []
+
+            candidates = []
+            candidates += check_cand(self.restore_path)
+
+            # candidate not found in restore path, so check elsewhere
+            if not candidates:
+                for cand in [os.path.join(self.repo, c) for c in categories]:
+                    candidates += check_cand(cand)
+            else:
+                logging.debug(f'"{path}" found in restore path, so overriding '
+                              'any other candidates')
 
             if not candidates:
                 logging.warning(f'unable to find any candidates for "{path}"')
                 continue
 
+            candidates = list(set(candidates))
             if len(candidates) > 1:
-                candidates = list(candidates)
                 print(f'multiple candidates found for {path}:\n')
 
                 for i, cand in enumerate(candidates):
@@ -71,7 +81,8 @@ class CalcOps:
 
             master = os.path.join(self.repo, master, path)
             slaves = [os.path.join(self.repo, s, path) for s in slaves]
-            if source != master:
+
+            if source != master and not self.plugin.samefile(master, source):
                 if os.path.exists(master):
                     fops.remove(master)
                 # check if source is in repo, if it is not apply the plugin

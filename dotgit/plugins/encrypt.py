@@ -198,7 +198,7 @@ class EncryptPlugin(Plugin):
     # the ext_file
     def samefile(self, repo_file, ext_file):
         ext_hash = hash_file(ext_file)
-        return self.hashes[repo_file] == ext_hash
+        return self.hashes.get(repo_file, None) == ext_hash
 
     def strify(self, op):
         if op == self.apply:

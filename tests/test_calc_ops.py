@@ -309,7 +309,9 @@ class TestCalcOps:
         calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data', hard=True))
         calc.clean({'file': ['cat1', 'cat2']}).apply()
 
-        assert not (home / 'file').is_file()
+        # shouldn't remove symlinks since they are not hard-copied files from
+        # the repo
+        assert (home / 'file').is_file()
         assert (repo / 'cat1' / 'file').is_file()
 
     def test_clean_hard_filehome(self, tmp_path):
