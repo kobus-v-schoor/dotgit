@@ -123,7 +123,7 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
     elif args.action in [Actions.DIFF, Actions.COMMIT]:
         # calculate and apply git operations
         if args.action == Actions.DIFF:
-            print('\n'.join(git.diff()))
+            print('\n'.join(git.diff(ignore=['.plugins/'])))
         elif args.action == Actions.COMMIT:
             if not git.has_changes():
                 logging.warning('no changes detected in repo, not creating '

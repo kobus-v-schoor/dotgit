@@ -88,7 +88,7 @@ class Git:
     def push(self):
         self.run('git push')
 
-    def diff(self):
+    def diff(self, ignore=[]):
         if not self.has_changes():
             return ['no changes']
 
@@ -99,6 +99,9 @@ class Git:
         diff = []
 
         for path in status:
+            # ignore the paths specified in ignore
+            if any((path[1].startswith(i) for i in ignore)):
+                continue
             diff.append(f'{path[0].name.lower()} {path[1]}')
 
         return diff
