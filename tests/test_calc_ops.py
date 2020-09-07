@@ -156,7 +156,8 @@ class TestCalcOps:
         calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data'))
         calc.update({'file': ['cat1', 'cat2']}).apply()
 
-        assert (repo / 'cat1' / 'file').read_text() == 'file2'
+        assert (repo / 'cat1' / 'file').exists()
+        assert not (repo / 'cat1' / 'file').is_symlink()
         assert (repo / 'cat2' / 'file').is_symlink()
 
     def test_restore_nomaster_nohome(self, tmp_path, caplog):
