@@ -89,11 +89,11 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
                                                        'encrypt'))
     }
 
+    dotfiles = os.path.join(repo, 'dotfiles')
+    logging.debug(f'dotfiles path is {dotfiles}')
+
     if args.action in [Actions.UPDATE, Actions.RESTORE, Actions.CLEAN]:
         # calculate and apply file operations
-        dotfiles = os.path.join(repo, 'dotfiles')
-        logging.debug(f'dotfiles path is {dotfiles}')
-
         for plugin in plugins:
             # filter out filelist paths that use current plugin
             flist = {path: filelist[path]['categories'] for path in filelist if
@@ -134,6 +134,12 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
                 if ans.lower() == 'y':
                     git.push()
                     logging.info('successfully pushed to git remote')
+
+    elif args.action == Actions.PASSWD:
+        logging.debug(f'attempting to change encryption password')
+        repo = os.path.join(dotfiles, 'encrypt')
+        repo = repo if os.path.exists(repo) else None
+        plugins['encrypt'].change_password(repo=repo)
 
     return 0
 

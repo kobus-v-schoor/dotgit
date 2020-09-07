@@ -10,3 +10,5 @@ class Actions(enum.Enum):
 
     DIFF = 'diff'
     COMMIT = 'commit'
+
+    PASSWD = 'passwd'

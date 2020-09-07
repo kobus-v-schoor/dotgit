@@ -188,3 +188,28 @@ class TestMain:
         assert captured.out == ('added dotfiles/plain/common/file\n'
                                 'added dotfiles/plain/common/file2\n'
                                 'modified filelist\n')
+
+    def test_passwd_empty(self, tmp_path, monkeypatch):
+        home, repo = self.setup_repo(tmp_path, 'file\nfile2')
+
+        password = 'password123'
+        monkeypatch.setattr('getpass.getpass', lambda prompt: password)
+
+        assert not (repo / '.plugins' / 'encrypt' / 'passwd').exists()
+        assert main(args=['passwd'], cwd=str(repo), home=str(home)) == 0
+        assert (repo / '.plugins' / 'encrypt' / 'passwd').exists()
+
+    def test_passwd_nonempty(self, tmp_path, monkeypatch):
+        home, repo = self.setup_repo(tmp_path, 'file|encrypt')
+
+        password = 'password123'
+        monkeypatch.setattr('getpass.getpass', lambda prompt: password)
+
+        (home / 'file').touch()
+        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
+
+        repo_file = repo / 'dotfiles' / 'encrypt' / 'common' / 'file'
+        txt = repo_file.read_text()
+
+        assert main(args=['passwd'], cwd=str(repo), home=str(home)) == 0
+        assert repo_file.read_text() != txt
