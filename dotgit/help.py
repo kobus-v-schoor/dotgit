@@ -74,7 +74,7 @@ FILELIST SYNTAX:
     don't need to specify any categories when running dotgit as your hostname
     already matches the correct categories.
 
-GETTING STARTED:
+EXAMPLE WORKFLOW:
 
     A typical workflow might look something like the following. In this example
     we will set up two machines to use dotgit. The first will be named "laptop"

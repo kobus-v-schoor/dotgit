@@ -141,6 +141,88 @@ It is strongly recommended to look through dotgit's help by running `dotgit
 --help`. This will show you good ways to use dotgit and explain dotgit's options
 in detail.
 
+## Example workflow
+
+A typical workflow might look something like the following. In this example we
+will set up two machines to use dotgit. The first will be named "laptop" and
+the second "desktop". We want to share a ".vimrc" file between the two but have
+separate ".xinitrc" files.
+
+First we start on the laptop. On it we have the ".vimrc" file that we want to
+share as well as the ".xinitrc" file for the laptop. We create a new dotgit
+repo (cloning an empty repo or just making an empty dir) and init the repo by
+running the following inside the repo dir:
+
+```
+[laptop]$ dotgit init
+```
+
+This command creates an empty filelist and also makes the first commit inside
+the repo. Next, we set up our filelist. We will set up the complete filelist
+now, since the ".xinitrc" file for the desktop won't be affected while we work
+on the laptop (since it is in a separate category). We edit the filelist to
+look as follows:
+
+```
+# dotgit filelist
+.vimrc:laptop,desktop
+.xinitrc:laptop
+.xinitrc:desktop
+```
+
+Our filelist is now ready. To update the dotgit repo to match it we run the
+update command inside the dotgit repo:
+
+```
+[laptop]$ dotgit update -v
+```
+
+Our repository now contains the newly-copied ".vimrc" file as well as the
+".xinitrc" file for the laptop. To see these changes, we can run the diff
+command:
+
+```
+[laptop]$ dotgit diff
+```
+
+We are now done on the laptop, so we commit our changes to the repo and push it
+to the remote (something like GitHub):
+
+```
+[laptop]$ dotgit commit
+```
+
+Next, on the desktop we clone the repo to where we want to save it.  Assuming
+that dotgit is already installed on the desktop we cd into the dotfiles repo.
+We first want to replace the ".vimrc" on the desktop with the one stored in the
+repo, so we run the restore command inside the repo:
+
+```
+[desktop]$ dotgit restore -v
+```
+
+Note that dotgit always replaces the file in the repo if the same file exists
+in your home folder and you run the "update" command. To prevent this from
+happening, run the restore command first in in the previous step.
+
+We now want to store the ".xinitrc" file from the desktop in our dotgit repo,
+so again we run the update operation.
+
+```
+[desktop]$ dotgit update -v
+```
+
+Again we save the changes to the dotfiles repo by committing it and pushing it
+to the remote:
+
+```
+[desktop]$ dotgit commit
+```
+
+Now we're done! To pull in the changes made from the desktop to the laptop, run
+"git pull" on the laptop. You might also need to run a "dotgit restore" on the
+laptop if you added new files to the filelist on the desktop.
+
 ## Future goals
 
 dotgit was written with a plugin architecture which allows easily extending it
