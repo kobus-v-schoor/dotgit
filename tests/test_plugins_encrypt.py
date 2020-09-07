@@ -47,6 +47,7 @@ class TestEncryptPlugin:
 
         txt = 'hello world'
         sfile.write_text(txt)
+        sfile.chmod(0o600)
 
         password = 'password123'
         monkeypatch.setattr('getpass.getpass', lambda prompt: password)
@@ -64,6 +65,7 @@ class TestEncryptPlugin:
         assert tfile.read_text() == txt
         assert rel_path in plugin.hashes
         assert plugin.hashes[rel_path] == hash_file(str(sfile))
+        assert plugin.modes[rel_path] == 0o600
         assert (tmp_path / "hashes").read_text()
 
     def test_remove(self, tmp_path, monkeypatch):
@@ -75,15 +77,16 @@ class TestEncryptPlugin:
         dfile = tmp_path / 'dest'
 
         tfile.write_text(txt)
-        gpg = GPG(password)
-        gpg.encrypt(str(tfile), str(sfile))
+        tfile.chmod(0o600)
 
         monkeypatch.setattr('getpass.getpass', lambda prompt: password)
-        plugin = EncryptPlugin(data_dir=str(tmp_path))
+        plugin = EncryptPlugin(data_dir=str(tmp_path), repo_dir=str(tmp_path))
 
+        plugin.apply(str(tfile), str(sfile))
         plugin.remove(str(sfile), str(dfile))
 
         assert dfile.read_text() == tfile.read_text()
+        assert dfile.stat().st_mode & 0o777 == 0o600
 
     def test_samefile(self, tmp_path, monkeypatch):
         txt = 'hello world'

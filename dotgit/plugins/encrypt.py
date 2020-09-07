@@ -80,6 +80,7 @@ class EncryptPlugin(Plugin):
     def __init__(self, data_dir, *args, **kwargs):
         self.gpg = None
         self.hashes_path = os.path.join(data_dir, 'hashes')
+        self.modes_path = os.path.join(data_dir, 'modes')
         self.pword_path = os.path.join(data_dir, 'passwd')
         super().__init__(*args, data_dir=data_dir, **kwargs)
 
@@ -91,10 +92,18 @@ class EncryptPlugin(Plugin):
         else:
             self.hashes = {}
 
+        if os.path.exists(self.modes_path):
+            with open(self.modes_path, 'r') as f:
+                self.modes = json.load(f)
+        else:
+            self.modes = {}
+
     # saves the current hashes to the data dir
     def save_data(self):
         with open(self.hashes_path, 'w') as f:
             json.dump(self.hashes, f)
+        with open(self.modes_path, 'w') as f:
+            json.dump(self.modes, f)
 
     # sets the password in the plugin's data dir. do not use directly, use
     # change_password instead
@@ -178,20 +187,22 @@ class EncryptPlugin(Plugin):
         self.gpg = GPG(password)
 
     # encrypts a file from outside the repo and stores it inside the repo
-    # TODO save unix file permissions
     def apply(self, source, dest):
         self.init_password()
         self.gpg.encrypt(source, dest)
 
         # calculate and store file hash
         self.hashes[self.strip_repo(dest)] = hash_file(source)
+        # store file mode data (metadata)
+        self.modes[self.strip_repo(dest)] = os.stat(source).st_mode & 0o777
+
         self.save_data()
 
     # decrypts source and saves it in dest
-    # TODO restore unix file permissions
     def remove(self, source, dest):
         self.init_password()
         self.gpg.decrypt(source, dest)
+        os.chmod(dest, self.modes[self.strip_repo(source)])
 
     # compares the ext_file to repo_file and returns true if they are the same.
     # does this by looking at the repo_file's hash and calculating the hash of
