@@ -2,8 +2,9 @@ import os
 
 
 class Plugin:
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, repo_dir=None):
         self.data_dir = data_dir
+        self.repo_dir = '/' if repo_dir is None else repo_dir
 
         if not os.path.isdir(self.data_dir):
             os.makedirs(self.data_dir)
@@ -33,3 +34,9 @@ class Plugin:
     # describing the op
     def strify(self, op):
         pass
+
+    # takes a path inside the repo and strips the repo dir as a prefix
+    def strip_repo(self, path):
+        if os.path.isabs(path):
+            return os.path.relpath(path, self.repo_dir)
+        return path

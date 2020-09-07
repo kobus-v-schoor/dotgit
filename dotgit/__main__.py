@@ -80,17 +80,21 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
     # set up git interface
     git = Git(repo)
 
+    # set the dotfiles repo
+    dotfiles = os.path.join(repo, 'dotfiles')
+    logging.debug(f'dotfiles path is {dotfiles}')
+
     # init plugins
     plugins_data_dir = os.path.join(repo, '.plugins')
     plugins = {
-        'plain': PlainPlugin(data_dir=os.path.join(plugins_data_dir, 'plain'),
-                             hard=args.hard_mode),
-        'encrypt': EncryptPlugin(data_dir=os.path.join(plugins_data_dir,
-                                                       'encrypt'))
+        'plain': PlainPlugin(
+            data_dir=os.path.join(plugins_data_dir, 'plain'),
+            repo_dir=os.path.join(dotfiles, 'plain'),
+            hard=args.hard_mode),
+        'encrypt': EncryptPlugin(
+            data_dir=os.path.join(plugins_data_dir, 'encrypt'),
+            repo_dir=os.path.join(dotfiles, 'encrypt'))
     }
-
-    dotfiles = os.path.join(repo, 'dotfiles')
-    logging.debug(f'dotfiles path is {dotfiles}')
 
     if args.action in [Actions.UPDATE, Actions.RESTORE, Actions.CLEAN]:
         # calculate and apply file operations

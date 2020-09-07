@@ -184,7 +184,7 @@ class EncryptPlugin(Plugin):
         self.gpg.encrypt(source, dest)
 
         # calculate and store file hash
-        self.hashes[dest] = hash_file(source)
+        self.hashes[self.strip_repo(dest)] = hash_file(source)
         self.save_data()
 
     # decrypts source and saves it in dest
@@ -198,6 +198,7 @@ class EncryptPlugin(Plugin):
     # the ext_file
     def samefile(self, repo_file, ext_file):
         ext_hash = hash_file(ext_file)
+        repo_file = self.strip_repo(repo_file)
         return self.hashes.get(repo_file, None) == ext_hash
 
     def strify(self, op):

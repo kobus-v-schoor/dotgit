@@ -130,7 +130,8 @@ class CalcOps:
 
             if os.path.exists(dest):
                 if self.plugin.samefile(source, dest):
-                    logging.debug(f'{dest} already linked to repo, skipping')
+                    logging.debug(f'{dest} is the same file as in the repo, '
+                                  'skipping')
                     continue
 
                 # check if the dest is already a symlink to the repo, if it is

@@ -51,7 +51,7 @@ class TestEncryptPlugin:
         password = 'password123'
         monkeypatch.setattr('getpass.getpass', lambda prompt: password)
 
-        plugin = EncryptPlugin(data_dir=str(tmp_path))
+        plugin = EncryptPlugin(data_dir=str(tmp_path), repo_dir=str(tmp_path))
         plugin.apply(str(sfile), str(dfile))
 
         assert sfile.read_bytes() != dfile.read_bytes()
@@ -59,9 +59,11 @@ class TestEncryptPlugin:
         gpg = GPG(password)
         gpg.decrypt(str(dfile), str(tfile))
 
+        rel_path = str(dfile.relative_to(tmp_path))
+
         assert tfile.read_text() == txt
-        assert str(dfile) in plugin.hashes
-        assert plugin.hashes[str(dfile)] == hash_file(str(sfile))
+        assert rel_path in plugin.hashes
+        assert plugin.hashes[rel_path] == hash_file(str(sfile))
         assert (tmp_path / "hashes").read_text()
 
     def test_remove(self, tmp_path, monkeypatch):
