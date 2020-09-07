@@ -65,13 +65,23 @@ class TestFilelist:
                 'plugin': 'plain'
             }]}
 
-    def test_plugin(self, tmp_path):
-        fname = self.write_flist(tmp_path, 'file:cat1,cat2:encrypt')
+    def test_cat_plugin(self, tmp_path):
+        fname = self.write_flist(tmp_path, 'file:cat1,cat2|encrypt')
 
         flist = Filelist(fname)
         assert flist.files == {
             'file': [{
                 'categories': ['cat1', 'cat2'],
+                'plugin': 'encrypt'
+            }]}
+
+    def test_nocat_plugin(self, tmp_path):
+        fname = self.write_flist(tmp_path, 'file|encrypt')
+
+        flist = Filelist(fname)
+        assert flist.files == {
+            'file': [{
+                'categories': ['common'],
                 'plugin': 'encrypt'
             }]}
 
@@ -105,7 +115,7 @@ class TestFilelist:
     def test_manifest(self, tmp_path):
         fname = self.write_flist(tmp_path,
                                  'group=cat1,cat2\ncfile\nnfile:cat1,cat2\n'
-                                 'gfile:group\npfile:cat1,cat2:encrypt')
+                                 'gfile:group\npfile:cat1,cat2|encrypt')
 
         flist = Filelist(fname)
         manifest = flist.manifest()

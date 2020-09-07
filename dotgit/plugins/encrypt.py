@@ -29,9 +29,10 @@ class GPG:
 
         try:
             proc = subprocess.run(cmd, input=self.password.encode(),
-                                  stdout=subprocess.PIPE, check=True)
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, check=True)
         except subprocess.CalledProcessError as e:
-            logging.error(e.stdout.decode())
+            logging.error(e.stderr.decode())
             logging.error(f'gpg command {cmd} failed with exit code '
                           f'{e.returncode}\n')
             raise

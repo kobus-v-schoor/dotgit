@@ -19,6 +19,7 @@ from dotgit.flists import Filelist
 from dotgit.git import Git
 from dotgit.calc_ops import CalcOps
 from dotgit.plugins.plain import PlainPlugin
+from dotgit.plugins.encrypt import EncryptPlugin
 import dotgit.info as info
 
 
@@ -83,7 +84,9 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
     plugins_data_dir = os.path.join(repo, '.plugins')
     plugins = {
         'plain': PlainPlugin(data_dir=os.path.join(plugins_data_dir, 'plain'),
-                             hard=args.hard_mode)
+                             hard=args.hard_mode),
+        'encrypt': EncryptPlugin(data_dir=os.path.join(plugins_data_dir,
+                                                       'encrypt'))
     }
 
     if args.action in [Actions.UPDATE, Actions.RESTORE, Actions.CLEAN]:

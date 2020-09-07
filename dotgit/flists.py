@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 
 class Filelist:
@@ -23,12 +24,16 @@ class Filelist:
                     self.groups[group] = categories
                 # file
                 else:
-                    line = line.split(':')
-                    path, categories, plugin = line[0], ['common'], 'plain'
-                    if len(line) > 1:
-                        categories = line[1].split(',')
-                    if len(line) > 2:
-                        plugin = line[2]
+                    split = re.split('[:|]', line)
+
+                    path, categories, plugin = split[0], ['common'], 'plain'
+                    if len(split) >= 2:
+                        if ':' in line:
+                            categories = split[1].split(',')
+                        else:
+                            plugin = split[1]
+                    if len(split) >= 3:
+                        plugin = split[2]
 
                     if path not in self.files:
                         self.files[path] = []
