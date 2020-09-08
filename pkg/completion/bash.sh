@@ -28,6 +28,7 @@ function _dotgit {
 		COMPREPLY+=("clean")
 		COMPREPLY+=("diff")
 		COMPREPLY+=("commit")
+		COMPREPLY+=("passwd")
 	else
 		# there is alreay an action specified, so parse the filelist for
 		# category names
@@ -66,6 +67,7 @@ function _dotgit {
 	# add other command-line flags
 	COMPREPLY+=("-h" "--help")
 	COMPREPLY+=("-v" "--verbose")
+	COMPREPLY+=("--version")
 	COMPREPLY+=("--dry-run")
 	COMPREPLY+=("--hard")
 
