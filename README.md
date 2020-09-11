@@ -116,8 +116,19 @@ You can also get bash-completion to work by installing dotgit's bash-completion
 in your home folder:
 
 ```
-curl https://raw.githubusercontent.com/kobus-v-schoor/dotgit/master/pkg/completion/bash.sh >> ~/.bash_completion
+url="https://raw.githubusercontent.com/kobus-v-schoor/dotgit/master/pkg/completion/bash.sh"
+curl "$url" >> ~/.bash_completion
 ```
+
+You can also get completion for fish shell by using the following:
+
+```
+url=https://raw.githubusercontent.com/kobus-v-schoor/dotgit/master/pkg/completion/fish.fish
+curl --create-dirs "$url" >> ~/.config/fish/completions/dotgit.fish
+```
+
+PRs for improvements for the fish shell completion (or for any other shell) are
+welcome :grin:
 
 ## Getting started
 
