@@ -97,6 +97,8 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
     }
 
     if args.action in [Actions.UPDATE, Actions.RESTORE, Actions.CLEAN]:
+        clean_ops = []
+
         # calculate and apply file operations
         for plugin in plugins:
             # filter out filelist paths that use current plugin
@@ -117,8 +119,12 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
             elif args.action == Actions.CLEAN:
                 calc_ops.clean(flist).apply(args.dry_run)
 
-            calc_ops.clean_repo(manifest[plugin]).apply(args.dry_run)
+            clean_ops.append(calc_ops.clean_repo(manifest[plugin]))
             plugins[plugin].clean_data(manifest[plugin])
+
+        # execute cleaning ops after everything else
+        for clean_op in clean_ops:
+            clean_op.apply(args.dry_run)
 
     elif args.action in [Actions.DIFF, Actions.COMMIT]:
         # calculate and apply git operations
