@@ -209,3 +209,28 @@ class CalcOps:
                         fops.remove(fname)
 
         return fops
+
+    # goes through the filelist and finds files that have modifications that
+    # are not yet in the repo e.g. changes to encrypted files. This should not
+    # be used for any calculations, only for informational purposes
+    def diff(self, categories):
+        diffs = []
+        for category in categories:
+            category_path = os.path.join(self.repo, category)
+
+            for root, dirs, files in os.walk(category_path):
+                for fname in files:
+                    fname = os.path.join(root, fname)
+                    fname = os.path.relpath(fname, category_path)
+
+                    restore_file = os.path.join(self.restore_path, fname)
+                    category_file = os.path.join(category_path, fname)
+
+                    if not os.path.exists(restore_file):
+                        continue
+
+                    logging.debug(f'checking diff samefile for {restore_file}')
+                    if not self.plugin.samefile(category_file, restore_file):
+                        diffs.append(f'modified {restore_file}')
+
+        return diffs

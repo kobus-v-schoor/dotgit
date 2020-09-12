@@ -96,6 +96,9 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
             repo_dir=os.path.join(dotfiles, 'encrypt'))
     }
 
+    plugin_dirs = {plugin: os.path.join(dotfiles, plugin) for plugin in
+                   plugins}
+
     if args.action in [Actions.UPDATE, Actions.RESTORE, Actions.CLEAN]:
         clean_ops = []
 
@@ -108,7 +111,7 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
                 continue
             logging.debug(f'active filelist for plugin {plugin}: {flist}')
 
-            plugin_dir = os.path.join(dotfiles, plugin)
+            plugin_dir = plugin_dirs[plugin]
             calc_ops = CalcOps(plugin_dir, home, plugins[plugin])
 
             if args.action == Actions.UPDATE:
@@ -130,6 +133,15 @@ def main(args=None, cwd=os.getcwd(), home=info.home):
         # calculate and apply git operations
         if args.action == Actions.DIFF:
             print('\n'.join(git.diff(ignore=['.plugins/'])))
+
+            for plugin in plugins:
+                calc_ops = CalcOps(plugin_dirs[plugin], home, plugins[plugin])
+                diff = calc_ops.diff(args.categories)
+
+                if diff:
+                    print(f'\n{plugin}-plugin updates not yet in repo:')
+                    print('\n'.join(diff))
+
         elif args.action == Actions.COMMIT:
             if not git.has_changes():
                 logging.warning('no changes detected in repo, not creating '

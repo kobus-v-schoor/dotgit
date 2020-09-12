@@ -178,16 +178,23 @@ class TestMain:
 
     def test_diff(self, tmp_path, capsys):
         home, repo = self.setup_repo(tmp_path, 'file\nfile2')
-        open(home / 'file', 'w').close()
-        open(home / 'file2', 'w').close()
+        (home / 'file').touch()
+        (home / 'file2').touch()
 
-        assert main(args=['update'], cwd=str(repo), home=str(home)) == 0
-        assert main(args=['diff'], cwd=str(repo), home=str(home)) == 0
+        ret = main(args=['update', '--hard'], cwd=str(repo), home=str(home))
+        assert ret == 0
+
+        (home / 'file').write_text('hello world')
+
+        ret = main(args=['diff', '--hard'], cwd=str(repo), home=str(home))
+        assert ret == 0
 
         captured = capsys.readouterr()
         assert captured.out == ('added dotfiles/plain/common/file\n'
                                 'added dotfiles/plain/common/file2\n'
-                                'modified filelist\n')
+                                'modified filelist\n\n'
+                                'plain-plugin updates not yet in repo:\n'
+                                f'modified {home / "file"}\n')
 
     def test_passwd_empty(self, tmp_path, monkeypatch):
         home, repo = self.setup_repo(tmp_path, 'file\nfile2')

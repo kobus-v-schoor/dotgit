@@ -392,3 +392,18 @@ class TestCalcOps:
         calc.clean_repo([]).apply()
 
         assert not (repo / 'cat1').is_dir()
+
+    def test_diff(self, tmp_path):
+        home, repo = self.setup_home_repo(tmp_path)
+
+        (home / 'file').touch()
+        (home / 'file2').touch()
+
+        calc = CalcOps(repo, home, PlainPlugin(tmp_path / '.data', hard=True))
+        calc.update({'file': ['common'], 'file2': ['common']}).apply()
+        calc.restore({'file': ['common'], 'file2': ['common']}).apply()
+
+        (home / 'file').write_text('hello world')
+        (home / 'file2').unlink()
+
+        assert calc.diff(['common']) == [f'modified {home / "file"}']

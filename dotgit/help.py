@@ -176,8 +176,9 @@ OPTIONS:
                      your home folder.
 
     diff           - This will print your current changes in your dotfiles
-                     repository (does not show when there is unencrypted
-                     changes)
+                     repository and also tell you if there is changes in your
+                     home directory that is not in your repo yet (e.g. changes
+                     to encrypted files)
 
     commit         - This will generate a git commit message and push to a
                      remote if it can find one (will ask for confirmation)
