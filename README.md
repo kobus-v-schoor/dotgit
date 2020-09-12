@@ -130,6 +130,42 @@ curl --create-dirs "$url" >> ~/.config/fish/completions/dotgit.fish
 PRs for improvements for the fish shell completion (or for any other shell) are
 welcome :grin:
 
+Alternatively, if you do not want to install dotgit with a package manager you
+can also just add this repo as a git submodule to your dotfiles repo. That way
+you get dotgit whenever you clone your dotfiles repo with no install necessary.
+Note that if you choose this route you will need to manually update dotgit to
+the newest version if there is a new release. To set this up, cd into your
+dotfiles repo and run the following:
+
+```
+cd ~/.dotfiles
+git submodule add https://github.com/kobus-v-schoor/dotgit
+git commit -m "Added dotgit submodule"
+```
+
+Now, whenever you clone your dotfiles repo you will have to pass an additional
+flag to git to tell it to also clone the dotgit repo
+
+```
+git clone --recurse-submodules https://github.com/dotfiles/repo ~/.dotfiles
+```
+
+If you want to update the dotgit repo to the latest version run the following
+inside your dotfiles repo:
+
+```
+git submodule update --remote dotgit
+```
+
+Finally, to run dotgit it is easiest to set up an alias like the following (you
+might need to adjust the path as well as the `python3` command depending on
+your setup). You can then also set up the bash completion in the same way as
+mentioned earlier in this section.
+
+```
+echo 'alias dotgit="python3 ~/.dotfiles/dotgit/dotgit/__main__.py"' >> ~/.bashrc
+```
+
 ## Getting started
 
 1. Choose a folder where you want to store your dotfiles, `~/.dotfiles` is a
