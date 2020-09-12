@@ -41,6 +41,8 @@ function _dotgit {
 				line="${line#"${line%%[![:space:]]*}"}"
 				# remove trailing whitespace characters
 				line="${line%"${line##*[![:space:]]}"}"
+				# remove plugins
+				line="${line%|*}"
 
 				# skip empty lines
 				[[ -z $line ]] && continue
