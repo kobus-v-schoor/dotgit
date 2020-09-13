@@ -1,3 +1,5 @@
+.PHONY: test lint package clean docs
+
 test:
 	pytest-3 -v
 
@@ -9,3 +11,6 @@ package:
 
 clean:
 	rm -rf build dist dotgit.egg-info
+
+docs:
+	sphinx-build -M html docs docs/_build
