@@ -62,7 +62,7 @@ categories a lot easier. They are defined using the following syntax::
 
 Along with dotgit's automatic hostname category (see the :doc:`usage` section
 for more details) groups become very useful. Have a look at the
-:doc:`org_schemes` section for how this could be used.
+:doc:`cookbook` section for how this could be used.
 
 Plugins
 =======

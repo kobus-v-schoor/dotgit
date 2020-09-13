@@ -10,3 +10,4 @@ dotgit documentation
    getting_started
    filelist
    usage
+   cookbook
