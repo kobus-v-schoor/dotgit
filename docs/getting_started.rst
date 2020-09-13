@@ -26,9 +26,10 @@ you first need to initialize it. To do that, run the ``init`` command::
 Most importantly, running this will create your filelist (unsurprisingly in a
 file named ``filelist``) for you. Your filelist will contain all the dotfiles
 you want to store inside your dotgit repo, as well as what plugins and
-categories you want them to belong to (more on that later). For now, we'll just
-add your bash config file to your repo. Note that the path is relative to your
-home directory, and as such you only specify ``.basrc`` and not its full path::
+categories you want them to belong to (check out the :doc:`filelist` section
+for more info on those). For now, we'll just add your bash config file to your
+repo. Note that the path is relative to your home directory, and as such you
+only specify ``.bashrc`` and not its full path::
 
    echo .bashrc >> ~/filelist
 
