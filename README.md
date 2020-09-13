@@ -3,7 +3,7 @@
 ![tests](https://github.com/kobus-v-schoor/dotgit/workflows/tests/badge.svg)
 [![coverage](https://coveralls.io/repos/github/kobus-v-schoor/dotgit/badge.svg)](https://coveralls.io/github/kobus-v-schoor/dotgit)
 ![publish-pypi](https://github.com/kobus-v-schoor/dotgit/workflows/publish-pypi/badge.svg)
-[![docs](https://readthedocs.org/projects/dotgit/badge/?version=latest)](https://dotgit.readthedocs.io/en/latest/?badge=latest)
+[![docs](https://readthedocs.org/projects/dotgit/badge/?version=latest)](https://dotgit.readthedocs.io/en/latest/)
 [![downloads](https://img.shields.io/pypi/dm/dotgit)](https://pypi.org/project/dotgit/)
 
 ## A comprehensive and versatile dotfiles manager
