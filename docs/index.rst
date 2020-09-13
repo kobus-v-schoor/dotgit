@@ -11,3 +11,4 @@ dotgit documentation
    filelist
    usage
    cookbook
+   migration_v1

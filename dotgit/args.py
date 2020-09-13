@@ -3,22 +3,23 @@ import argparse
 
 from dotgit.enums import Actions
 import dotgit.info as info
-import dotgit.help
 
 HELP = {
-    'verbose': 'print more info to the console',
+    'verbose': 'increase verbosity level',
     'dry-run': 'do not actually execute any file operations',
     'hard-mode': 'copy files instead of symlinking them',
     'action': 'action to take on active categories',
     'category': 'categories to activate. (default: %(default)s)'
 }
 
+EPILOG = 'See full the documentation at https://dotgit.readthedocs.io/'
+
 
 class Arguments:
     def __init__(self, args=None):
         # construct parser
         formatter = argparse.RawDescriptionHelpFormatter
-        parser = argparse.ArgumentParser(epilog=dotgit.help.HELP,
+        parser = argparse.ArgumentParser(epilog=EPILOG,
                                          formatter_class=formatter)
 
         # add parser options
