@@ -38,12 +38,12 @@ Any help for non-bash completion scripts would be much appreciated :)
 Manual installation
 ===================
 
-Alternatively, if you do not want to install dotgit with a package manager you
-can also just add this repo as a git submodule to your dotfiles repo. That way
-you get dotgit whenever you clone your dotfiles repo with no install necessary.
-Note that if you choose this route you will need to manually update dotgit to
-the newest version if there is a new release. To set this up, cd into your
-dotfiles repo and run the following::
+If you do not want to install dotgit with a package manager you can also just
+add this repo as a git submodule to your dotfiles repo. That way you get dotgit
+whenever you clone your dotfiles repo with no install necessary.  Note that if
+you choose this route you will need to manually update dotgit to the newest
+version if there is a new release. To set this up, cd into your dotfiles repo
+and run the following::
 
    cd ~/.dotfiles
    git submodule add https://github.com/kobus-v-schoor/dotgit

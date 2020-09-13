@@ -7,3 +7,4 @@ dotgit documentation
 
    introduction
    installation
+   getting_started
