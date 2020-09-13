@@ -9,3 +9,4 @@ dotgit documentation
    installation
    getting_started
    filelist
+   usage

@@ -104,3 +104,6 @@ An example filelist might look something like this::
 
    # easily group dotfiles to keep them separate but still in the same repo
    .foo:server
+
+You can also have a look at an example dotfiles repo
+`here <https://github.com/kobus-v-schoor/dotgit-dotfiles>`_
