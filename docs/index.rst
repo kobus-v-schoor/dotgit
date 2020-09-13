@@ -6,3 +6,4 @@ dotgit documentation
    :caption: Contents:
 
    introduction
+   installation
