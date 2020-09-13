@@ -3,15 +3,15 @@
 ![tests](https://github.com/kobus-v-schoor/dotgit/workflows/tests/badge.svg)
 [![coverage](https://coveralls.io/repos/github/kobus-v-schoor/dotgit/badge.svg)](https://coveralls.io/github/kobus-v-schoor/dotgit)
 ![publish-pypi](https://github.com/kobus-v-schoor/dotgit/workflows/publish-pypi/badge.svg)
-[![docs](https://readthedocs.org/projects/dotgit/badge/?version=rtd)](https://dotgit.readthedocs.io/en/latest/?badge=rtd)
+[![docs](https://readthedocs.org/projects/dotgit/badge/?version=latest)](https://dotgit.readthedocs.io/en/latest/?badge=latest)
 [![downloads](https://img.shields.io/pypi/dm/dotgit)](https://pypi.org/project/dotgit/)
 
 ## A comprehensive and versatile dotfiles manager
 
-dotgit will allows you to easily store all your dotfiles for any number of
-machines in a single git repository. Written in python with no external
-dependencies besides git, it works on both Linux and MacOS (should also work on
-other \*nix environments)
+dotgit allows you to easily store all your dotfiles for any number of machines
+in a single git repository. Written in python with no external dependencies
+besides git, it works on both Linux and MacOS (should also work on other \*nix
+environments)
 
 ## Table of Contents
 
