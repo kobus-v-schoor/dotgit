@@ -4,8 +4,8 @@ Encryption
 
 dotgit allows you to encrypt files that you don't want to be stored in
 plaintext in your repo. This is achieved by encrypting the files with GnuPG
-with its default symmetric encryption (AES256 at the time of writing on my
-machine) before storing them in your repo. You can specify that a file should
+with its default symmetric encryption (AES256 on my machine at the time of
+writing) before storing them in your repo. You can specify that a file should
 be encrypted by appending ``|encrypt`` to the filename in your filelist, for
 example::
 
