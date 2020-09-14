@@ -44,11 +44,11 @@ To get started with dotgit have a look at dotgit's documentation at
 
 ## Future goals
 
-dotgit was written with a plugin architecture which allows easily extending it
-with more functionality. The following plugins are on the wishlist for future
-releases (more suggestions welcome):
+The following features are on the wishlist for future releases (more
+suggestions welcome):
 
 * [x] Encryption using GnuPG
+* [ ] Config file for default behaviour (e.g. verbosity level, hard mode)
 * [ ] Templating
 
 ## Migration from v1.x

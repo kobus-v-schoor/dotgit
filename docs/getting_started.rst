@@ -23,15 +23,15 @@ you first need to initialize it. To do that, run the ``init`` command::
 
    dotgit init -v
 
-Most importantly, running this will create your filelist (unsurprisingly in a
-file named ``filelist``) for you. Your filelist will contain all the dotfiles
-you want to store inside your dotgit repo, as well as what plugins and
-categories you want them to belong to (check out the :doc:`filelist` section
-for more info on those). For now, we'll just add your bash config file to your
-repo. Note that the path is relative to your home directory, and as such you
-only specify ``.bashrc`` and not its full path::
+Running this will create your filelist (unsurprisingly in a file named
+``filelist``) for you. Your filelist will contain all the dotfiles you want to
+store inside your dotgit repo, as well as what plugins and categories you want
+them to belong to (check out the :doc:`filelist` section for more info on
+those). For now, we'll just add your bash config file to your repo. Note that
+the path is relative to your home directory, and as such you only specify
+``.bashrc`` and not its full path::
 
-   echo .bashrc >> ~/filelist
+   echo .bashrc >> filelist
 
 Now that you have made changes to your filelist you need to update your repo.
 This will copy over your files to your dotgit repo and set up the links in your
@@ -54,13 +54,14 @@ convenience. If you want to go ahead and set up some crazy git hooks or make
 use of branches and tags you are welcome to do so, dotgit won't get in your
 way.
 
-Example workflow
-================
+Example workflow for multiple hosts
+===================================
 
-A typical workflow might look something like the following. In this example we
-will set up two machines to use dotgit. The first will be named "laptop" and
-the second "desktop". We want to share a ".vimrc" file between the two but have
-separate ".xinitrc" files.
+In this example we will set up two machines to use dotgit. The first will be
+named "laptop" and the second "desktop". We want to share a ".vimrc" file
+between the two but have separate ".xinitrc" files. Note that this example
+doesn't follow the recommended filelist structure as outlined in the
+:doc:`cookbook`, but is merely set up as an example.
 
 First we start on the laptop. On it we have the ".vimrc" file that we want to
 share as well as the ".xinitrc" file for the laptop. We create a new dotgit
@@ -97,24 +98,26 @@ to the remote (something like GitHub)::
    [laptop]$ dotgit commit
 
 Next, on the desktop we clone the repo to where we want to save it. Assuming
-that dotgit is already installed on the desktop we ``cd`` into the dotfiles
-repo. We first want to replace the ".vimrc" on the desktop with the one stored
-in the repo, so we run the ``restore`` command inside the repo::
+that dotgit is already installed on the desktop we cd into the dotfiles repo.
+We first want to replace the ".vimrc" on the desktop with the one stored in the
+repo, so we run the ``restore`` command inside the repo::
 
    [desktop]$ dotgit restore -v
 
-Note that dotgit always replaces the file in the repo if the same file exists
-in your home folder and you run the "update" command. This is why we first ran
-the restore command in the previous step, otherwise the ".vimrc" that was
-already on the desktop would have replaced the one in the repo.
+.. note::
+   When you run the ``update`` command dotgit will replace any files in the
+   repo with those in your home folder. This is why we first ran the
+   ``restore`` command in the previous step, otherwise the ".vimrc" that might
+   have already been present on the desktop would have replaced the one in the
+   repo.
 
 We now want to store the ".xinitrc" file from the desktop in our dotgit repo,
 so again we run the update command::
 
    [desktop]$ dotgit update -v
 
-Again we save the changes to the dotfiles repo by committing it and pushing it
-to the remote::
+We then save changes to the dotfiles repo by committing it and pushing it to
+the remote::
 
    [desktop]$ dotgit commit
 

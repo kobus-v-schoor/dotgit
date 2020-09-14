@@ -85,25 +85,29 @@ Putting it all together
 
 An example filelist might look something like this::
 
-   # grouping makes organization a breeze
+   # grouping makes organizing categories easy - check the "Cookbook" section
+   # for a good way to utilize groups
    laptop=tools,x,ssh
    desktop=tools,x
+
+   # this file will be added to the "common" category automatically
+   .bashrc
+
+   # this file belongs to the "x" category
+   .xinitrc:x
 
    # sharing/splitting of dotfiles between hosts/categories
    .vimrc:tools,vim
    .vimrc:pi
 
-   .xinitrc:x
-
-   # encryption support using GnuPG
+   # here the "encrypt" plugin is used to encrypt these files
    .ssh/id_rsa:ssh|encrypt
    .ssh/id_rsa.pub:ssh|encrypt
    .gitconfig|encrypt
 
-   .bashrc
-
-   # easily group dotfiles to keep them separate but still in the same repo
+   # this file will only ever get used if you have a host with the name
+   # "server" or if you explicitly activate the "server" category
    .foo:server
 
 You can also have a look at an example dotfiles repo
-`here <https://github.com/kobus-v-schoor/dotgit-dotfiles>`_
+`here <https://github.com/kobus-v-schoor/dotgit-dotfiles>`_.
