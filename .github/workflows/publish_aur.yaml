@@ -16,9 +16,9 @@ jobs:
 
       # install needed packages to update aur repo
       - run: |
-          mkdir -p /var/lib/pacman
           pacman -Syu --noconfirm
           pacman -S --noconfirm git openssh base-devel
+          true
 
       # setup ssh credentials
       - run: |
