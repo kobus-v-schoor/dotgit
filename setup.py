@@ -13,6 +13,9 @@ setuptools.setup(
         long_description = long_description,
         long_description_content_type = 'text/markdown',
         url = info.__url__,
+        project_urls = {
+            'Documentation': 'https://dotgit.readthedocs.io',
+        },
         license = info.__license__,
         packages = ['dotgit', 'dotgit.plugins'],
         entry_points = {
