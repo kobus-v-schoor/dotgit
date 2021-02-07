@@ -7,7 +7,7 @@ on:
 jobs:
   arch:
     runs-on: ubuntu-latest
-    container: archlinux:latest
+    container: archlinux:base-devel
 
     steps:
       - uses: actions/checkout@v2
@@ -16,9 +16,7 @@ jobs:
 
       # install needed packages to update aur repo
       - run: |
-          pacman -Syu --noconfirm
-          pacman -S --noconfirm git openssh base-devel
-          true
+          pacman -S --noconfirm git openssh
 
       # setup ssh credentials
       - run: |
