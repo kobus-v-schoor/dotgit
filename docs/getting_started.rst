@@ -39,10 +39,25 @@ home folder pointing to them. To do so, run the ``update`` command::
 
    dotgit update -v
 
-If you now check in your home folder, you will see that ``.bashrc`` is now a
-symlink that points to your dotfiles repo. To commit your changes you can
-either do so by using git directly or making use of dotgit's convenient
-``commit`` command::
+The ``update`` command does two things. Firstly it copies your file from your
+home directory into your dotfiles repo and then it creates a symlink in your
+home folder that links to this file. Your dotfiles repo will now look something
+like this::
+
+   ~/.dotfiles
+   ├── dotfiles
+   │   └── plain
+   │       └── common
+   │           └── .bashrc
+   └── filelist
+
+And in your home folder you should see a symlink to your dotfiles repo::
+
+   readlink ~/.bashrc
+   /home/user/.dotfiles/dotfiles/plain/common/.bashrc
+
+To commit your changes you can either do so by using git directly or making use
+of dotgit's convenient ``commit`` command::
 
    dotgit commit -v
 
