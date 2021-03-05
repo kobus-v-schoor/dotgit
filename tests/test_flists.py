@@ -1,5 +1,6 @@
 import os
 import pytest
+import socket
 
 from dotgit.flists import Filelist
 
@@ -19,10 +20,18 @@ class TestFilelist:
         assert flist.files == {}
 
     def test_group(self, tmp_path):
+        # Test where group name != hostname
         fname = self.write_flist(tmp_path, 'group=cat1,cat2,cat3')
 
         flist = Filelist(fname)
         assert flist.groups == {'group': ['cat1', 'cat2', 'cat3']}
+        assert flist.files == {}
+
+        # Test where group name == hostname
+        fname = self.write_flist(tmp_path, socket.gethostname() + '=cat1,cat2,cat3')
+
+        flist = Filelist(fname)
+        assert flist.groups == {socket.gethostname(): ['cat1', 'cat2', 'cat3', socket.gethostname()]}
         assert flist.files == {}
 
     def test_common_file(self, tmp_path):
