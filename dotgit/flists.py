@@ -2,6 +2,8 @@ import logging
 import os
 import re
 
+import dotgit.info as info
+
 
 class Filelist:
     def __init__(self, fname):
@@ -21,6 +23,8 @@ class Filelist:
                 if '=' in line:
                     group, categories = line.split('=')
                     categories = categories.split(',')
+                    if group == info.hostname:
+                        categories.append(info.hostname)
                     self.groups[group] = categories
                 # file
                 else:
