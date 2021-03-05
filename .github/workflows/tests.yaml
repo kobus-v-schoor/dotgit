@@ -37,5 +37,5 @@ jobs:
       - name: Upload coverage report to Coveralls
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DOTGIT_GITHUB_TOKEN }}
         run: coveralls
