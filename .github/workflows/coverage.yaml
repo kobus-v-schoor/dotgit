@@ -1,0 +1,25 @@
+name: coverage
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install testing and coverage dependencies
+        run: |
+            python -m pip install --upgrade pip
+            pip install pytest pytest-cov coveralls
+
+      - name: Run unit tests
+        run: python3 -m pytest --cov=dotgit
+
+      - name: Upload coverage report to Coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+        run: coveralls
