@@ -1,7 +1,7 @@
 from os.path import expanduser
 import socket
 
-__version__ = '2.2.8'
+__version__ = '2.2.9'
 __author__ = 'Kobus van Schoor'
 __author_email__ = 'v.schoor.kobus@gmail.com'
 __url__ = 'https://github.com/kobus-v-schoor/dotgit'
