@@ -5,7 +5,7 @@ on:
     branches: [master]
 
 jobs:
-  tests:
+  coverage:
     runs-on: ubuntu-latest
 
     steps:
